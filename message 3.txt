@@ -1,0 +1,3548 @@
+_G.BunnyHubEntitlements = { ["kabuki.autoFarm"] = false }
+if type(_G.__BunnyMonkeysStop) == "function" then
+	pcall(_G.__BunnyMonkeysStop)
+end
+
+if type(_G.BunnyUIStop) == "function" then
+	pcall(_G.BunnyUIStop)
+end
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local MarketplaceService = game:GetService("MarketplaceService")
+local ContentProvider = game:GetService("ContentProvider")
+local HttpService = game:GetService("HttpService")
+local CoreGui = game:GetService("CoreGui")
+local TeleportService = game:GetService("TeleportService")
+local Lighting = game:GetService("Lighting")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CollectionService = game:GetService("CollectionService")
+local VirtualUser = game:GetService("VirtualUser")
+
+local LocalPlayer = Players.LocalPlayer
+local running = true
+local shutdown
+local statusText = "Idle"
+local connections = {}
+local shownStatus = ""
+
+local STORE_FOLDER = "BunnyHub"
+local STORE_FILE = "BunnyHub/monkeys_ui.json"
+local SETTINGS_FILE = "BunnyHub/monkeys.json"
+
+local function fsReady()
+	return type(writefile) == "function" and type(readfile) == "function"
+end
+
+local function loadStore()
+	local data = { configs = {}, autoload = "" }
+	if not fsReady() then
+		return data
+	end
+	local ok, raw = pcall(function()
+		if type(isfile) == "function" and not isfile(STORE_FILE) then
+			return nil
+		end
+		return readfile(STORE_FILE)
+	end)
+	if not ok or type(raw) ~= "string" or raw == "" then
+		return data
+	end
+	local parsed = nil
+	pcall(function()
+		parsed = HttpService:JSONDecode(raw)
+	end)
+	if type(parsed) == "table" then
+		parsed.configs = parsed.configs or {}
+		parsed.autoload = parsed.autoload or ""
+		return parsed
+	end
+	return data
+end
+
+local function saveStore(data)
+	if not fsReady() then
+		return
+	end
+	pcall(function()
+		if type(makefolder) == "function" and type(isfolder) == "function" and not isfolder(STORE_FOLDER) then
+			makefolder(STORE_FOLDER)
+		end
+		writefile(STORE_FILE, HttpService:JSONEncode(data))
+	end)
+end
+
+local HUB_IMAGE_ASSET = 70947888871024
+
+local function track(conn)
+	connections[#connections + 1] = conn
+	return conn
+end
+
+local function tween(inst, duration, props)
+	local info = TweenInfo.new(duration, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+	local t = TweenService:Create(inst, info, props)
+	t:Play()
+	return t
+end
+
+local function tweenBounce(inst, duration, props)
+	local info = TweenInfo.new(duration, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	local t = TweenService:Create(inst, info, props)
+	t:Play()
+	return t
+end
+
+local function hoverBind(button, normalColor, hoverColor)
+	button.MouseEnter:Connect(function()
+		tween(button, 0.2, { BackgroundColor3 = hoverColor })
+	end)
+	button.MouseLeave:Connect(function()
+		tween(button, 0.2, { BackgroundColor3 = normalColor })
+	end)
+end
+
+local function notify(text)
+	statusText = tostring(text)
+	pcall(function()
+		game:GetService("StarterGui"):SetCore("SendNotification", {
+			Title = "Bunny Hub",
+			Text = tostring(text),
+			Duration = 3,
+		})
+	end)
+end
+
+local function roleOf(player)
+	local target = player or LocalPlayer
+	local team = target.Team and target.Team.Name
+	if team and team ~= "" then
+		return team
+	end
+	return "Player"
+end
+
+local gui
+local savedWalk, savedJump, savedZoom
+local flyBV
+local lightBackup
+local noclipState = {}
+local visuals = {}
+local prompts = {}
+local listBind = { label = nil }
+local threats = {}
+local groceries = {}
+local cashPoints = {}
+local lastFire = 0
+local lastContinue = 0
+
+local STYLES = {}
+local MOVES = {}
+local function releaseParryKey() end
+
+local Config = {
+	EspMonkeys = true,
+	EspPlayers = false,
+	Aim = false,
+	AimFov = 80,
+	AimRange = 180,
+	AimSmooth = 0.35,
+	AutoPrimary = false,
+	AutoSecondary = false,
+	Melee = false,
+	MeleeRange = 16,
+	AutoUlt = false,
+	AutoNade = false,
+	AutoBarricade = false,
+	AutoWeapon = false,
+	AutoHealth = false,
+	AutoSkip = false,
+	Bright = false,
+	NoBlur = false,
+	FovOn = false,
+	Fov = 90,
+	SpeedOn = false,
+	Speed = 1.5,
+	JumpOn = false,
+	JumpPower = 100,
+	Noclip = false,
+	AntiAFK = true,
+	Freecam = false,
+	Scan = 0.35,
+}
+
+local function rootOf(player)
+	local character = (player or LocalPlayer).Character
+	if not character then
+		return nil
+	end
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	local root = character:FindFirstChild("HumanoidRootPart")
+	return root, humanoid, character
+end
+
+local function teleportTo(cf)
+	local root = rootOf()
+	if root and cf then
+		root.CFrame = cf
+	end
+end
+
+local function serverHop()
+	notify("Looking for a quiet server")
+	local ok = pcall(function()
+		local raw = game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")
+		local data = HttpService:JSONDecode(raw)
+		local best
+		for _, server in data.data or {} do
+			if server.id ~= game.JobId and type(server.playing) == "number" and server.playing < (server.maxPlayers or 1) then
+				if not best or server.playing < best.playing then
+					best = server
+				end
+			end
+		end
+		if not best then
+			error("none")
+		end
+		notify("Hopping · " .. tostring(best.playing) .. " players")
+		TeleportService:TeleportToPlaceInstance(game.PlaceId, best.id, LocalPlayer)
+	end)
+	if not ok then
+		notify("Server hop failed")
+	end
+end
+
+local highlights = {}
+local monkeys = {}
+
+local function ensureFolder()
+	local folder = workspace:FindFirstChild("BunnyMonkeyVisuals")
+	if not folder then
+		folder = Instance.new("Folder")
+		folder.Name = "BunnyMonkeyVisuals"
+		folder.Parent = workspace
+	end
+	return folder
+end
+
+local function clearVisuals()
+	for inst, bb in visuals do
+		if bb then
+			bb:Destroy()
+		end
+		visuals[inst] = nil
+	end
+	for model, hl in highlights do
+		if hl then
+			hl:Destroy()
+		end
+		highlights[model] = nil
+	end
+	local folder = workspace:FindFirstChild("BunnyMonkeyVisuals")
+	if folder then
+		folder:Destroy()
+	end
+end
+
+local function partOf(inst)
+	if not inst then
+		return nil
+	end
+	if inst:IsA("BasePart") then
+		return inst
+	end
+	if inst:IsA("Model") then
+		return inst:FindFirstChild("Head") or inst:FindFirstChild("HumanoidRootPart") or inst.PrimaryPart or inst:FindFirstChildWhichIsA("BasePart")
+	end
+	return inst:FindFirstAncestorWhichIsA("BasePart")
+end
+
+local function tag(inst, text, color)
+	local host = partOf(inst)
+	if not host then
+		return
+	end
+	local bb = visuals[inst]
+	if not bb or not bb.Parent then
+		bb = Instance.new("BillboardGui")
+		bb.Name = "BunnyTag"
+		bb.AlwaysOnTop = true
+		bb.Size = UDim2.fromOffset(180, 36)
+		bb.StudsOffset = Vector3.new(0, 3, 0)
+		bb.MaxDistance = 900
+		bb.Parent = ensureFolder()
+		local label = Instance.new("TextLabel", bb)
+		label.Name = "Label"
+		label.BackgroundTransparency = 1
+		label.Size = UDim2.fromScale(1, 1)
+		label.Font = Enum.Font.GothamBold
+		label.TextSize = 14
+		label.TextStrokeTransparency = 0.4
+		visuals[inst] = bb
+	end
+	bb.Adornee = host
+	local label = bb:FindFirstChild("Label")
+	if label then
+		label.Text = text
+		label.TextColor3 = color
+	end
+end
+
+local function highlight(model, color)
+	local hl = highlights[model]
+	if not hl or not hl.Parent then
+		hl = Instance.new("Highlight")
+		hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+		hl.Parent = model
+		highlights[model] = hl
+	end
+	hl.FillColor = color
+	hl.OutlineColor = color
+	hl.FillTransparency = 0.62
+	hl.OutlineTransparency = 0.15
+end
+
+local SKIP_NAMES = { "dmitri", "vendor", "shop", "cashier", "clerk", "dummy", "lobby" }
+
+local function isMonkey(model)
+	if not model or not model:IsA("Model") then
+		return false
+	end
+	if Players:GetPlayerFromCharacter(model) then
+		return false
+	end
+	local views = workspace:FindFirstChild("UnitViews")
+	if not views or not model:IsDescendantOf(views) then
+		return false
+	end
+	local unitPart = model:FindFirstChild("Unit")
+	if not unitPart or unitPart:GetAttribute("UnitId") == nil then
+		return false
+	end
+	local hum = model:FindFirstChildOfClass("Humanoid")
+	if not hum or hum.Health <= 0 then
+		return false
+	end
+	local name = string.lower(model.Name .. " " .. tostring(hum.DisplayName or ""))
+	for _, word in SKIP_NAMES do
+		if string.find(name, word, 1, true) then
+			return false
+		end
+	end
+	return true
+end
+
+local function consider(inst)
+	local model = nil
+	if inst:IsA("Model") then
+		model = inst
+	elseif inst:IsA("Humanoid") and inst.Parent and inst.Parent:IsA("Model") then
+		model = inst.Parent
+	end
+	if not model then
+		return
+	end
+	local views = workspace:FindFirstChild("UnitViews")
+	if not views or not model:IsDescendantOf(views) then
+		return
+	end
+	if model:FindFirstChildOfClass("Humanoid") and isMonkey(model) then
+		monkeys[model] = true
+	end
+end
+
+local function scanWorld()
+	if not running then
+		return
+	end
+	local root = rootOf()
+	local origin = root and root.Position or Vector3.zero
+	local wanted = {}
+	for model in monkeys do
+		if not isMonkey(model) then
+			monkeys[model] = nil
+		else
+			local part = partOf(model)
+			local hum = model:FindFirstChildOfClass("Humanoid")
+			if part and hum and Config.EspMonkeys then
+				local dist = math.floor((part.Position - origin).Magnitude)
+				highlight(model, Color3.fromRGB(255, 90, 120))
+				tag(model, string.format("%s  %d  %d", model.Name, math.floor(hum.Health), dist), Color3.fromRGB(255, 150, 170))
+				wanted[model] = true
+			end
+		end
+	end
+	if Config.EspPlayers and root then
+		for _, player in Players:GetPlayers() do
+			if player ~= LocalPlayer and player.Character then
+				local part = partOf(player.Character)
+				if part then
+					local dist = math.floor((part.Position - origin).Magnitude)
+					highlight(player.Character, Color3.fromRGB(126, 224, 164))
+					tag(player.Character, player.DisplayName .. "  " .. dist, Color3.fromRGB(126, 224, 164))
+					wanted[player.Character] = true
+				end
+			end
+		end
+	end
+	for inst, bb in visuals do
+		if not wanted[inst] then
+			bb:Destroy()
+			visuals[inst] = nil
+		end
+	end
+	for model, hl in highlights do
+		if not wanted[model] then
+			hl:Destroy()
+			highlights[model] = nil
+		end
+	end
+end
+
+local function nearestMonkey(maxDist)
+	local root = rootOf()
+	local camera = workspace.CurrentCamera
+	if not root or not camera then
+		return nil
+	end
+	local best, bestDist
+	for model in monkeys do
+		if model.Parent and isMonkey(model) then
+			local part = partOf(model)
+			if part then
+				local dist = (part.Position - root.Position).Magnitude
+				if dist <= maxDist and (not bestDist or dist < bestDist) then
+					local look = camera.CFrame.LookVector
+					local aim = part.Position - camera.CFrame.Position
+					if aim.Magnitude > 0.1 then
+						local angle = math.deg(math.acos(math.clamp(look:Dot(aim.Unit), -1, 1)))
+						if not Config.Aim or angle <= (Config.AimFov or 80) or dist <= (Config.MeleeRange or 16) then
+							best = part
+							bestDist = dist
+						end
+					end
+				end
+			end
+		else
+			monkeys[model] = nil
+		end
+	end
+	return best, bestDist
+end
+
+local function shoot()
+	local _, _, character = rootOf()
+	if character then
+		local tool = character:FindFirstChildOfClass("Tool")
+		if tool then
+			pcall(function()
+				tool:Activate()
+			end)
+		end
+	end
+	pcall(function()
+		local vim = game:GetService("VirtualInputManager")
+		local camera = workspace.CurrentCamera
+		local size = camera and camera.ViewportSize or Vector2.new(960, 540)
+		vim:SendMouseButtonEvent(size.X / 2, size.Y / 2, 0, true, game, 0)
+		task.delay(0.04, function()
+			pcall(function()
+				vim:SendMouseButtonEvent(size.X / 2, size.Y / 2, 0, false, game, 0)
+			end)
+		end)
+	end)
+end
+
+local function clickRight()
+	pcall(function()
+		local vim = game:GetService("VirtualInputManager")
+		local camera = workspace.CurrentCamera
+		local size = camera and camera.ViewportSize or Vector2.new(960, 540)
+		vim:SendMouseButtonEvent(size.X / 2, size.Y / 2, 1, true, game, 0)
+		task.delay(0.04, function()
+			pcall(function()
+				vim:SendMouseButtonEvent(size.X / 2, size.Y / 2, 1, false, game, 0)
+			end)
+		end)
+	end)
+end
+
+local function tapKey(key)
+	pcall(function()
+		local vim = game:GetService("VirtualInputManager")
+		vim:SendKeyEvent(true, key, false, game)
+		task.delay(0.05, function()
+			pcall(function()
+				vim:SendKeyEvent(false, key, false, game)
+			end)
+		end)
+	end)
+end
+
+local function pressSkip()
+	local pg = LocalPlayer:FindFirstChild("PlayerGui")
+	if not pg then
+		return
+	end
+	for _, d in pg:GetDescendants() do
+		if (d:IsA("TextButton") or d:IsA("ImageButton")) and d.Visible and d.AbsoluteSize.X > 20 then
+			local screen = d:FindFirstAncestorOfClass("ScreenGui")
+			if screen and screen.Name ~= "BunnyHubMonkeys" and screen.Name ~= "BunnyHub_Loader" then
+				local blob = string.lower(d.Name .. " " .. (d:IsA("TextButton") and d.Text or ""))
+				for _, child in d:GetDescendants() do
+					if child:IsA("TextLabel") or child:IsA("TextButton") then
+						blob = blob .. " " .. string.lower(child.Text or "")
+					end
+				end
+				if string.find(blob, "skip", 1, true) then
+					if type(getconnections) == "function" then
+						for _, signalName in { "MouseButton1Click", "Activated" } do
+							local signal = d[signalName]
+							if typeof(signal) == "RBXScriptSignal" then
+								for _, conn in getconnections(signal) do
+									pcall(function()
+										conn:Fire()
+									end)
+								end
+							end
+						end
+					end
+					if type(firesignal) == "function" then
+						pcall(function()
+							firesignal(d.MouseButton1Click)
+						end)
+						pcall(function()
+							firesignal(d.Activated)
+						end)
+					end
+					return
+				end
+			end
+		end
+	end
+end
+
+local lastShot = 0
+local lastAlt = 0
+local lastKeys = 0
+local lastSkip = 0
+
+local function stepCombat()
+	local now = os.clock()
+	local target, dist = nearestMonkey(Config.AimRange or 180)
+	local camera = workspace.CurrentCamera
+	if Config.Aim and target and camera and not Config.Freecam then
+		local goal = CFrame.lookAt(camera.CFrame.Position, target.Position)
+		camera.CFrame = camera.CFrame:Lerp(goal, math.clamp(Config.AimSmooth or 0.35, 0.08, 1))
+	end
+	local close = dist and dist <= (Config.MeleeRange or 16)
+	if ((Config.AutoPrimary and target) or (Config.Melee and close)) and now - lastShot > 0.09 then
+		lastShot = now
+		shoot()
+	end
+	if Config.AutoSecondary and target and now - lastAlt > 0.45 then
+		lastAlt = now
+		clickRight()
+	end
+	if now - lastKeys > 0.85 then
+		lastKeys = now
+		if Config.AutoWeapon then
+			tapKey(Enum.KeyCode.V)
+		end
+		if Config.AutoHealth then
+			tapKey(Enum.KeyCode.C)
+		end
+		if Config.AutoUlt then
+			tapKey(Enum.KeyCode.Q)
+		end
+		if Config.AutoNade then
+			tapKey(Enum.KeyCode.G)
+		end
+		if Config.AutoBarricade then
+			tapKey(Enum.KeyCode.X)
+		end
+	end
+	if Config.AutoSkip and now - lastSkip > 1.6 then
+		lastSkip = now
+		pressSkip()
+	end
+end
+
+local function applyWorld()
+	if Config.Bright then
+		if not lightBackup then
+			lightBackup = {
+				Brightness = Lighting.Brightness,
+				ClockTime = Lighting.ClockTime,
+				FogEnd = Lighting.FogEnd,
+				GlobalShadows = Lighting.GlobalShadows,
+			}
+		end
+		Lighting.Brightness = 2
+		Lighting.ClockTime = 14
+		Lighting.FogEnd = 100000
+		Lighting.GlobalShadows = false
+	elseif lightBackup then
+		Lighting.Brightness = lightBackup.Brightness
+		Lighting.ClockTime = lightBackup.ClockTime
+		Lighting.FogEnd = lightBackup.FogEnd
+		Lighting.GlobalShadows = lightBackup.GlobalShadows
+		lightBackup = nil
+	end
+	if Config.NoBlur then
+		local function mute(parent)
+			if not parent then
+				return
+			end
+			for _, inst in parent:GetChildren() do
+				if inst:IsA("BlurEffect") or inst:IsA("DepthOfFieldEffect") then
+					inst.Enabled = false
+				end
+			end
+		end
+		mute(Lighting)
+		mute(workspace.CurrentCamera)
+	end
+end
+
+local function applyMove(dt)
+	local root, hum, character = rootOf()
+	if not character or not hum or not root then
+		return
+	end
+	if Config.Noclip then
+		for _, part in character:GetDescendants() do
+			if part:IsA("BasePart") and part.CanCollide then
+				noclipState[part] = true
+				part.CanCollide = false
+			end
+		end
+	else
+		for part in noclipState do
+			if part.Parent then
+				part.CanCollide = true
+			end
+			noclipState[part] = nil
+		end
+	end
+	local camera = workspace.CurrentCamera
+	if camera and Config.FovOn then
+		camera.FieldOfView = Config.Fov
+	end
+	if Config.JumpOn then
+		hum.UseJumpPower = true
+		hum.JumpPower = Config.JumpPower or 100
+	end
+end
+
+local camState
+local freeLook = false
+local function updateFreecam(dt)
+	local camera = workspace.CurrentCamera
+	if not camera then
+		return
+	end
+	if Config.Freecam then
+		if camera.CameraType ~= Enum.CameraType.Scriptable then
+			camState = camera.CameraType
+			camera.CameraType = Enum.CameraType.Scriptable
+		end
+		local boost = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) and 3 or 1
+		local speed = 40 * boost * dt
+		local move = Vector3.zero
+		if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+			move += camera.CFrame.LookVector
+		end
+		if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+			move -= camera.CFrame.LookVector
+		end
+		if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+			move -= camera.CFrame.RightVector
+		end
+		if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+			move += camera.CFrame.RightVector
+		end
+		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+			move += Vector3.yAxis
+		end
+		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+			move -= Vector3.yAxis
+		end
+		if move.Magnitude > 0 then
+			camera.CFrame += move.Unit * speed
+		end
+	elseif camState then
+		camera.CameraType = camState
+		camState = nil
+	end
+end
+
+track(RunService.RenderStepped:Connect(function()
+	if not running or not Config.SpeedOn then
+		return
+	end
+	local root, hum = rootOf()
+	if not root or not hum then
+		return
+	end
+	local dir = hum.MoveDirection
+	if dir.Magnitude <= 0 then
+		return
+	end
+	local mult = Config.Speed
+	if type(mult) ~= "number" or mult > 3 or mult < 1.2 then
+		mult = 1.5
+	end
+	local vel = root.AssemblyLinearVelocity
+	root.AssemblyLinearVelocity = Vector3.new(dir.X * 16 * mult, vel.Y, dir.Z * 16 * mult)
+end))
+
+track(UserInputService.InputBegan:Connect(function(input)
+	if Config.Freecam and input.UserInputType == Enum.UserInputType.MouseButton2 then
+		freeLook = true
+	end
+end))
+track(UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton2 then
+		freeLook = false
+	end
+end))
+track(UserInputService.InputChanged:Connect(function(input)
+	if Config.Freecam and freeLook and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local camera = workspace.CurrentCamera
+		if camera then
+			camera.CFrame = camera.CFrame * CFrame.Angles(-input.Delta.Y * 0.004, -input.Delta.X * 0.004, 0)
+		end
+	end
+end))
+
+local function saveSettings()
+	if not fsReady() then
+		notify("Saving needs an executor with writefile")
+		return
+	end
+	local ok = pcall(function()
+		if type(makefolder) == "function" and type(isfolder) == "function" and not isfolder(STORE_FOLDER) then
+			makefolder(STORE_FOLDER)
+		end
+		writefile(SETTINGS_FILE, HttpService:JSONEncode(Config))
+	end)
+	notify(ok and "Settings saved" or "Could not save")
+end
+
+local function loadSettings()
+	if not fsReady() then
+		return
+	end
+	local ok, raw = pcall(function()
+		if type(isfile) == "function" and not isfile(SETTINGS_FILE) then
+			return nil
+		end
+		return readfile(SETTINGS_FILE)
+	end)
+	if not ok or type(raw) ~= "string" or raw == "" then
+		return
+	end
+	local parsed
+	pcall(function()
+		parsed = HttpService:JSONDecode(raw)
+	end)
+	if type(parsed) ~= "table" then
+		return
+	end
+	for key, value in parsed do
+		if Config[key] ~= nil and type(value) == type(Config[key]) then
+			Config[key] = value
+		end
+	end
+end
+
+local function buildHub()
+	local TYPE = {
+		badge = 10,
+		caption = 11,
+		small = 12,
+		body = 13,
+		label = 14,
+		title = 15,
+		heading = 18,
+		display = 22,
+		metric = 26,
+	}
+	local INK = Color3.fromRGB(14, 13, 16)
+	local SIDE = Color3.fromRGB(20, 18, 24)
+	local CARD = Color3.fromRGB(30, 28, 34)
+	local LINE = Color3.fromRGB(58, 48, 68)
+	local NAV = Color3.fromRGB(44, 36, 54)
+	local PINK = Color3.fromRGB(255, 143, 214)
+	local MUTED = Color3.fromRGB(164, 156, 176)
+	local TEXT = Color3.fromRGB(240, 236, 244)
+	local camera = workspace.CurrentCamera
+	local view = camera and camera.ViewportSize or Vector2.new(1280, 720)
+	local phone = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled and math.min(view.X, view.Y) <= 900
+	local panelW = phone and math.clamp(view.X - 16, 340, 600) or 1120
+	local panelH = phone and math.clamp(view.Y - 48, 400, 720) or 700
+	local sideW = phone and 124 or 216
+	local pageButtons = {}
+	local hotkeyMap = {}
+	local toggles = {}
+	local bindTarget
+	local hideKey = Enum.KeyCode.RightControl
+	local Ui
+
+	gui = Instance.new("ScreenGui")
+	gui.Name = "BunnyHubMonkeys"
+	gui.ResetOnSpawn = false
+	gui.IgnoreGuiInset = true
+	gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	gui.DisplayOrder = 60
+	pcall(function()
+		game:GetService("GuiService").AutoSelectGuiEnabled = false
+		game:GetService("GuiService").SelectedObject = nil
+	end)
+	pcall(function()
+		gui.Parent = CoreGui
+	end)
+	if not gui.Parent then
+		gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+	end
+
+	local main = Instance.new("Frame", gui)
+	main.Size = UDim2.fromOffset(panelW, panelH)
+	main.Position = UDim2.new(0.5, -panelW / 2, 0.5, -panelH / 2)
+	main.BackgroundColor3 = INK
+	Instance.new("UICorner", main).CornerRadius = UDim.new(0, 16)
+	local windowStroke = Instance.new("UIStroke", main)
+	windowStroke.Color = PINK
+	windowStroke.Transparency = 0.82
+	windowStroke.Thickness = 1.2
+	local windowWash = Instance.new("UIGradient", main)
+	windowWash.Color = ColorSequence.new(Color3.fromRGB(36, 18, 40), Color3.fromRGB(12, 10, 14))
+	windowWash.Rotation = 118
+	local uiScale = Instance.new("UIScale", main)
+	uiScale.Scale = 1
+	main.ZIndex = 2
+	local dimmer = Instance.new("Frame", gui)
+	dimmer.Size = UDim2.fromScale(1, 1)
+	dimmer.BackgroundColor3 = Color3.new(0, 0, 0)
+	dimmer.BackgroundTransparency = 1
+	dimmer.BorderSizePixel = 0
+	dimmer.ZIndex = 0
+	dimmer.Active = false
+	local snowLayer = Instance.new("Frame", gui)
+	snowLayer.Size = UDim2.fromScale(1, 1)
+	snowLayer.BackgroundTransparency = 1
+	snowLayer.ZIndex = 1
+	snowLayer.Active = false
+	snowLayer.ClipsDescendants = true
+
+	local WEATHER_ORDER = { "Off", "Snow", "Rain", "Embers", "Stars", "Fog", "Fireflies", "Petals", "Bubbles", "Dust" }
+	local WEATHER = {
+		Snow = {
+			count = 70,
+			round = true,
+			width = function(d) return 1.5 + d * 4.5 end,
+			height = function(d) return 1.5 + d * 4.5 end,
+			color = function() return Color3.fromRGB(255, 255, 255) end,
+			transparency = function(d) return 0.05 + (1 - d) * 0.45 end,
+			speed = function(d) return 0.035 + d * 0.11 end,
+			sway = 0.012,
+			slant = 0,
+			twinkle = false,
+		},
+		Rain = {
+			count = 110,
+			round = false,
+			width = function() return 1 end,
+			height = function(d) return 9 + d * 12 end,
+			color = function() return Color3.fromRGB(174, 208, 255) end,
+			transparency = function(d) return 0.15 + (1 - d) * 0.35 end,
+			speed = function(d) return 0.85 + d * 0.5 end,
+			sway = 0,
+			slant = 12,
+			twinkle = false,
+		},
+		Embers = {
+			count = 42,
+			round = true,
+			width = function(d) return 1.5 + d * 3 end,
+			height = function(d) return 1.5 + d * 3 end,
+			color = function() return Color3.fromRGB(255, 168, 80) end,
+			transparency = function(d) return 0.1 + (1 - d) * 0.4 end,
+			speed = function(d) return -(0.05 + d * 0.09) end,
+			sway = 0.03,
+			slant = 0,
+			twinkle = true,
+		},
+		Stars = {
+			count = 70,
+			round = true,
+			width = function(d) return 1 + d * 2 end,
+			height = function(d) return 1 + d * 2 end,
+			color = function() return Color3.fromRGB(255, 252, 226) end,
+			transparency = function() return 0.25 end,
+			speed = function() return 0.004 end,
+			sway = 0.001,
+			slant = 0,
+			twinkle = true,
+		},
+		Fog = {
+			count = 18,
+			round = true,
+			width = function() return 90 + math.random() * 130 end,
+			height = function() return 70 + math.random() * 110 end,
+			color = function() return Color3.fromRGB(198, 202, 214) end,
+			transparency = function() return 0.86 end,
+			speed = function() return 0.004 end,
+			sway = 0.004,
+			slant = 0,
+			twinkle = false,
+			vx = function() return 0.012 + math.random() * 0.014 end,
+		},
+		Fireflies = {
+			count = 30,
+			round = true,
+			width = function(d) return 2 + d * 2 end,
+			height = function(d) return 2 + d * 2 end,
+			color = function() return Color3.fromRGB(190, 255, 130) end,
+			transparency = function() return 0.35 end,
+			speed = function(d) return -(0.006 + d * 0.01) end,
+			sway = 0.06,
+			slant = 0,
+			twinkle = true,
+			strongTwinkle = true,
+		},
+		Petals = {
+			count = 45,
+			round = true,
+			width = function(d) return 4 + d * 4 end,
+			height = function(d) return 2 + d * 2 end,
+			color = function() return Color3.fromRGB(255, 168, 200) end,
+			transparency = function(d) return 0.15 + (1 - d) * 0.35 end,
+			speed = function(d) return 0.06 + d * 0.09 end,
+			sway = 0.05,
+			slant = 0,
+			twinkle = false,
+			spin = function() return 70 + math.random() * 130 end,
+		},
+		Bubbles = {
+			count = 36,
+			round = true,
+			width = function(d) return 5 + d * 12 end,
+			height = function(d) return 5 + d * 12 end,
+			color = function() return Color3.fromRGB(186, 226, 255) end,
+			transparency = function() return 0.7 end,
+			speed = function(d) return -(0.04 + d * 0.07) end,
+			sway = 0.04,
+			slant = 0,
+			twinkle = true,
+			rim = true,
+		},
+		Dust = {
+			count = 90,
+			round = true,
+			width = function(d) return 1 + d * 1.5 end,
+			height = function(d) return 1 + d * 1.5 end,
+			color = function() return Color3.fromRGB(214, 186, 140) end,
+			transparency = function(d) return 0.3 + (1 - d) * 0.4 end,
+			speed = function(d) return 0.02 + d * 0.04 end,
+			sway = 0.02,
+			slant = 0,
+			twinkle = false,
+			vx = function() return 0.05 + math.random() * 0.05 end,
+		},
+	}
+
+	local decorLayer = Instance.new("Frame", gui)
+	decorLayer.Size = UDim2.fromScale(1, 1)
+	decorLayer.BackgroundTransparency = 1
+	decorLayer.ZIndex = 1
+	decorLayer.Active = false
+	decorLayer.ClipsDescendants = true
+
+	local function blob(parent, x, y, w, h, color, round, rot)
+		local f = Instance.new("Frame", parent)
+		f.Size = UDim2.fromOffset(w, h)
+		f.Position = UDim2.fromOffset(x, y)
+		f.BackgroundColor3 = color
+		f.BorderSizePixel = 0
+		f.Rotation = rot or 0
+		if round then
+			Instance.new("UICorner", f).CornerRadius = UDim.new(1, 0)
+		else
+			Instance.new("UICorner", f).CornerRadius = UDim.new(0, 2)
+		end
+		return f
+	end
+
+	local function polar(parent, cx, cy, r, angle, w, h, color, round, extraTilt)
+		local rad = math.rad(angle)
+		local piece = Instance.new("Frame", parent)
+		piece.Size = UDim2.fromOffset(w, h)
+		piece.Position = UDim2.fromOffset(cx + math.cos(rad) * r - w / 2, cy + math.sin(rad) * r - h / 2)
+		piece.BackgroundColor3 = color
+		piece.BorderSizePixel = 0
+		piece.Rotation = angle + (extraTilt or 0)
+		if round then
+			Instance.new("UICorner", piece).CornerRadius = UDim.new(1, 0)
+		else
+			Instance.new("UICorner", piece).CornerRadius = UDim.new(0, 2)
+		end
+		return piece
+	end
+
+	local function shade(parent, light, dark, rotation)
+		local g = Instance.new("UIGradient", parent)
+		g.Color = ColorSequence.new(light, dark)
+		g.Rotation = rotation or 90
+		return g
+	end
+
+	local function makeHeart(size, color)
+		local root = Instance.new("Frame")
+		root.Size = UDim2.fromOffset(size, size)
+		root.BackgroundTransparency = 1
+		local square = size * 0.7
+		local point = blob(root, size * 0.5 - square / 2, size - square * 0.707 - square / 2, square, square, color, false, 45)
+		local light = color:Lerp(Color3.new(1, 1, 1), 0.42)
+		blob(root, size * 0.04, size * 0.1, size * 0.5, size * 0.5, light, true)
+		blob(root, size * 0.46, size * 0.1, size * 0.5, size * 0.5, light, true)
+		local glow = blob(root, size * 0.2, size * 0.2, size * 0.2, size * 0.13, Color3.new(1, 1, 1), true, -35)
+		glow.BackgroundTransparency = 0.55
+		shade(point, color:Lerp(Color3.new(1, 1, 1), 0.3), color:Lerp(Color3.new(0, 0, 0), 0.12))
+		return root
+	end
+
+	local function makeBunny(size, color)
+		local root = Instance.new("Frame")
+		root.Size = UDim2.fromOffset(size, size)
+		root.BackgroundTransparency = 1
+		local inner = color:Lerp(Color3.fromRGB(255, 190, 214), 0.55)
+		blob(root, size * 0.22, size * 0.02, size * 0.17, size * 0.46, color, true, -10)
+		blob(root, size * 0.61, size * 0.02, size * 0.17, size * 0.46, color, true, 10)
+		blob(root, size * 0.27, size * 0.08, size * 0.07, size * 0.32, inner, true, -10)
+		blob(root, size * 0.66, size * 0.08, size * 0.07, size * 0.32, inner, true, 10)
+		local head = blob(root, size * 0.13, size * 0.42, size * 0.74, size * 0.74, color, true)
+		shade(head, Color3.new(1, 1, 1), color:Lerp(Color3.new(0, 0, 0), 0.06))
+		local eye = Color3.fromRGB(70, 45, 70)
+		blob(root, size * 0.32, size * 0.68, size * 0.09, size * 0.09, eye, true)
+		blob(root, size * 0.59, size * 0.68, size * 0.09, size * 0.09, eye, true)
+		local blush = Color3.fromRGB(255, 150, 180)
+		blob(root, size * 0.22, size * 0.78, size * 0.13, size * 0.08, blush, true)
+		blob(root, size * 0.65, size * 0.78, size * 0.13, size * 0.08, blush, true)
+		blob(root, size * 0.46, size * 0.83, size * 0.08, size * 0.06, blush, true)
+		return root
+	end
+
+	local function makeBow(size, color)
+		local root = Instance.new("Frame")
+		root.Size = UDim2.fromOffset(size, size)
+		root.BackgroundTransparency = 1
+		local mid = size * 0.44
+		local light = color:Lerp(Color3.new(1, 1, 1), 0.35)
+		local dark = color:Lerp(Color3.new(0, 0, 0), 0.14)
+		polar(root, mid, size * 0.44, size * 0.21, 200, size * 0.46, size * 0.3, dark, true, -18)
+		polar(root, mid, size * 0.44, size * 0.21, -20, size * 0.46, size * 0.3, dark, true, 18)
+		polar(root, mid, size * 0.44, size * 0.19, 200, size * 0.42, size * 0.26, color, true, -18)
+		polar(root, mid, size * 0.44, size * 0.19, -20, size * 0.42, size * 0.26, color, true, 18)
+		polar(root, mid, size * 0.68, size * 0.17, 118, size * 0.13, size * 0.34, light, true, 12)
+		polar(root, mid, size * 0.68, size * 0.17, 62, size * 0.13, size * 0.34, light, true, -12)
+		local knot = blob(root, mid - size * 0.11, size * 0.44 - size * 0.11, size * 0.22, size * 0.22, color:Lerp(Color3.new(1, 1, 1), 0.15), true)
+		shade(knot, Color3.new(1, 1, 1), dark, 45)
+		return root
+	end
+
+	local function makeSparkle(size, color)
+		local root = Instance.new("Frame")
+		root.Size = UDim2.fromOffset(size, size)
+		root.BackgroundTransparency = 1
+		local soft = color:Lerp(Color3.new(1, 1, 1), 0.55)
+		local inner = blob(root, size * 0.4, size * 0.02, size * 0.2, size * 0.96, color, true)
+		blob(root, size * 0.02, size * 0.4, size * 0.96, size * 0.2, color, true)
+		polar(root, size * 0.5, size * 0.5, size * 0.34, 45, size * 0.72, size * 0.1, soft, true)
+		polar(root, size * 0.5, size * 0.5, size * 0.34, 135, size * 0.72, size * 0.1, soft, true)
+		shade(inner, Color3.new(1, 1, 1), color:Lerp(Color3.fromRGB(255, 240, 170), 0.35), 90)
+		return root
+	end
+
+	local function makeFlower(size, color)
+		local root = Instance.new("Frame")
+		root.Size = UDim2.fromOffset(size, size)
+		root.BackgroundTransparency = 1
+		local mid = size * 0.5
+		local light = color:Lerp(Color3.new(1, 1, 1), 0.45)
+		for i = 0, 4 do
+			polar(root, mid, mid, size * 0.2, i * 72 - 90, size * 0.32, size * 0.2, color, true)
+			polar(root, mid, mid, size * 0.2, i * 72 - 90, size * 0.26, size * 0.14, light, true)
+		end
+		local core = blob(root, mid - size * 0.12, mid - size * 0.12, size * 0.24, size * 0.24, Color3.fromRGB(255, 214, 92), true)
+		shade(core, Color3.fromRGB(255, 240, 170), Color3.fromRGB(226, 160, 40), 45)
+		return root
+	end
+
+	local DECOR_ORDER = { "Off", "Hearts", "Bunnies", "Bows", "Sparkles", "Flowers" }
+	local DECOR = {
+		Hearts = {
+			count = 26,
+			build = makeHeart,
+			size = function(d) return 12 + d * 20 end,
+			color = function() return Color3.fromRGB(255, 110, 170) end,
+			speed = function(d) return 0.045 + d * 0.07 end,
+			sway = 0.035,
+			spin = function() return -25 + math.random() * 50 end,
+			twinkle = true,
+		},
+		Bunnies = {
+			count = 16,
+			build = makeBunny,
+			size = function(d) return 18 + d * 26 end,
+			color = function() return Color3.fromRGB(255, 236, 244) end,
+			speed = function(d) return 0.035 + d * 0.06 end,
+			sway = 0.045,
+			spin = function() return -12 + math.random() * 24 end,
+			twinkle = false,
+		},
+		Bows = {
+			count = 22,
+			build = makeBow,
+			size = function(d) return 12 + d * 18 end,
+			color = function() return Color3.fromRGB(255, 150, 200) end,
+			speed = function(d) return 0.04 + d * 0.07 end,
+			sway = 0.03,
+			spin = function() return -30 + math.random() * 60 end,
+			twinkle = true,
+		},
+		Sparkles = {
+			count = 28,
+			build = makeSparkle,
+			size = function(d) return 10 + d * 18 end,
+			color = function() return Color3.fromRGB(255, 236, 150) end,
+			speed = function() return 0.02 end,
+			sway = 0.02,
+			spin = function() return 20 + math.random() * 40 end,
+			twinkle = true,
+		},
+		Flowers = {
+			count = 22,
+			build = makeFlower,
+			size = function(d) return 12 + d * 18 end,
+			color = function()
+				local palette = {
+					Color3.fromRGB(255, 140, 190),
+					Color3.fromRGB(255, 180, 200),
+					Color3.fromRGB(220, 150, 255),
+					Color3.fromRGB(255, 200, 150),
+				}
+				return palette[math.random(1, #palette)]
+			end,
+			speed = function(d) return 0.035 + d * 0.06 end,
+			sway = 0.04,
+			spin = function() return -20 + math.random() * 40 end,
+			twinkle = true,
+		},
+	}
+
+	local decorParts = {}
+
+	local function clearDecor()
+		for _, part in decorParts do
+			part.frame:Destroy()
+		end
+		table.clear(decorParts)
+	end
+
+	local function buildDecor(mode)
+		clearDecor()
+		local spec = DECOR[mode]
+		if not spec then
+			return
+		end
+		for i = 1, spec.count do
+			local depth = (i % 4) / 3
+			local size = spec.size(depth)
+			local holder = Instance.new("Frame", decorLayer)
+			holder.Size = UDim2.fromOffset(size, size)
+			holder.BackgroundTransparency = 1
+			holder.BorderSizePixel = 0
+			local group = Instance.new("CanvasGroup", holder)
+			group.Size = UDim2.fromScale(1, 1)
+			group.BackgroundTransparency = 1
+			group.BorderSizePixel = 0
+			group.GroupTransparency = 0
+			spec.build(size, spec.color()).Parent = group
+			decorParts[i] = {
+				frame = holder,
+				group = group,
+				x = math.random(),
+				y = math.random(),
+				speed = spec.speed(depth),
+				sway = spec.sway * (0.5 + math.random()),
+				phase = math.random() * math.pi * 2,
+				pulse = 0.6 + math.random() * 1.6,
+				spin = spec.spin and spec.spin(depth) or 0,
+				twinkle = spec.twinkle,
+				base = 0.35 + (1 - depth) * 0.4,
+			}
+		end
+	end
+
+	local activeDecor = nil
+	local function syncDecor()
+		local mode = DECOR[Ui.Decor] and Ui.Decor or "Off"
+		if mode ~= activeDecor then
+			activeDecor = mode
+			buildDecor(mode)
+		end
+	end
+
+	local flakes = {}
+
+	local function clearParticles()
+		for _, particle in flakes do
+			particle.frame:Destroy()
+		end
+		table.clear(flakes)
+	end
+
+	local function buildParticles(mode)
+		clearParticles()
+		local spec = WEATHER[mode]
+		if not spec then
+			return
+		end
+		for i = 1, spec.count do
+			local depth = (i % 4) / 3
+			local frame = Instance.new("Frame", snowLayer)
+			frame.Size = UDim2.fromOffset(spec.width(depth), spec.height(depth))
+			frame.BackgroundColor3 = spec.color()
+			frame.BorderSizePixel = 0
+			frame.Rotation = spec.slant
+			frame.ZIndex = 1 + (depth > 0.66 and 1 or 0)
+			local base = spec.transparency(depth)
+			frame.BackgroundTransparency = base
+			if spec.round then
+				Instance.new("UICorner", frame).CornerRadius = UDim.new(1, 0)
+			else
+				Instance.new("UICorner", frame).CornerRadius = UDim.new(1, -2)
+			end
+			if spec.rim then
+				local rim = Instance.new("UIStroke", frame)
+				rim.Color = Color3.fromRGB(255, 255, 255)
+				rim.Thickness = 1.2
+				rim.Transparency = 0.55
+			end
+			flakes[i] = {
+				frame = frame,
+				x = math.random(),
+				y = math.random(),
+				speed = spec.speed(depth),
+				vx = spec.vx and spec.vx(depth) or 0,
+				spin = spec.spin and spec.spin(depth) or 0,
+				sway = spec.sway * (0.5 + math.random()),
+				phase = math.random() * math.pi * 2,
+				pulse = 0.6 + math.random() * 1.6,
+				base = base,
+				twinkle = spec.twinkle,
+				strongTwinkle = spec.strongTwinkle,
+			}
+		end
+	end
+
+	local activeWeather = nil
+	local function syncWeather()
+		local mode = WEATHER[Ui.Weather] and Ui.Weather or "Off"
+		if mode ~= activeWeather then
+			activeWeather = mode
+			buildParticles(mode)
+		end
+	end
+
+	local menuButton = Instance.new("TextButton", gui)
+	menuButton.Size = UDim2.fromOffset(phone and 52 or 42, phone and 52 or 42)
+	menuButton.Position = UDim2.new(0, 12, 0.4, 0)
+	menuButton.BackgroundColor3 = CARD
+	menuButton.Font = Enum.Font.GothamBlack
+	menuButton.TextSize = phone and TYPE.heading or TYPE.label
+	menuButton.TextColor3 = PINK
+	menuButton.Text = "×"
+	menuButton.ZIndex = 30
+	Instance.new("UICorner", menuButton).CornerRadius = UDim.new(0, 10)
+	Instance.new("UIStroke", menuButton).Color = LINE
+
+	local function applyMouse(open)
+		pcall(function()
+			game:GetService("GuiService").SelectedObject = nil
+		end)
+	end
+
+	local function setMenu(open)
+		menuButton.Text = open and "×" or "B"
+		applyMouse(open)
+		local alpha = (Ui and Ui.Transparent) and 0.28 or 0
+		if open then
+			main.Visible = true
+			main.BackgroundTransparency = 1
+			uiScale.Scale = 0.88
+			TweenService:Create(uiScale, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+				Scale = (Ui and Ui.Scale / 100) or 1,
+			}):Play()
+			TweenService:Create(main, TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				BackgroundTransparency = alpha,
+			}):Play()
+			TweenService:Create(dimmer, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+				BackgroundTransparency = (Ui and Ui.Dim) and 0.45 or 1,
+			}):Play()
+		else
+			main.Visible = false
+			local info = TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+			TweenService:Create(uiScale, info, { Scale = 0.88 }):Play()
+			TweenService:Create(main, info, { BackgroundTransparency = 1 }):Play()
+			TweenService:Create(dimmer, info, { BackgroundTransparency = 1 }):Play()
+		end
+	end
+
+	local side = Instance.new("Frame", main)
+	side.Size = UDim2.new(0, sideW, 1, -12)
+	side.Position = UDim2.fromOffset(6, 6)
+	side.BackgroundColor3 = SIDE
+	side.BorderSizePixel = 0
+	Instance.new("UICorner", side).CornerRadius = UDim.new(0, 14)
+
+	local title = Instance.new("TextButton", side)
+	title.Size = UDim2.new(1, -12, 0, 52)
+	title.Position = UDim2.fromOffset(8, 8)
+	title.BackgroundTransparency = 1
+	title.AutoButtonColor = false
+	title.Text = ""
+	local logo = Instance.new("ImageLabel", title)
+	logo.Size = UDim2.fromOffset(34, 34)
+	logo.Position = UDim2.fromOffset(2, 6)
+	logo.BackgroundColor3 = PINK
+	logo.BackgroundTransparency = HUB_IMAGE_ASSET > 0 and 1 or 0
+	logo.ScaleType = Enum.ScaleType.Fit
+	logo.Image = HUB_IMAGE_ASSET > 0 and ("rbxassetid://" .. tostring(HUB_IMAGE_ASSET)) or ""
+	logo.ZIndex = 2
+	Instance.new("UICorner", logo).CornerRadius = UDim.new(0, 11)
+	local brandName = Instance.new("TextLabel", title)
+	brandName.BackgroundTransparency = 1
+	brandName.Position = UDim2.fromOffset(46, 6)
+	brandName.Size = UDim2.new(1, -50, 0, 18)
+	brandName.Font = Enum.Font.GothamBold
+	brandName.TextSize = TYPE.title
+	brandName.TextXAlignment = Enum.TextXAlignment.Left
+	brandName.TextColor3 = TEXT
+	brandName.Text = "Bunny Hub"
+
+	local brandVer = Instance.new("TextLabel", title)
+	brandVer.BackgroundTransparency = 1
+	brandVer.Position = UDim2.fromOffset(46, 24)
+	brandVer.Size = UDim2.new(1, -50, 0, 14)
+	brandVer.Font = Enum.Font.GothamBold
+	brandVer.TextSize = TYPE.caption
+	brandVer.TextXAlignment = Enum.TextXAlignment.Left
+	brandVer.TextColor3 = PINK
+	brandVer.Text = "v1.0"
+
+	local nav = Instance.new("Frame", side)
+	nav.BackgroundTransparency = 1
+	nav.Position = UDim2.fromOffset(8, 66)
+	nav.Size = UDim2.new(1, -16, 1, -120)
+	Instance.new("UIListLayout", nav).Padding = UDim.new(0, 4)
+
+	local content = Instance.new("Frame", main)
+	content.BackgroundColor3 = Color3.fromRGB(18, 17, 21)
+	content.Position = UDim2.fromOffset(sideW + 10, 6)
+	content.Size = UDim2.new(1, -(sideW + 16), 1, -12)
+	Instance.new("UICorner", content).CornerRadius = UDim.new(0, 14)
+
+	local function glassEdge(parent)
+		local stroke = Instance.new("UIStroke", parent)
+		stroke.Color = Color3.fromRGB(255, 255, 255)
+		stroke.Transparency = 1
+		stroke.Thickness = 1
+		return stroke
+	end
+	local mainGlass = glassEdge(main)
+	local sideGlass = glassEdge(side)
+	local contentGlass = glassEdge(content)
+	local pageTitle = Instance.new("TextLabel", content)
+	pageTitle.BackgroundTransparency = 1
+	pageTitle.Position = UDim2.fromOffset(18, 12)
+	pageTitle.Size = UDim2.new(1, -250, 0, 26)
+	pageTitle.Font = Enum.Font.GothamBold
+	pageTitle.TextSize = phone and TYPE.heading or TYPE.display
+	pageTitle.TextXAlignment = Enum.TextXAlignment.Left
+	pageTitle.TextColor3 = TEXT
+	pageTitle.Active = true
+	statusLabel = Instance.new("TextLabel", content)
+	statusLabel.BackgroundTransparency = 1
+	statusLabel.Position = UDim2.fromOffset(18, 38)
+	statusLabel.Size = UDim2.new(1, -250, 0, 16)
+	statusLabel.Font = Enum.Font.Gotham
+	statusLabel.TextSize = TYPE.body
+	statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+	statusLabel.TextColor3 = MUTED
+	statusLabel.Text = "UI ready"
+	local search = Instance.new("TextBox", content)
+	search.Size = UDim2.fromOffset(phone and 110 or 196, 32)
+	search.Position = UDim2.new(1, phone and -148 or -236, 0, 14)
+	search.BackgroundColor3 = Color3.fromRGB(24, 20, 30)
+	search.TextColor3 = TEXT
+	search.Text = ""
+	search.PlaceholderText = "Search"
+	search.PlaceholderColor3 = MUTED
+	search.Font = Enum.Font.Gotham
+	search.TextSize = TYPE.body
+	search.ClearTextOnFocus = false
+	Instance.new("UICorner", search).CornerRadius = UDim.new(0, 10)
+	local searchStroke = Instance.new("UIStroke", search)
+	searchStroke.Color = LINE
+	searchStroke.Transparency = 0.35
+	local searchPad = Instance.new("UIPadding", search)
+	searchPad.PaddingLeft = UDim.new(0, 12)
+	searchPad.PaddingRight = UDim.new(0, 8)
+	search.Focused:Connect(function()
+		tween(searchStroke, 0.2, { Color = PINK, Transparency = 0 })
+		tween(search, 0.2, { BackgroundColor3 = Color3.fromRGB(32, 26, 40) })
+	end)
+	search.FocusLost:Connect(function()
+		tween(searchStroke, 0.2, { Color = LINE, Transparency = 0.35 })
+		tween(search, 0.2, { BackgroundColor3 = CARD })
+	end)
+	local closeBtn = Instance.new("TextButton", content)
+	closeBtn.Size = UDim2.fromOffset(32, 32)
+	closeBtn.Position = UDim2.new(1, -46, 0, 14)
+	closeBtn.BackgroundColor3 = CARD
+	closeBtn.Font = Enum.Font.GothamBold
+	closeBtn.TextSize = TYPE.label
+	closeBtn.TextColor3 = MUTED
+	closeBtn.Text = "×"
+	Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 8)
+	Instance.new("UIStroke", closeBtn).Color = LINE
+	closeBtn.MouseEnter:Connect(function()
+		tween(closeBtn, 0.15, { BackgroundColor3 = Color3.fromRGB(60, 28, 34) })
+		tween(closeBtn, 0.15, { TextColor3 = Color3.fromRGB(255, 120, 140) })
+	end)
+	closeBtn.MouseLeave:Connect(function()
+		tween(closeBtn, 0.15, { BackgroundColor3 = CARD })
+		tween(closeBtn, 0.15, { TextColor3 = MUTED })
+	end)
+	closeBtn.MouseButton1Click:Connect(function()
+		setMenu(false)
+	end)
+	local pages = Instance.new("Frame", content)
+	pages.BackgroundTransparency = 1
+	pages.Position = UDim2.fromOffset(14, 64)
+	pages.Size = UDim2.new(1, -22, 1, -76)
+	local userCard = Instance.new("Frame", side)
+	userCard.Size = UDim2.new(1, -16, 0, 40)
+	userCard.Position = UDim2.new(0, 8, 1, -48)
+	userCard.BackgroundColor3 = CARD
+	userCard:SetAttribute("BunnyRole", "card")
+	Instance.new("UICorner", userCard).CornerRadius = UDim.new(0, 8)
+	local avatar = Instance.new("ImageLabel", userCard)
+	avatar.Size = UDim2.fromOffset(26, 26)
+	avatar.Position = UDim2.fromOffset(7, 7)
+	avatar.BackgroundColor3 = Color3.fromRGB(40, 32, 48)
+	avatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(LocalPlayer.UserId) .. "&w=150&h=150"
+	avatar.ScaleType = Enum.ScaleType.Crop
+	Instance.new("UICorner", avatar).CornerRadius = UDim.new(1, 0)
+	local avatarRing = Instance.new("UIStroke", avatar)
+	avatarRing.Color = PINK
+	avatarRing.Thickness = 1.5
+	local onlineDot = Instance.new("Frame", userCard)
+	onlineDot.Size = UDim2.fromOffset(8, 8)
+	onlineDot.Position = UDim2.fromOffset(24, 24)
+	onlineDot.BackgroundColor3 = Color3.fromRGB(80, 220, 140)
+	onlineDot.BorderSizePixel = 0
+	onlineDot.ZIndex = 3
+	Instance.new("UICorner", onlineDot).CornerRadius = UDim.new(1, 0)
+	local userName = Instance.new("TextLabel", userCard)
+	userName.BackgroundTransparency = 1
+	userName.Position = UDim2.fromOffset(38, 4)
+	userName.Size = UDim2.new(1, -44, 0, 16)
+	userName.Font = Enum.Font.GothamBold
+	userName.TextSize = TYPE.small
+	userName.TextXAlignment = Enum.TextXAlignment.Left
+	userName.TextColor3 = TEXT
+	userName.Text = LocalPlayer.DisplayName
+	local footer = Instance.new("TextLabel", userCard)
+	footer.BackgroundTransparency = 1
+	footer.Position = UDim2.fromOffset(38, 20)
+	footer.Size = UDim2.new(1, -44, 0, 14)
+	footer.Font = Enum.Font.Gotham
+	footer.TextSize = TYPE.caption
+	footer.TextXAlignment = Enum.TextXAlignment.Left
+	footer.TextColor3 = MUTED
+	footer.Text = "RightControl"
+
+	local function corner(inst, radius)
+		local c = Instance.new("UICorner")
+		c.CornerRadius = UDim.new(0, radius or 8)
+		c.Parent = inst
+	end
+
+	local currentPage = "Home"
+	local sliderPaints = {}
+	local dropdownPaints = {}
+	local hideChip
+
+	local function showPage(name)
+		currentPage = name
+		statusLabel:SetAttribute("Page", name)
+		pageTitle.Text = name == "Home" and "Welcome to Bunny Hub!" or name
+		statusLabel.Text = name == "Home" and "UI ready" or statusText
+		local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+		for pageName, pack in pageButtons do
+			local on = pageName == name
+			pack.page.Visible = on
+			TweenService:Create(pack.button, tweenInfo, { BackgroundColor3 = on and NAV or SIDE }):Play()
+			if pack.caption then
+				TweenService:Create(pack.caption, tweenInfo, { TextColor3 = on and TEXT or MUTED }):Play()
+			end
+			TweenService:Create(pack.mark, tweenInfo, { BackgroundTransparency = on and 0 or 1 }):Play()
+			pack.mark.BackgroundColor3 = PINK
+		end
+	end
+
+	local navOrder = 0
+
+	local function addNav(name)
+		local button = Instance.new("TextButton", nav)
+		button.Size = UDim2.new(1, 0, 0, 34)
+		button.BackgroundColor3 = SIDE
+		button.AutoButtonColor = false
+		button.Font = Enum.Font.GothamMedium
+		button.TextSize = TYPE.body
+		button.TextColor3 = MUTED
+		button.TextXAlignment = Enum.TextXAlignment.Left
+		button.Text = ""
+		corner(button, 10)
+		local caption = Instance.new("TextLabel", button)
+		caption.BackgroundTransparency = 1
+		caption.Position = UDim2.fromOffset(12, 0)
+		caption.Size = UDim2.new(1, -22, 1, 0)
+		caption.Font = Enum.Font.GothamMedium
+		caption.TextSize = TYPE.label
+		caption.TextXAlignment = Enum.TextXAlignment.Left
+		caption.TextColor3 = MUTED
+		caption.Text = name
+		navOrder = navOrder + 1
+		button.LayoutOrder = navOrder
+		local mark = Instance.new("Frame", button)
+		mark.Size = UDim2.fromOffset(3, 16)
+		mark.Position = UDim2.fromOffset(4, 9)
+		mark.BackgroundTransparency = 1
+		mark.BackgroundColor3 = PINK
+		mark.BorderSizePixel = 0
+		corner(mark, 2)
+		local page = Instance.new("ScrollingFrame", pages)
+		page.BackgroundTransparency = 1
+		page.Size = UDim2.fromScale(1, 1)
+		page.CanvasSize = UDim2.new()
+		page.AutomaticCanvasSize = Enum.AutomaticSize.Y
+		page.ScrollBarThickness = 3
+		page.ScrollBarImageColor3 = PINK
+		page.Visible = false
+		Instance.new("UIListLayout", page).Padding = UDim.new(0, 8)
+		local pagePad = Instance.new("UIPadding", page)
+		pagePad.PaddingTop = UDim.new(0, 4)
+		pagePad.PaddingRight = UDim.new(0, 6)
+		pagePad.PaddingLeft = UDim.new(0, 2)
+		pageButtons[name] = { page = page, button = button, mark = mark, caption = caption }
+		local lift = Instance.new("UIScale", button)
+		button.MouseButton1Click:Connect(function()
+			showPage(name)
+		end)
+		button.MouseEnter:Connect(function()
+			tweenBounce(lift, 0.22, { Scale = 1.03 })
+			if currentPage ~= name then
+				tween(button, 0.18, { BackgroundColor3 = NAV })
+			end
+		end)
+		button.MouseLeave:Connect(function()
+			tween(lift, 0.2, { Scale = 1 })
+			if currentPage ~= name then
+				tween(button, 0.18, { BackgroundColor3 = SIDE })
+			end
+		end)
+		return page
+	end
+
+	local function card(parent, titleText)
+		local frame = Instance.new("Frame", parent)
+		frame.Size = UDim2.new(1, 0, 0, 0)
+		frame.AutomaticSize = Enum.AutomaticSize.Y
+		frame.BackgroundColor3 = CARD
+		frame:SetAttribute("BunnyRole", "card")
+		corner(frame, 8)
+		local stroke = Instance.new("UIStroke", frame)
+		stroke.Color = LINE
+		stroke.Transparency = 0.45
+		frame.MouseEnter:Connect(function()
+			tween(stroke, 0.22, { Color = PINK, Transparency = 0.12 })
+			tween(frame, 0.22, { BackgroundColor3 = CARD:Lerp(PINK, 0.07) })
+		end)
+		frame.MouseLeave:Connect(function()
+			tween(stroke, 0.22, { Color = LINE, Transparency = 0.45 })
+			tween(frame, 0.22, { BackgroundColor3 = CARD })
+		end)
+		local pad = Instance.new("UIPadding", frame)
+		pad.PaddingTop = UDim.new(0, 8)
+		pad.PaddingBottom = UDim.new(0, 10)
+		pad.PaddingLeft = UDim.new(0, 10)
+		pad.PaddingRight = UDim.new(0, 10)
+		Instance.new("UIListLayout", frame).Padding = UDim.new(0, 6)
+		local label = Instance.new("TextLabel", frame)
+		label.LayoutOrder = -1
+		label.BackgroundTransparency = 1
+		label.Size = UDim2.new(1, 0, 0, 18)
+		label.Font = Enum.Font.GothamBold
+		label.TextSize = TYPE.body
+		label.TextXAlignment = Enum.TextXAlignment.Left
+		label.TextColor3 = TEXT
+		label.Text = titleText
+		return frame
+	end
+
+	local function paintAll()
+		table.clear(hotkeyMap)
+		for _, entry in toggles do
+			if entry.key then
+				hotkeyMap[entry.key] = entry
+				entry.chip.Text = entry.key.Name
+			else
+				entry.chip.Text = "None"
+			end
+			entry.paint()
+		end
+		footer.Text = phone and "Tap B" or (hideKey.Name:gsub("Right", "R"):gsub("Left", "L"):gsub("Control", "Ctrl") .. " to toggle")
+		if hideChip then
+			hideChip.Text = hideKey.Name
+		end
+	end
+
+	local function pill(parent, labelText, key, filter, getter, setter)
+		local row = Instance.new("Frame", parent)
+		row.Size = UDim2.new(1, 0, 0, 26)
+		row.BackgroundTransparency = 1
+		row:SetAttribute("Filter", string.lower(filter or labelText))
+		local name = Instance.new("TextLabel", row)
+		name.BackgroundTransparency = 1
+		name.Size = UDim2.new(1, -100, 1, 0)
+		name.Font = Enum.Font.GothamMedium
+		name.TextSize = phone and TYPE.body or TYPE.label
+		name.TextXAlignment = Enum.TextXAlignment.Left
+		name.TextColor3 = TEXT
+		name.Text = labelText
+		local chip = Instance.new("TextButton", row)
+		chip.Size = UDim2.fromOffset(46, 18)
+		chip.Position = UDim2.new(1, -92, 0.5, -9)
+		chip.BackgroundColor3 = Color3.fromRGB(22, 20, 26)
+		chip.Font = Enum.Font.Gotham
+		chip.TextSize = TYPE.badge
+		chip.TextColor3 = MUTED
+		chip.Text = key and key.Name or "None"
+		corner(chip, 6)
+		local trackBtn = Instance.new("TextButton", row)
+		trackBtn.Size = UDim2.fromOffset(36, 18)
+		trackBtn.Position = UDim2.new(1, -36, 0.5, -9)
+		trackBtn.Text = ""
+		trackBtn.AutoButtonColor = false
+		trackBtn.BackgroundColor3 = Color3.fromRGB(48, 44, 54)
+		corner(trackBtn, 9)
+		local knob = Instance.new("Frame", trackBtn)
+		knob.Size = UDim2.fromOffset(12, 12)
+		knob.Position = UDim2.fromOffset(3, 3)
+		knob.BackgroundColor3 = TEXT
+		corner(knob, 6)
+		local entry = { label = labelText, key = key, chip = chip }
+		function entry.paint()
+			local on = getter()
+			local info = TweenInfo.new(0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+			TweenService:Create(knob, info, { Position = on and UDim2.fromOffset(21, 3) or UDim2.fromOffset(3, 3) }):Play()
+			TweenService:Create(trackBtn, info, { BackgroundColor3 = on and PINK or Color3.fromRGB(48, 44, 54) }):Play()
+			TweenService:Create(knob, info, { BackgroundColor3 = on and INK or TEXT }):Play()
+		end
+		function entry.flip()
+			setter(not getter())
+			entry.paint()
+			notify(labelText .. (getter() and " on" or " off"))
+		end
+		trackBtn.MouseButton1Click:Connect(function()
+			tweenBounce(trackBtn, 0.15, { Size = UDim2.fromOffset(38, 20) })
+			task.delay(0.12, function()
+				tweenBounce(trackBtn, 0.15, { Size = UDim2.fromOffset(36, 18) })
+			end)
+			entry.flip()
+		end)
+		local chipStroke = Instance.new("UIStroke", chip)
+		chipStroke.Color = LINE
+		chipStroke.Transparency = 0.5
+		chip.MouseEnter:Connect(function()
+			tween(chip, 0.15, { BackgroundColor3 = Color3.fromRGB(36, 32, 42), TextColor3 = PINK })
+		end)
+		chip.MouseLeave:Connect(function()
+			tween(chip, 0.15, { BackgroundColor3 = Color3.fromRGB(22, 20, 26), TextColor3 = MUTED })
+		end)
+		chip.MouseButton1Click:Connect(function()
+			bindTarget = entry
+			chip.Text = "..."
+			tweenBounce(chip, 0.2, { Size = UDim2.fromOffset(50, 20) })
+			notify("Press a key for " .. labelText)
+		end)
+		toggles[#toggles + 1] = entry
+		entry.paint()
+	end
+
+	local function slider(parent, labelText, min, max, get, set, filter, decimals)
+		local wrap = Instance.new("Frame", parent)
+		wrap.Size = UDim2.new(1, 0, 0, phone and 48 or 36)
+		wrap.BackgroundTransparency = 1
+		wrap:SetAttribute("Filter", string.lower(filter or labelText))
+		local name = Instance.new("TextLabel", wrap)
+		name.BackgroundTransparency = 1
+		name.Size = UDim2.new(1, -48, 0, 16)
+		name.Font = Enum.Font.Gotham
+		name.TextSize = phone and TYPE.small or TYPE.body
+		name.TextXAlignment = Enum.TextXAlignment.Left
+		name.TextColor3 = TEXT
+		name.Text = labelText
+		local valueLabel = Instance.new("TextLabel", wrap)
+		valueLabel.BackgroundTransparency = 1
+		valueLabel.Size = UDim2.fromOffset(48, 16)
+		valueLabel.Position = UDim2.new(1, -48, 0, 0)
+		valueLabel.Font = Enum.Font.GothamBold
+		valueLabel.TextSize = TYPE.body
+		valueLabel.TextColor3 = PINK
+		local hit = Instance.new("TextButton", wrap)
+		hit.Size = UDim2.new(1, 0, 0, phone and 30 or 18)
+		hit.Position = UDim2.fromOffset(0, 18)
+		hit.BackgroundTransparency = 1
+		hit.Text = ""
+		hit.AutoButtonColor = false
+		hit.Active = true
+		local trackBar = Instance.new("Frame", hit)
+		trackBar.Size = UDim2.new(1, 0, 0, phone and 10 or 8)
+		trackBar.Position = UDim2.new(0, 0, 0.5, phone and -5 or -4)
+		trackBar.BackgroundColor3 = Color3.fromRGB(48, 44, 54)
+		trackBar.BorderSizePixel = 0
+		corner(trackBar, 5)
+		local fill = Instance.new("Frame", trackBar)
+		fill.BackgroundColor3 = PINK
+		fill.BorderSizePixel = 0
+		corner(fill, 5)
+		local knob = Instance.new("Frame", hit)
+		knob.Size = UDim2.fromOffset(phone and 18 or 14, phone and 18 or 14)
+		knob.AnchorPoint = Vector2.new(0.5, 0.5)
+		knob.BackgroundColor3 = TEXT
+		corner(knob, 9)
+		local function paint(n)
+			local alpha = math.clamp((n - min) / (max - min), 0, 1)
+			fill.Size = UDim2.fromScale(alpha, 1)
+			knob.Position = UDim2.new(alpha, 0, 0.5, 0)
+			if decimals and decimals > 0 then
+				valueLabel.Text = string.format("%." .. tostring(decimals) .. "f", n)
+			else
+				valueLabel.Text = tostring(math.floor(n + 0.5))
+			end
+			valueLabel.TextColor3 = PINK
+		end
+		local function fromX(x)
+			local alpha = math.clamp((x - hit.AbsolutePosition.X) / math.max(hit.AbsoluteSize.X, 1), 0, 1)
+			local n = min + (max - min) * alpha
+			if decimals and decimals > 0 then
+				local scale = 10 ^ decimals
+				n = math.floor(n * scale + 0.5) / scale
+			end
+			set(n)
+			paint(get())
+		end
+		local sliding = false
+		local scroll
+		local baseKnobSize = phone and 18 or 14
+		hit.MouseEnter:Connect(function()
+			if not sliding then
+				tweenBounce(knob, 0.2, { Size = UDim2.fromOffset(baseKnobSize + 3, baseKnobSize + 3), BackgroundColor3 = PINK })
+			end
+		end)
+		hit.MouseLeave:Connect(function()
+			if not sliding then
+				tweenBounce(knob, 0.2, { Size = UDim2.fromOffset(baseKnobSize, baseKnobSize), BackgroundColor3 = TEXT })
+			end
+		end)
+		hit.InputBegan:Connect(function(input)
+			if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then
+				return
+			end
+			sliding = true
+			tweenBounce(knob, 0.15, { Size = UDim2.fromOffset(baseKnobSize + 5, baseKnobSize + 5), BackgroundColor3 = PINK })
+			scroll = hit:FindFirstAncestorOfClass("ScrollingFrame")
+			if scroll then
+				scroll.ScrollingEnabled = false
+			end
+			fromX(input.Position.X)
+		end)
+		track(UserInputService.InputChanged:Connect(function(input)
+			if sliding and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+				fromX(input.Position.X)
+			end
+		end))
+		track(UserInputService.InputEnded:Connect(function(input)
+			if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then
+				return
+			end
+			if sliding then
+				tweenBounce(knob, 0.2, { Size = UDim2.fromOffset(baseKnobSize, baseKnobSize), BackgroundColor3 = TEXT })
+				if scroll then
+					scroll.ScrollingEnabled = true
+				end
+			end
+			sliding = false
+		end))
+		paint(get())
+		sliderPaints[#sliderPaints + 1] = function()
+			paint(get())
+		end
+	end
+
+	local function action(parent, labelText, fn, filter)
+		local button = Instance.new("TextButton", parent)
+		button.Size = UDim2.new(1, 0, 0, 28)
+		button.BackgroundColor3 = Color3.fromRGB(22, 20, 26)
+		button.Font = Enum.Font.GothamMedium
+		button.TextSize = TYPE.body
+		button.TextColor3 = TEXT
+		button.Text = labelText
+		button:SetAttribute("Filter", string.lower(filter or labelText))
+		corner(button, 8)
+		Instance.new("UIStroke", button).Color = LINE
+		button.MouseEnter:Connect(function()
+			tween(button, 0.18, { BackgroundColor3 = Color3.fromRGB(38, 34, 46) })
+			tween(button, 0.18, { TextColor3 = PINK })
+		end)
+		button.MouseLeave:Connect(function()
+			tween(button, 0.18, { BackgroundColor3 = Color3.fromRGB(22, 20, 26) })
+			tween(button, 0.18, { TextColor3 = TEXT })
+		end)
+		button.MouseButton1Click:Connect(function()
+			tweenBounce(button, 0.12, { Size = UDim2.new(1, -4, 0, 26) })
+			task.delay(0.12, function()
+				tweenBounce(button, 0.15, { Size = UDim2.new(1, 0, 0, 28) })
+			end)
+			fn()
+		end)
+		return button
+	end
+
+	local DEFAULT_DECOR = "Bunnies"
+	local DEFAULT_GLASS = "Off"
+	local GLASS_ORDER = { "Off", "Subtle", "Strong" }
+
+	local function glassLevel(value)
+		if value == "Subtle" then
+			return 1
+		end
+		if value == "Strong" then
+			return 2
+		end
+		return 0
+	end
+
+	Ui = {
+		Theme = "Bunny",
+		Scale = 100,
+		Radius = 12,
+		Transparent = false,
+		Dim = false,
+		Weather = "Off",
+		WeatherMode = "Screen",
+		Decor = "Off",
+		Glass = DEFAULT_GLASS,
+		Drag = "Fill",
+		Density = "Default",
+		MenuButton = "Always",
+	}
+	local THEMES = {
+		Bunny = {
+			ink = Color3.fromRGB(14, 13, 16),
+			side = Color3.fromRGB(20, 18, 24),
+			content = Color3.fromRGB(18, 17, 21),
+			card = Color3.fromRGB(30, 28, 34),
+			line = Color3.fromRGB(58, 48, 68),
+			nav = Color3.fromRGB(44, 36, 54),
+			pink = Color3.fromRGB(255, 143, 214),
+			muted = Color3.fromRGB(164, 156, 176),
+			text = Color3.fromRGB(240, 236, 244),
+		},
+		Mono = {
+			ink = Color3.fromRGB(16, 16, 16),
+			side = Color3.fromRGB(20, 20, 20),
+			content = Color3.fromRGB(14, 14, 14),
+			card = Color3.fromRGB(28, 28, 28),
+			line = Color3.fromRGB(58, 58, 58),
+			nav = Color3.fromRGB(42, 42, 42),
+			pink = Color3.fromRGB(236, 236, 236),
+			muted = Color3.fromRGB(150, 150, 150),
+			text = Color3.fromRGB(240, 240, 240),
+		},
+		Midnight = {
+			ink = Color3.fromRGB(8, 10, 22),
+			side = Color3.fromRGB(12, 16, 32),
+			content = Color3.fromRGB(10, 12, 24),
+			card = Color3.fromRGB(18, 24, 42),
+			line = Color3.fromRGB(48, 64, 110),
+			nav = Color3.fromRGB(28, 36, 68),
+			pink = Color3.fromRGB(140, 176, 255),
+			muted = Color3.fromRGB(150, 164, 196),
+			text = Color3.fromRGB(230, 236, 255),
+		},
+		Mint = {
+			ink = Color3.fromRGB(10, 18, 18),
+			side = Color3.fromRGB(13, 24, 24),
+			content = Color3.fromRGB(11, 20, 20),
+			card = Color3.fromRGB(19, 33, 32),
+			line = Color3.fromRGB(44, 84, 78),
+			nav = Color3.fromRGB(26, 52, 48),
+			pink = Color3.fromRGB(96, 230, 190),
+			muted = Color3.fromRGB(146, 176, 168),
+			text = Color3.fromRGB(230, 248, 244),
+		},
+		Ember = {
+			ink = Color3.fromRGB(20, 12, 10),
+			side = Color3.fromRGB(26, 16, 13),
+			content = Color3.fromRGB(22, 14, 12),
+			card = Color3.fromRGB(36, 23, 19),
+			line = Color3.fromRGB(92, 54, 40),
+			nav = Color3.fromRGB(56, 33, 25),
+			pink = Color3.fromRGB(255, 146, 86),
+			muted = Color3.fromRGB(186, 158, 144),
+			text = Color3.fromRGB(250, 238, 232),
+		},
+		Grape = {
+			ink = Color3.fromRGB(15, 11, 22),
+			side = Color3.fromRGB(20, 14, 30),
+			content = Color3.fromRGB(17, 12, 26),
+			card = Color3.fromRGB(28, 20, 42),
+			line = Color3.fromRGB(70, 50, 104),
+			nav = Color3.fromRGB(42, 30, 64),
+			pink = Color3.fromRGB(182, 132, 255),
+			muted = Color3.fromRGB(164, 150, 190),
+			text = Color3.fromRGB(240, 234, 252),
+		},
+		Crimson = {
+			ink = Color3.fromRGB(18, 10, 12),
+			side = Color3.fromRGB(24, 13, 16),
+			content = Color3.fromRGB(20, 11, 14),
+			card = Color3.fromRGB(34, 18, 22),
+			line = Color3.fromRGB(92, 40, 52),
+			nav = Color3.fromRGB(56, 24, 32),
+			pink = Color3.fromRGB(255, 96, 118),
+			muted = Color3.fromRGB(188, 152, 160),
+			text = Color3.fromRGB(250, 234, 238),
+		},
+		Gold = {
+			ink = Color3.fromRGB(18, 15, 10),
+			side = Color3.fromRGB(24, 20, 13),
+			content = Color3.fromRGB(20, 17, 11),
+			card = Color3.fromRGB(33, 28, 18),
+			line = Color3.fromRGB(90, 74, 40),
+			nav = Color3.fromRGB(55, 45, 25),
+			pink = Color3.fromRGB(255, 205, 110),
+			muted = Color3.fromRGB(186, 172, 140),
+			text = Color3.fromRGB(250, 244, 230),
+		},
+	}
+	local THEME_ORDER = { "Bunny", "Mint", "Grape", "Ember", "Gold", "Crimson", "Midnight", "Mono" }
+	local store = loadStore()
+
+	local function readStore()
+		return store
+	end
+
+	local function writeStore(data)
+		store = data
+		saveStore(store)
+	end
+
+	local function snapshot()
+		local features = {}
+		for key, value in Config do
+			features[key] = value
+		end
+		local moves = {}
+		for styleName, list in MOVES do
+			local delays = {}
+			for index, mv in list do
+				delays[tostring(index)] = mv.Delay
+			end
+			moves[styleName] = delays
+		end
+		local styles = {}
+		for _, style in STYLES do
+			styles[style.Name] = style.On
+		end
+		return {
+			features = features,
+			moves = moves,
+			styles = styles,
+			theme = Ui.Theme,
+			scale = Ui.Scale,
+			radius = Ui.Radius,
+			transparent = Ui.Transparent,
+			dim = Ui.Dim,
+			weather = Ui.Weather,
+			weatherMode = Ui.WeatherMode,
+			decor = Ui.Decor,
+			glass = Ui.Glass,
+			drag = Ui.Drag,
+			density = Ui.Density,
+			menuButton = Ui.MenuButton,
+			hide = hideKey.Name,
+		}
+	end
+
+	local ringStroke
+
+	local function applyChrome()
+		local theme = THEMES[Ui.Theme] or THEMES.Bunny
+		INK = theme.ink
+		SIDE = theme.side
+		CARD = theme.card
+		LINE = theme.line
+		NAV = theme.nav
+		PINK = theme.pink
+		MUTED = theme.muted
+		TEXT = theme.text
+		local level = glassLevel(Ui.Glass)
+		local alpha = Ui.Transparent and 0.28 or 0
+		if level > 0 then
+			alpha = math.max(alpha, level == 1 and 0.42 or 0.6)
+		end
+		local rimOn = level > 0 and not Ui.Transparent
+		local glassT = rimOn and (level == 1 and 0.88 or 0.7) or 1
+		mainGlass.Transparency = glassT
+		sideGlass.Transparency = glassT
+		contentGlass.Transparency = glassT
+		local ct = TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+		TweenService:Create(main, ct, { BackgroundColor3 = INK, BackgroundTransparency = alpha }):Play()
+		TweenService:Create(side, ct, { BackgroundColor3 = SIDE, BackgroundTransparency = alpha }):Play()
+		TweenService:Create(content, ct, { BackgroundColor3 = theme.content, BackgroundTransparency = alpha }):Play()
+		TweenService:Create(windowStroke, ct, { Color = PINK, Transparency = Ui.Theme == "Bunny" and 0.78 or 0.45 }):Play()
+		windowWash.Color = ColorSequence.new(PINK:Lerp(INK, 0.78), PINK:Lerp(INK, 0.93))
+		windowWash.Enabled = Ui.Theme ~= "Mono"
+		TweenService:Create(menuButton, ct, { BackgroundColor3 = CARD, TextColor3 = PINK }):Play()
+		local menuStroke = menuButton:FindFirstChildOfClass("UIStroke")
+		if menuStroke then
+			TweenService:Create(menuStroke, ct, { Color = LINE }):Play()
+		end
+		TweenService:Create(search, ct, { BackgroundColor3 = CARD, TextColor3 = TEXT, PlaceholderColor3 = MUTED }):Play()
+		TweenService:Create(searchStroke, ct, { Color = LINE }):Play()
+		TweenService:Create(closeBtn, ct, { BackgroundColor3 = CARD, TextColor3 = MUTED }):Play()
+		TweenService:Create(pageTitle, ct, { TextColor3 = TEXT }):Play()
+		TweenService:Create(statusLabel, ct, { TextColor3 = MUTED }):Play()
+		TweenService:Create(brandName, ct, { TextColor3 = TEXT }):Play()
+		TweenService:Create(brandVer, ct, { TextColor3 = PINK }):Play()
+		TweenService:Create(logo, ct, { ImageColor3 = TEXT }):Play()
+		avatarRing.Color = PINK
+		ringStroke.Color = PINK
+		TweenService:Create(userName, ct, { TextColor3 = TEXT }):Play()
+		TweenService:Create(footer, ct, { TextColor3 = MUTED }):Play()
+		TweenService:Create(dimmer, ct, { BackgroundTransparency = Ui.Dim and 0.45 or 1 }):Play()
+		uiScale.Scale = Ui.Scale / 100
+		syncWeather()
+		syncDecor()
+		snowLayer.Visible = (Ui.Weather ~= "Off" or Ui.Decor ~= "Off") and main.Visible
+		decorLayer.Visible = Ui.Decor ~= "Off" and main.Visible
+		if Ui.MenuButton == "Hidden" then
+			menuButton.Visible = false
+		elseif Ui.MenuButton == "Mobile" then
+			menuButton.Visible = phone
+		elseif Ui.MenuButton ~= "Hover" then
+			menuButton.Visible = true
+		end
+		for _, inst in gui:GetDescendants() do
+			if inst:GetAttribute("BunnyRole") == "card" and inst:IsA("Frame") then
+				TweenService:Create(inst, ct, { BackgroundColor3 = CARD, BackgroundTransparency = alpha }):Play()
+				local stroke = inst:FindFirstChildOfClass("UIStroke")
+				if stroke then
+					TweenService:Create(stroke, ct, { Color = LINE }):Play()
+				end
+			end
+			if inst:IsA("UICorner") and inst.Parent and (inst.Parent == main or inst.Parent == side or inst.Parent == content or inst.Parent:GetAttribute("BunnyRole") == "card") then
+				inst.CornerRadius = UDim.new(0, Ui.Radius)
+			end
+			if inst:IsA("UIListLayout") and inst.Parent and inst.Parent:IsA("ScrollingFrame") then
+				inst.Padding = UDim.new(0, Ui.Density == "Compact" and 4 or 8)
+			end
+		end
+		showPage(currentPage)
+		for _, entry in toggles do
+			entry.paint()
+		end
+		for _, paint in sliderPaints do
+			paint()
+		end
+		for _, paint in dropdownPaints do
+			paint()
+		end
+	end
+
+	local function dropdown(parent, labelText, options, get, set, filter)
+		local row = Instance.new("Frame", parent)
+		row.Size = UDim2.new(1, 0, 0, 28)
+		row.BackgroundTransparency = 1
+		row:SetAttribute("Filter", string.lower(filter or labelText))
+		local name = Instance.new("TextLabel", row)
+		name.BackgroundTransparency = 1
+		name.Size = UDim2.new(1, -130, 0, 28)
+		name.Font = Enum.Font.GothamMedium
+		name.TextSize = TYPE.body
+		name.TextXAlignment = Enum.TextXAlignment.Left
+		name.TextColor3 = TEXT
+		name.Text = labelText
+		local button = Instance.new("TextButton", row)
+		button.Size = UDim2.fromOffset(122, 22)
+		button.Position = UDim2.new(1, -122, 0, 3)
+		button.BackgroundColor3 = Color3.fromRGB(22, 20, 26)
+		button.Font = Enum.Font.Gotham
+		button.TextSize = TYPE.small
+		button.TextColor3 = TEXT
+		button.Text = tostring(get()) .. "  v"
+		button.AutoButtonColor = false
+		corner(button, 6)
+		button.MouseEnter:Connect(function()
+			tween(button, 0.15, { BackgroundColor3 = Color3.fromRGB(32, 28, 38) })
+		end)
+		button.MouseLeave:Connect(function()
+			tween(button, 0.15, { BackgroundColor3 = Color3.fromRGB(22, 20, 26) })
+		end)
+		local list = Instance.new("Frame", row)
+		list.BackgroundColor3 = Color3.fromRGB(18, 16, 22)
+		list.Position = UDim2.fromOffset(0, 28)
+		list.Size = UDim2.new(1, 0, 0, 0)
+		list.Visible = false
+		list.ClipsDescendants = true
+		list.ZIndex = 8
+		corner(list, 6)
+		Instance.new("UIStroke", list).Color = LINE
+		local function choices()
+			if type(options) == "function" then
+				return options()
+			end
+			return options
+		end
+		local function closeList()
+			local tInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+			local tList = TweenService:Create(list, tInfo, { Size = UDim2.new(1, 0, 0, 0) })
+			local tRow = TweenService:Create(row, tInfo, { Size = UDim2.new(1, 0, 0, 28) })
+			tList:Play()
+			tRow:Play()
+			tList.Completed:Connect(function()
+				if list.Size.Y.Offset <= 0 then
+					list.Visible = false
+				end
+			end)
+		end
+		local function openList()
+			for _, child in list:GetChildren() do
+				if child:IsA("TextButton") then
+					child:Destroy()
+				end
+			end
+			local items = choices()
+			for index, option in items do
+				local pick = Instance.new("TextButton", list)
+				pick.Size = UDim2.new(1, -8, 0, 22)
+				pick.Position = UDim2.fromOffset(4, 4 + (index - 1) * 24)
+				pick.BackgroundTransparency = 1
+				pick.Font = Enum.Font.Gotham
+				pick.TextSize = TYPE.small
+				pick.TextXAlignment = Enum.TextXAlignment.Left
+				pick.TextColor3 = TEXT
+				pick.Text = "   " .. tostring(option)
+				pick.ZIndex = 9
+				corner(pick, 4)
+				pick.MouseEnter:Connect(function()
+					tween(pick, 0.15, { BackgroundTransparency = 0.85, BackgroundColor3 = PINK, TextColor3 = PINK })
+				end)
+				pick.MouseLeave:Connect(function()
+					tween(pick, 0.15, { BackgroundTransparency = 1, TextColor3 = TEXT })
+				end)
+				pick.MouseButton1Click:Connect(function()
+					set(option)
+					button.Text = tostring(option) .. "  v"
+					closeList()
+				end)
+			end
+			list.Visible = true
+			local targetH = 8 + #items * 24
+			local tInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+			TweenService:Create(list, tInfo, { Size = UDim2.new(1, 0, 0, targetH) }):Play()
+			TweenService:Create(row, tInfo, { Size = UDim2.new(1, 0, 0, 32 + targetH) }):Play()
+		end
+		button.MouseButton1Click:Connect(function()
+			if list.Visible and list.Size.Y.Offset > 0 then
+				closeList()
+			else
+				openList()
+			end
+		end)
+		dropdownPaints[#dropdownPaints + 1] = function()
+			button.Text = tostring(get()) .. "  v"
+		end
+		return button
+	end
+
+	local function field(parent, placeholder)
+		local box = Instance.new("TextBox", parent)
+		box.Size = UDim2.new(1, 0, 0, 28)
+		box.BackgroundColor3 = Color3.fromRGB(22, 20, 26)
+		box.PlaceholderText = placeholder
+		box.PlaceholderColor3 = MUTED
+		box.Text = ""
+		box.TextColor3 = TEXT
+		box.Font = Enum.Font.Gotham
+		box.TextSize = TYPE.body
+		box.ClearTextOnFocus = false
+		corner(box, 6)
+		Instance.new("UIStroke", box).Color = LINE
+		return box
+	end
+
+	local function buttonRow(parent, items)
+		local row = Instance.new("Frame", parent)
+		row.Size = UDim2.new(1, 0, 0, 28)
+		row.BackgroundTransparency = 1
+		local layout = Instance.new("UIListLayout", row)
+		layout.FillDirection = Enum.FillDirection.Horizontal
+		layout.Padding = UDim.new(0, 6)
+		for _, item in items do
+			local button = Instance.new("TextButton", row)
+			button.Size = UDim2.new(1 / #items, -6, 1, 0)
+			button.BackgroundColor3 = Color3.fromRGB(22, 20, 26)
+			button.Font = Enum.Font.GothamMedium
+			button.TextSize = TYPE.small
+			button.TextColor3 = item.danger and Color3.fromRGB(255, 120, 140) or TEXT
+			button.Text = item.text
+			corner(button, 6)
+			Instance.new("UIStroke", button).Color = LINE
+			button.MouseButton1Click:Connect(item.click)
+		end
+	end
+
+	local function split(parent)
+		local row = Instance.new("Frame", parent)
+		row.BackgroundTransparency = 1
+		row.Size = UDim2.new(1, 0, 0, 0)
+		row.AutomaticSize = Enum.AutomaticSize.Y
+		local layout = Instance.new("UIListLayout", row)
+		layout.FillDirection = phone and Enum.FillDirection.Vertical or Enum.FillDirection.Horizontal
+		layout.Padding = UDim.new(0, 8)
+		local function col()
+			local frame = Instance.new("Frame", row)
+			frame.BackgroundTransparency = 1
+			frame.Size = phone and UDim2.new(1, 0, 0, 0) or UDim2.new(0.5, -4, 0, 0)
+			frame.AutomaticSize = Enum.AutomaticSize.Y
+			Instance.new("UIListLayout", frame).Padding = UDim.new(0, 8)
+			return frame
+		end
+		return col(), col()
+	end
+
+	local homePage = addNav("Home")
+	local fight = addNav("Combat")
+	local city = addNav("Waves")
+	local movePage = addNav("Move")
+	local extra = addNav("Extra")
+
+	local sessionStart = os.clock()
+	local fpsSmooth = 60
+	local fpsHist = {}
+	local pingHist = {}
+	local homeTab = "Overview"
+
+	local switch = Instance.new("Frame", homePage)
+	switch.LayoutOrder = 1
+	switch.BackgroundTransparency = 1
+	switch.Size = UDim2.new(1, 0, 0, 32)
+	local overviewBtn = Instance.new("TextButton", switch)
+	overviewBtn.Size = UDim2.fromOffset(108, 28)
+	overviewBtn.BackgroundColor3 = NAV
+	overviewBtn.Font = Enum.Font.GothamMedium
+	overviewBtn.TextSize = TYPE.body
+	overviewBtn.TextColor3 = TEXT
+	overviewBtn.Text = "Overview"
+	corner(overviewBtn, 8)
+	local serverBtn = Instance.new("TextButton", switch)
+	serverBtn.Size = UDim2.fromOffset(88, 28)
+	serverBtn.Position = UDim2.fromOffset(116, 0)
+	serverBtn.BackgroundTransparency = 1
+	serverBtn.Font = Enum.Font.GothamMedium
+	serverBtn.TextSize = TYPE.body
+	serverBtn.TextColor3 = MUTED
+	serverBtn.Text = "Server"
+
+	local topRow = Instance.new("Frame", homePage)
+	topRow.LayoutOrder = 2
+	topRow.BackgroundTransparency = 1
+	local contentH = math.max(panelH - 76, 220)
+	local topRowH = math.floor(contentH * 0.30)
+	local hubH = math.floor(contentH * 0.40)
+	local statsH = math.floor(contentH * 0.26)
+	topRow.Size = UDim2.new(1, 0, 0, phone and 430 or topRowH)
+	local topLayout = Instance.new("UIListLayout", topRow)
+	topLayout.FillDirection = phone and Enum.FillDirection.Vertical or Enum.FillDirection.Horizontal
+	topLayout.Padding = UDim.new(0, 8)
+
+	local function panel(parent)
+		local frame = Instance.new("Frame", parent)
+		frame.BackgroundColor3 = CARD
+		frame:SetAttribute("BunnyRole", "card")
+		frame.Size = phone and UDim2.new(1, 0, 0, 210) or UDim2.new(0.5, -4, 1, 0)
+		corner(frame, 12)
+		local stroke = Instance.new("UIStroke", frame)
+		stroke.Color = LINE
+		stroke.Transparency = 0.4
+		return frame
+	end
+
+	local profileCard = panel(topRow)
+	local serverCard = panel(topRow)
+
+	local function sectionTitle(parent, text)
+		local label = Instance.new("TextLabel", parent)
+		label.BackgroundTransparency = 1
+		label.Position = UDim2.fromOffset(14, 10)
+		label.Size = UDim2.new(1, -28, 0, 18)
+		label.Font = Enum.Font.GothamMedium
+		label.TextSize = TYPE.label
+		label.TextXAlignment = Enum.TextXAlignment.Left
+		label.TextColor3 = TEXT
+		label.Text = text
+	end
+	sectionTitle(profileCard, "Profile")
+	sectionTitle(serverCard, "Current Server")
+
+	local hubCard = Instance.new("Frame", homePage)
+	hubCard.LayoutOrder = 3
+	hubCard.Size = UDim2.new(1, 0, 0, hubH)
+	hubCard.BackgroundColor3 = CARD
+	hubCard:SetAttribute("BunnyRole", "card")
+	corner(hubCard, 12)
+	local hubStroke = Instance.new("UIStroke", hubCard)
+	hubStroke.Color = LINE
+	hubStroke.Transparency = 0.4
+	local hubTitle = Instance.new("TextLabel", hubCard)
+	hubTitle.BackgroundTransparency = 1
+	hubTitle.Position = UDim2.fromOffset(14, 10)
+	hubTitle.Size = UDim2.new(1, -28, 0, 18)
+	hubTitle.Font = Enum.Font.GothamMedium
+	hubTitle.TextSize = TYPE.label
+	hubTitle.TextXAlignment = Enum.TextXAlignment.Left
+	hubTitle.TextColor3 = TEXT
+	hubTitle.Text = "Bunny Hub"
+	local hubImage = Instance.new("ImageLabel", hubCard)
+	hubImage.Position = UDim2.fromOffset(14, 34)
+	hubImage.Size = UDim2.new(1, -28, 1, -48)
+	hubImage.BackgroundColor3 = Color3.fromRGB(18, 16, 22)
+	hubImage.BorderSizePixel = 0
+	hubImage.ScaleType = Enum.ScaleType.Fit
+	hubImage.ImageTransparency = 0
+	hubImage.Image = HUB_IMAGE_ASSET > 0 and ("rbxassetid://" .. tostring(HUB_IMAGE_ASSET)) or ""
+	corner(hubImage, 8)
+	local hubHint = Instance.new("TextLabel", hubCard)
+	hubHint.Position = UDim2.fromOffset(14, 34)
+	hubHint.Size = UDim2.new(1, -28, 1, -48)
+	hubHint.BackgroundTransparency = 1
+	hubHint.Font = Enum.Font.Gotham
+	hubHint.TextSize = TYPE.body
+	hubHint.TextWrapped = true
+	hubHint.TextColor3 = MUTED
+	hubHint.Text = "Set HUB_IMAGE_ASSET to your uploaded image ID"
+	hubHint.Visible = HUB_IMAGE_ASSET == 0
+
+	if HUB_IMAGE_ASSET > 0 then
+		task.spawn(function()
+			local ok = pcall(function()
+				ContentProvider:PreloadAsync({ hubImage })
+			end)
+			if not ok and hubHint.Parent then
+				hubHint.Visible = true
+				hubHint.Text = "Could not load image " .. tostring(HUB_IMAGE_ASSET)
+			end
+		end)
+	end
+
+	local welcomeKicker = Instance.new("TextLabel", profileCard)
+	welcomeKicker.BackgroundTransparency = 1
+	welcomeKicker.Position = UDim2.fromOffset(14, 40)
+	welcomeKicker.Size = UDim2.new(1, -90, 0, 14)
+	welcomeKicker.Font = Enum.Font.GothamMedium
+	welcomeKicker.TextSize = TYPE.caption
+	welcomeKicker.TextXAlignment = Enum.TextXAlignment.Left
+	welcomeKicker.TextColor3 = PINK
+	welcomeKicker.Text = "WELCOME BACK"
+	local welcomeName = Instance.new("TextLabel", profileCard)
+	welcomeName.BackgroundTransparency = 1
+	welcomeName.Position = UDim2.fromOffset(14, 54)
+	welcomeName.Size = UDim2.new(1, -96, 0, 28)
+	welcomeName.Font = Enum.Font.GothamBold
+	welcomeName.TextSize = TYPE.display
+	welcomeName.TextXAlignment = Enum.TextXAlignment.Left
+	welcomeName.TextColor3 = TEXT
+	welcomeName.Text = LocalPlayer.DisplayName
+	local welcomeUser = Instance.new("TextLabel", profileCard)
+	welcomeUser.BackgroundTransparency = 1
+	welcomeUser.Position = UDim2.fromOffset(14, 82)
+	welcomeUser.Size = UDim2.new(1, -96, 0, 16)
+	welcomeUser.Font = Enum.Font.Gotham
+	welcomeUser.TextSize = TYPE.body
+	welcomeUser.TextXAlignment = Enum.TextXAlignment.Left
+	welcomeUser.TextColor3 = MUTED
+	welcomeUser.Text = "@" .. LocalPlayer.Name
+	local chips = Instance.new("Frame", profileCard)
+	chips.BackgroundTransparency = 1
+	chips.Position = UDim2.fromOffset(14, 112)
+	chips.Size = UDim2.new(1, -28, 0, 24)
+	local chipLayout = Instance.new("UIListLayout", chips)
+	chipLayout.FillDirection = Enum.FillDirection.Horizontal
+	chipLayout.Padding = UDim.new(0, 6)
+	local function miniChip(text, back, color)
+		local chip = Instance.new("TextLabel", chips)
+		chip.AutomaticSize = Enum.AutomaticSize.X
+		chip.Size = UDim2.fromOffset(0, 22)
+		chip.BackgroundColor3 = back
+		chip.Font = Enum.Font.GothamMedium
+		chip.TextSize = TYPE.small
+		chip.TextColor3 = color
+		chip.Text = "   " .. text .. "   "
+		corner(chip, 8)
+		return chip
+	end
+	miniChip("1.0", Color3.fromRGB(36, 32, 42), TEXT)
+	miniChip("●  Connected", Color3.fromRGB(28, 48, 40), Color3.fromRGB(120, 220, 160))
+	local ring = Instance.new("CanvasGroup", profileCard)
+	ring.Size = UDim2.fromOffset(58, 58)
+	ring.Position = UDim2.new(1, -74, 0, 48)
+	ring.BackgroundColor3 = Color3.fromRGB(24, 20, 28)
+	corner(ring, 29)
+	ringStroke = Instance.new("UIStroke", ring)
+	ringStroke.Color = PINK
+	ringStroke.Thickness = 2
+	local headshot = Instance.new("ImageLabel", ring)
+	headshot.BackgroundColor3 = Color3.fromRGB(24, 20, 28)
+	headshot.Position = UDim2.fromOffset(3, 3)
+	headshot.Size = UDim2.new(1, -6, 1, -6)
+	headshot.Image = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(LocalPlayer.UserId) .. "&w=150&h=150"
+	headshot.ScaleType = Enum.ScaleType.Crop
+	corner(headshot, 26)
+
+	local badge = Instance.new("ImageLabel", serverCard)
+	badge.Size = UDim2.fromOffset(40, 40)
+	badge.Position = UDim2.fromOffset(14, 40)
+	badge.BackgroundColor3 = Color3.fromRGB(42, 38, 48)
+	badge.ScaleType = Enum.ScaleType.Crop
+	badge.Image = "rbxthumb://type=GameIcon&id=" .. tostring(game.GameId) .. "&w=150&h=150"
+	corner(badge, 8)
+	local placeTitle = Instance.new("TextLabel", serverCard)
+	placeTitle.BackgroundTransparency = 1
+	placeTitle.Position = UDim2.fromOffset(64, 40)
+	placeTitle.Size = UDim2.new(1, -130, 0, 18)
+	placeTitle.Font = Enum.Font.GothamBold
+	placeTitle.TextSize = TYPE.title
+	placeTitle.TextXAlignment = Enum.TextXAlignment.Left
+	placeTitle.TextColor3 = TEXT
+	placeTitle.Text = "Loading"
+	local placeSub = Instance.new("TextLabel", serverCard)
+	placeSub.BackgroundTransparency = 1
+	placeSub.Position = UDim2.fromOffset(64, 58)
+	placeSub.Size = UDim2.new(1, -130, 0, 16)
+	placeSub.Font = Enum.Font.Gotham
+	placeSub.TextSize = TYPE.small
+	placeSub.TextXAlignment = Enum.TextXAlignment.Left
+	placeSub.TextColor3 = MUTED
+	placeSub.Text = "loading place..."
+	local placePlayers = Instance.new("TextLabel", serverCard)
+	placePlayers.BackgroundTransparency = 1
+	placePlayers.Position = UDim2.new(1, -110, 0, 46)
+	placePlayers.Size = UDim2.fromOffset(96, 16)
+	placePlayers.Font = Enum.Font.Gotham
+	placePlayers.TextSize = TYPE.small
+	placePlayers.TextXAlignment = Enum.TextXAlignment.Right
+	placePlayers.TextColor3 = MUTED
+	placePlayers.Text = ""
+
+	local function serverButton(text, x, y, w, primary, fn)
+		local button = Instance.new("TextButton", serverCard)
+		button.Position = UDim2.new(x, x == 0 and 14 or 4, 0, y)
+		button.Size = UDim2.new(w, -18, 0, 32)
+		button.BackgroundColor3 = primary and PINK or Color3.fromRGB(28, 26, 32)
+		button.Font = Enum.Font.GothamMedium
+		button.TextSize = TYPE.body
+		button.TextColor3 = primary and Color3.fromRGB(40, 12, 28) or TEXT
+		button.Text = text
+		button.AutoButtonColor = false
+		corner(button, 8)
+		local stroke = Instance.new("UIStroke", button)
+		stroke.Color = primary and PINK or LINE
+		stroke.Transparency = primary and 1 or 0.35
+		if primary then
+			local wash = Instance.new("UIGradient", button)
+			wash.Color = ColorSequence.new(Color3.fromRGB(255, 186, 226), Color3.fromRGB(255, 112, 188))
+			wash.Rotation = 18
+		end
+		button.MouseButton1Click:Connect(fn)
+		button.MouseEnter:Connect(function()
+			tween(button, 0.15, { Size = UDim2.new(w, -14, 0, 34) })
+		end)
+		button.MouseLeave:Connect(function()
+			tween(button, 0.15, { Size = UDim2.new(w, -18, 0, 32) })
+		end)
+	end
+	serverButton("Rejoin", 0, 108, 0.5, true, function()
+		notify("Rejoining")
+		local joined = pcall(function()
+			if game.JobId ~= "" then
+				TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+			else
+				TeleportService:Teleport(game.PlaceId, LocalPlayer)
+			end
+		end)
+		if not joined then
+			notify("Rejoin failed")
+		end
+	end)
+	serverButton("Hop", 0.5, 108, 0.5, false, function()
+		serverHop()
+	end)
+	local function serverCell(text, x, y, color)
+		local label = Instance.new("TextLabel", serverCard)
+		label.Position = UDim2.new(x, x == 0 and 14 or 4, 0, y)
+		label.Size = UDim2.new(0.5, -18, 0, 32)
+		label.BackgroundColor3 = Color3.fromRGB(28, 26, 32)
+		label.Font = Enum.Font.GothamMedium
+		label.TextSize = TYPE.small
+		label.TextColor3 = color
+		label.TextTruncate = Enum.TextTruncate.AtEnd
+		label.Text = text
+		corner(label, 8)
+		local stroke = Instance.new("UIStroke", label)
+		stroke.Color = color
+		stroke.Transparency = 0.55
+		return label
+	end
+	serverButton("Get ID", 0, 148, 0.5, false, function()
+		local id = tostring(game.PlaceId)
+		local copied = false
+		if type(setclipboard) == "function" then
+			copied = pcall(setclipboard, id)
+		elseif type(toclipboard) == "function" then
+			copied = pcall(toclipboard, id)
+		end
+		notify(copied and ("Place ID copied: " .. id) or ("Place ID: " .. id))
+	end)
+	serverCell("Working", 0.5, 148, Color3.fromRGB(126, 224, 164))
+
+	local function paintHomeTab()
+		local overview = homeTab == "Overview"
+		local ti = TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+		TweenService:Create(overviewBtn, ti, { BackgroundColor3 = overview and NAV or SIDE, TextColor3 = overview and TEXT or MUTED, BackgroundTransparency = overview and 0 or 1 }):Play()
+		TweenService:Create(serverBtn, ti, { BackgroundColor3 = overview and SIDE or NAV, TextColor3 = overview and MUTED or TEXT, BackgroundTransparency = overview and 1 or 0 }):Play()
+		profileCard.Visible = overview
+		TweenService:Create(serverCard, ti, { Size = (overview and not phone) and UDim2.new(0.5, -4, 1, 0) or UDim2.new(1, 0, phone and 210 or 1, 0) }):Play()
+		TweenService:Create(topRow, ti, { Size = UDim2.new(1, 0, 0, phone and (overview and 430 or 214) or 214) }):Play()
+	end
+	overviewBtn.MouseButton1Click:Connect(function()
+		homeTab = "Overview"
+		paintHomeTab()
+	end)
+	serverBtn.MouseButton1Click:Connect(function()
+		homeTab = "Server"
+		paintHomeTab()
+	end)
+	paintHomeTab()
+
+	local stats = Instance.new("Frame", homePage)
+	stats.LayoutOrder = 4
+	stats.Size = UDim2.new(1, 0, 0, statsH)
+	stats.BackgroundColor3 = CARD
+	stats:SetAttribute("BunnyRole", "card")
+	corner(stats, 12)
+	local statsStroke = Instance.new("UIStroke", stats)
+	statsStroke.Color = LINE
+	statsStroke.Transparency = 0.4
+	local fpsK = Instance.new("TextLabel", stats)
+	fpsK.BackgroundTransparency = 1
+	fpsK.Position = UDim2.fromOffset(16, 12)
+	fpsK.Size = UDim2.fromOffset(80, 14)
+	fpsK.Font = Enum.Font.Gotham
+	fpsK.TextSize = TYPE.caption
+	fpsK.TextXAlignment = Enum.TextXAlignment.Left
+	fpsK.TextColor3 = MUTED
+	fpsK.Text = "FPS"
+	local pingK = Instance.new("TextLabel", stats)
+	pingK.BackgroundTransparency = 1
+	pingK.Position = UDim2.new(0.5, 8, 0, 12)
+	pingK.Size = UDim2.fromOffset(80, 14)
+	pingK.Font = Enum.Font.Gotham
+	pingK.TextSize = TYPE.caption
+	pingK.TextXAlignment = Enum.TextXAlignment.Left
+	pingK.TextColor3 = MUTED
+	pingK.Text = "PING"
+	local fpsValue = Instance.new("TextLabel", stats)
+	fpsValue.BackgroundTransparency = 1
+	fpsValue.Position = UDim2.fromOffset(16, 28)
+	fpsValue.Size = UDim2.fromOffset(120, 28)
+	fpsValue.Font = Enum.Font.GothamBold
+	fpsValue.TextSize = TYPE.metric
+	fpsValue.TextXAlignment = Enum.TextXAlignment.Left
+	fpsValue.TextColor3 = Color3.fromRGB(120, 220, 160)
+	fpsValue.Text = "60"
+	local pingValue = Instance.new("TextLabel", stats)
+	pingValue.BackgroundTransparency = 1
+	pingValue.Position = UDim2.new(0.5, 8, 0, 28)
+	pingValue.Size = UDim2.fromOffset(140, 28)
+	pingValue.Font = Enum.Font.GothamBold
+	pingValue.TextSize = TYPE.metric
+	pingValue.TextXAlignment = Enum.TextXAlignment.Left
+	pingValue.TextColor3 = Color3.fromRGB(255, 176, 96)
+	pingValue.Text = "0ms"
+
+	local function makeMeter(xScale, xOffset)
+		local holder = Instance.new("Frame", stats)
+		holder.BackgroundTransparency = 1
+		holder.Position = UDim2.new(xScale, xOffset, 0, 64)
+		holder.Size = UDim2.new(0.5, -28, 0, 36)
+		local bars = {}
+		for i = 1, 22 do
+			local bar = Instance.new("Frame", holder)
+			bar.AnchorPoint = Vector2.new(0.5, 1)
+			bar.Position = UDim2.new((i - 1) / 21, 0, 1, 0)
+			bar.Size = UDim2.new(0, 4, 0.45, 0)
+			bar.BackgroundColor3 = Color3.fromRGB(70, 66, 78)
+			bar.BorderSizePixel = 0
+			corner(bar, 2)
+			bars[i] = bar
+		end
+		return bars
+	end
+	local fpsBars = makeMeter(0, 16)
+	local pingBars = makeMeter(0.5, 8)
+
+	local function statBlock(x, caption, highlight)
+		local value = Instance.new("TextLabel", stats)
+		value.BackgroundTransparency = 1
+		value.Position = UDim2.new(x, 12, 0, 112)
+		value.Size = UDim2.new(1 / 3, -24, 0, 22)
+		value.Font = Enum.Font.GothamBold
+		value.TextSize = TYPE.heading
+		value.TextXAlignment = Enum.TextXAlignment.Left
+		value.TextColor3 = highlight and PINK or TEXT
+		value.Text = "-"
+		local cap = Instance.new("TextLabel", stats)
+		cap.BackgroundTransparency = 1
+		cap.Position = UDim2.new(x, 12, 0, 134)
+		cap.Size = UDim2.new(1 / 3, -24, 0, 14)
+		cap.Font = Enum.Font.Gotham
+		cap.TextSize = TYPE.caption
+		cap.TextXAlignment = Enum.TextXAlignment.Left
+		cap.TextColor3 = MUTED
+		cap.Text = caption
+		return value
+	end
+	local statPlayers = statBlock(0, "PLAYERS")
+	local roleValue = statBlock(1 / 3, "TEAM", true)
+	local statSession = statBlock(2 / 3, "SESSION")
+
+	local function paintMeter(bars, hist, accent)
+		local peak = 1
+		for _, sample in hist do
+			if sample > peak then
+				peak = sample
+			end
+		end
+		for index, bar in bars do
+			local sample = hist[index]
+			local height = sample and math.clamp(sample / peak, 0.15, 1) or 0.18
+			local tInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+			TweenService:Create(bar, tInfo, { Size = UDim2.new(0, 4, height, 0) }):Play()
+			if index == #bars and sample then
+				TweenService:Create(bar, tInfo, { BackgroundColor3 = accent }):Play()
+			else
+				local alpha = index / #bars
+				local faded = Color3.fromRGB(
+					math.floor(40 + (accent.R * 255 - 40) * alpha * 0.45),
+					math.floor(40 + (accent.G * 255 - 40) * alpha * 0.45),
+					math.floor(48 + (accent.B * 255 - 48) * alpha * 0.45)
+				)
+				bar.BackgroundColor3 = faded
+			end
+		end
+	end
+
+	task.spawn(function()
+		local ok, info = pcall(function()
+			return MarketplaceService:GetProductInfo(game.PlaceId)
+		end)
+		if ok and info then
+			placeTitle.Text = info.Name or "Unknown place"
+			local creator = info.Creator and info.Creator.Name or "unknown"
+			placeSub.Text = "by " .. creator
+			if info.IconImageAssetId and info.IconImageAssetId ~= 0 then
+				badge.Image = "rbxthumb://type=Asset&id=" .. tostring(info.IconImageAssetId) .. "&w=150&h=150"
+			end
+		end
+	end)
+
+	local clock = 0
+	track(RunService.Heartbeat:Connect(function(dt)
+		fpsSmooth = fpsSmooth * 0.85 + (1 / math.max(dt, 1 / 240)) * 0.15
+		clock = clock + dt
+		if clock < 0.3 or not running then
+			return
+		end
+		clock = 0
+		local ping = 0
+		pcall(function()
+			ping = LocalPlayer:GetNetworkPing() * 1000
+		end)
+		fpsValue.Text = tostring(math.floor(fpsSmooth + 0.5))
+		pingValue.Text = tostring(math.floor(ping + 0.5)) .. "ms"
+		local playersNow = #Players:GetPlayers()
+		local playersMax = math.max(Players.MaxPlayers, 1)
+		statPlayers.Text = tostring(playersNow) .. "/" .. tostring(playersMax)
+		placePlayers.Text = tostring(playersNow) .. " players"
+		roleValue.Text = roleOf(LocalPlayer)
+		local elapsed = math.floor(os.clock() - sessionStart)
+		statSession.Text = string.format("%dm %02ds", math.floor(elapsed / 60), elapsed % 60)
+		fpsHist[#fpsHist + 1] = fpsSmooth
+		pingHist[#pingHist + 1] = math.max(ping, 1)
+		if #fpsHist > #fpsBars then
+			table.remove(fpsHist, 1)
+		end
+		if #pingHist > #pingBars then
+			table.remove(pingHist, 1)
+		end
+		paintMeter(fpsBars, fpsHist, Color3.fromRGB(120, 220, 160))
+		paintMeter(pingBars, pingHist, Color3.fromRGB(255, 176, 96))
+	end))
+
+	local function mountPages()
+		local combatL, combatR = split(fight)
+		local espCard = card(combatL, "Monkeys")
+		pill(espCard, "Monkey ESP", nil, "monkey esp", function()
+			return Config.EspMonkeys
+		end, function(v)
+			Config.EspMonkeys = v
+		end)
+		pill(espCard, "Player ESP", nil, "player", function()
+			return Config.EspPlayers
+		end, function(v)
+			Config.EspPlayers = v
+		end)
+
+		local gunCard = card(combatL, "Guns")
+		pill(gunCard, "Auto primary", nil, "shoot click", function()
+			return Config.AutoPrimary
+		end, function(v)
+			Config.AutoPrimary = v
+		end)
+		pill(gunCard, "Auto secondary", nil, "right click", function()
+			return Config.AutoSecondary
+		end, function(v)
+			Config.AutoSecondary = v
+		end)
+		pill(gunCard, "Melee aura", nil, "melee close", function()
+			return Config.Melee
+		end, function(v)
+			Config.Melee = v
+		end)
+		slider(gunCard, "Melee range", 8, 40, function()
+			return Config.MeleeRange
+		end, function(n)
+			Config.MeleeRange = math.floor(n + 0.5)
+		end, "melee range")
+
+		local aimCard = card(combatR, "Aim")
+		pill(aimCard, "Aim assist", nil, "aim camera", function()
+			return Config.Aim
+		end, function(v)
+			Config.Aim = v
+		end)
+		slider(aimCard, "Aim FOV", 20, 180, function()
+			return Config.AimFov
+		end, function(n)
+			Config.AimFov = math.floor(n + 0.5)
+		end, "aim fov")
+		slider(aimCard, "Aim range", 40, 400, function()
+			return Config.AimRange
+		end, function(n)
+			Config.AimRange = math.floor(n + 0.5)
+		end, "aim range")
+		slider(aimCard, "Smooth", 0.1, 1, function()
+			return Config.AimSmooth
+		end, function(n)
+			Config.AimSmooth = n
+		end, "aim smooth", 2)
+
+		local waveL, waveR = split(city)
+		local upCard = card(waveL, "Upgrades")
+		pill(upCard, "Auto weapon", nil, "upgrade v", function()
+			return Config.AutoWeapon
+		end, function(v)
+			Config.AutoWeapon = v
+		end)
+		pill(upCard, "Auto health", nil, "upgrade c", function()
+			return Config.AutoHealth
+		end, function(v)
+			Config.AutoHealth = v
+		end)
+		pill(upCard, "Auto ultimate", nil, "ultimate q", function()
+			return Config.AutoUlt
+		end, function(v)
+			Config.AutoUlt = v
+		end)
+		pill(upCard, "Auto grenade", nil, "grenade g", function()
+			return Config.AutoNade
+		end, function(v)
+			Config.AutoNade = v
+		end)
+		pill(upCard, "Auto barricade", nil, "barricade x", function()
+			return Config.AutoBarricade
+		end, function(v)
+			Config.AutoBarricade = v
+		end)
+		pill(upCard, "Auto skip wave", nil, "skip", function()
+			return Config.AutoSkip
+		end, function(v)
+			Config.AutoSkip = v
+		end)
+
+		local sense = card(waveR, "Senses")
+		pill(sense, "Fullbright", nil, "bright light", function()
+			return Config.Bright
+		end, function(v)
+			Config.Bright = v
+		end)
+		pill(sense, "No blur", nil, "blur", function()
+			return Config.NoBlur
+		end, function(v)
+			Config.NoBlur = v
+		end)
+		pill(sense, "Custom FOV", nil, "fov", function()
+			return Config.FovOn
+		end, function(v)
+			Config.FovOn = v
+		end)
+		slider(sense, "FOV", 60, 120, function()
+			return Config.Fov
+		end, function(n)
+			Config.Fov = math.floor(n + 0.5)
+		end, "field of view")
+		slider(sense, "Scan", 0.2, 1, function()
+			return Config.Scan
+		end, function(n)
+			Config.Scan = n
+		end, "scan interval", 1)
+
+		local moveL, moveR = split(movePage)
+		local speedCard = card(moveL, "Speed")
+		pill(speedCard, "Speed boost", nil, "walkspeed", function()
+			return Config.SpeedOn
+		end, function(v)
+			Config.SpeedOn = v
+		end)
+		slider(speedCard, "Boost multiplier", 1.2, 3, function()
+			return Config.Speed
+		end, function(n)
+			Config.Speed = n
+		end, "speed multiplier", 1)
+
+		local jumpCard = card(moveL, "Jump")
+		pill(jumpCard, "Jump boost", nil, "jump", function()
+			return Config.JumpOn
+		end, function(v)
+			Config.JumpOn = v
+		end)
+		slider(jumpCard, "Jump power", 50, 300, function()
+			return Config.JumpPower
+		end, function(n)
+			Config.JumpPower = math.floor(n + 0.5)
+		end, "jump power")
+
+		local body = card(moveR, "Body")
+		pill(body, "No-clip", nil, "noclip", function()
+			return Config.Noclip
+		end, function(v)
+			Config.Noclip = v
+		end)
+
+		local extraL, extraR = split(extra)
+		local e2 = card(extraL, "Other")
+		pill(e2, "Anti-AFK", nil, "afk", function()
+			return Config.AntiAFK
+		end, function(v)
+			Config.AntiAFK = v
+		end)
+		pill(e2, "Freecam", nil, "freecam camera", function()
+			return Config.Freecam
+		end, function(v)
+			Config.Freecam = v
+		end)
+		action(e2, "Server hop", serverHop, "server hop")
+		action(e2, "Rejoin", function()
+			TeleportService:Teleport(game.PlaceId, LocalPlayer)
+		end, "rejoin")
+		action(e2, "Save settings", saveSettings, "save settings config")
+	end
+	mountPages()
+
+	local settings = addNav("Settings")
+	local setL, setR = split(settings)
+	local menuCard = card(setL, "Menu")
+	local hideRow = Instance.new("Frame", menuCard)
+	hideRow.Size = UDim2.new(1, 0, 0, 28)
+	hideRow.BackgroundTransparency = 1
+	local hideLabel = Instance.new("TextLabel", hideRow)
+	hideLabel.BackgroundTransparency = 1
+	hideLabel.Size = UDim2.new(1, -90, 1, 0)
+	hideLabel.Font = Enum.Font.GothamMedium
+	hideLabel.TextSize = TYPE.body
+	hideLabel.TextXAlignment = Enum.TextXAlignment.Left
+	hideLabel.TextColor3 = TEXT
+	hideLabel.Text = "Toggle UI"
+	hideChip = Instance.new("TextButton", hideRow)
+	hideChip.Size = UDim2.fromOffset(78, 22)
+	hideChip.Position = UDim2.new(1, -78, 0.5, -11)
+	hideChip.BackgroundColor3 = Color3.fromRGB(22, 20, 26)
+	hideChip.Font = Enum.Font.Gotham
+	hideChip.TextSize = TYPE.small
+	hideChip.TextColor3 = TEXT
+	hideChip.Text = hideKey.Name
+	corner(hideChip, 6)
+	Instance.new("UIStroke", hideChip).Color = LINE
+	hideChip.MouseButton1Click:Connect(function()
+		bindTarget = { hide = true, chip = hideChip }
+		hideChip.Text = "..."
+		notify("Press a key to hide the menu")
+	end)
+	dropdown(menuCard, "Toggle button", { "Always", "Mobile", "Hover", "Hidden" }, function()
+		return Ui.MenuButton
+	end, function(value)
+		Ui.MenuButton = value
+		applyChrome()
+	end, "toggle button")
+	action(menuCard, "Unload", function()
+		if type(_G.BunnyUIStop) == "function" then
+			_G.BunnyUIStop()
+		end
+	end, "unload")
+
+	local configCard = card(setL, "Configs")
+	local configName = field(configCard, "config name")
+	local picked = ""
+	local function configNames()
+		local names = {}
+		for name in readStore().configs do
+			names[#names + 1] = name
+		end
+		table.sort(names)
+		if #names == 0 then
+			names[1] = "-"
+		end
+		return names
+	end
+	dropdown(configCard, "Saved", configNames, function()
+		return picked ~= "" and picked or "-"
+	end, function(value)
+		picked = value ~= "-" and value or ""
+		if picked ~= "" then
+			configName.Text = picked
+		end
+	end, "saved config")
+	local function named()
+		local name = configName.Text
+		if name == "" or name == "-" then
+			notify("Type a config name")
+			return nil
+		end
+		return name
+	end
+	local function applyData(data)
+		for key, value in data.features or {} do
+			if Config[key] ~= nil and type(value) == type(Config[key]) then
+				Config[key] = value
+			end
+		end
+		if type(data.moves) == "table" then
+			for styleName, delays in data.moves do
+				local moves = MOVES[styleName]
+				if moves and type(delays) == "table" then
+					for index, delay in delays do
+						local slot = tonumber(index) or index
+						if moves[slot] and type(delay) == "number" then
+							moves[slot].Delay = delay
+						end
+					end
+				end
+			end
+		end
+		if type(data.styles) == "table" then
+			for _, style in STYLES do
+				if type(data.styles[style.Name]) == "boolean" then
+					style.On = data.styles[style.Name]
+				end
+			end
+		end
+		if not Config.AutoParry then
+			pcall(releaseParryKey)
+		end
+		Ui.Theme = data.theme or Ui.Theme
+		Ui.Scale = data.scale or Ui.Scale
+		Ui.Radius = data.radius or Ui.Radius
+		Ui.Transparent = data.transparent or false
+		Ui.Dim = data.dim or false
+		Ui.Weather = data.weather or "Off"
+		Ui.WeatherMode = data.weatherMode or "Screen"
+		Ui.Decor = data.decor or DEFAULT_DECOR
+		local savedGlass = data.glass
+		if type(savedGlass) == "boolean" then
+			savedGlass = savedGlass and "Strong" or "Off"
+		end
+		Ui.Glass = savedGlass or DEFAULT_GLASS
+		Ui.Drag = data.drag or "Fill"
+		Ui.Density = data.density or "Default"
+		Ui.MenuButton = data.menuButton or "Always"
+		if data.hide and Enum.KeyCode[data.hide] then
+			hideKey = Enum.KeyCode[data.hide]
+		end
+		applyChrome()
+		paintAll()
+	end
+	buttonRow(configCard, {
+		{ text = "Create", click = function()
+			local name = named()
+			if not name then
+				return
+			end
+			local data = readStore()
+			data.configs[name] = snapshot()
+			writeStore(data)
+			picked = name
+			for _, paint in dropdownPaints do
+				paint()
+			end
+			notify("Created " .. name)
+		end },
+		{ text = "Save", click = function()
+			local name = named()
+			if not name then
+				return
+			end
+			local data = readStore()
+			data.configs[name] = snapshot()
+			writeStore(data)
+			picked = name
+			for _, paint in dropdownPaints do
+				paint()
+			end
+			notify("Saved " .. name)
+		end },
+	})
+	buttonRow(configCard, {
+		{ text = "Load", click = function()
+			local name = named()
+			if not name then
+				return
+			end
+			local data = readStore()
+			local saved = data.configs[name]
+			if type(saved) ~= "table" then
+				notify("Config not found")
+				return
+			end
+			applyData(saved)
+			notify("Loaded " .. name)
+		end },
+		{ text = "Delete", danger = true, click = function()
+			local name = named()
+			if not name then
+				return
+			end
+			local data = readStore()
+			data.configs[name] = nil
+			if data.autoload == name then
+				data.autoload = ""
+			end
+			writeStore(data)
+			picked = ""
+			configName.Text = ""
+			for _, paint in dropdownPaints do
+				paint()
+			end
+			notify("Deleted " .. name)
+		end },
+	})
+
+	local themeCard = card(setR, "Themes")
+	dropdown(themeCard, "Preset", THEME_ORDER, function()
+		return Ui.Theme
+	end, function(value)
+		Ui.Theme = value
+		applyChrome()
+	end, "theme preset")
+	dropdown(themeCard, "Weather", WEATHER_ORDER, function()
+		return Ui.Weather
+	end, function(value)
+		Ui.Weather = value
+		applyChrome()
+	end, "weather")
+	dropdown(themeCard, "Weather mode", { "Screen", "Menu" }, function()
+		return Ui.WeatherMode
+	end, function(value)
+		Ui.WeatherMode = value
+		applyChrome()
+	end, "weather mode")
+	dropdown(themeCard, "Decor", DECOR_ORDER, function()
+		return Ui.Decor
+	end, function(value)
+		Ui.Decor = value
+		applyChrome()
+	end, "decor")
+	pill(themeCard, "Dim", nil, "dim", function()
+		return Ui.Dim
+	end, function(value)
+		Ui.Dim = value
+		applyChrome()
+	end)
+	dropdown(themeCard, "Glass", GLASS_ORDER, function()
+		return Ui.Glass
+	end, function(value)
+		Ui.Glass = value
+		applyChrome()
+	end, "glass")
+	pill(themeCard, "Transparent", nil, "transparent", function()
+		return Ui.Transparent
+	end, function(value)
+		Ui.Transparent = value
+		applyChrome()
+	end)
+	dropdown(themeCard, "Drag style", { "Fill", "Outline" }, function()
+		return Ui.Drag
+	end, function(value)
+		Ui.Drag = value
+	end, "drag")
+	slider(themeCard, "UI scale", 70, 120, function()
+		return Ui.Scale
+	end, function(value)
+		Ui.Scale = math.floor(value + 0.5)
+		uiScale.Scale = Ui.Scale / 100
+	end, "scale")
+	dropdown(themeCard, "Density", { "Default", "Compact" }, function()
+		return Ui.Density
+	end, function(value)
+		Ui.Density = value
+		applyChrome()
+	end, "density")
+	slider(themeCard, "Corner radius", 4, 18, function()
+		return Ui.Radius
+	end, function(value)
+		Ui.Radius = math.floor(value + 0.5)
+		applyChrome()
+	end, "radius")
+
+	search:GetPropertyChangedSignal("Text"):Connect(function()
+		local query = string.lower(search.Text)
+		if query == "" then
+			return
+		end
+		for name, pack in pageButtons do
+			for _, child in pack.page:GetDescendants() do
+				local filter = child:GetAttribute("Filter")
+				if type(filter) == "string" and string.find(filter, query, 1, true) then
+					showPage(name)
+					return
+				end
+			end
+		end
+	end)
+
+	local dragging = false
+	local dragStart, startPos
+	local function beginDrag(input)
+		if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then
+			return
+		end
+		dragging = true
+		dragStart = UserInputService:GetMouseLocation()
+		startPos = main.Position
+	end
+	title.InputBegan:Connect(beginDrag)
+	pageTitle.InputBegan:Connect(beginDrag)
+
+	local menuDragging = false
+	local menuStart, menuPos, menuMoved
+	menuButton.InputBegan:Connect(function(input)
+		if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then
+			return
+		end
+		menuDragging = true
+		menuMoved = false
+		menuStart = UserInputService:GetMouseLocation()
+		menuPos = menuButton.Position
+	end)
+	menuButton.InputEnded:Connect(function(input)
+		if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then
+			return
+		end
+		if menuDragging and not menuMoved then
+			setMenu(not main.Visible)
+		end
+		menuDragging = false
+	end)
+	track(UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = false
+		end
+	end))
+	track(RunService.RenderStepped:Connect(function(dt)
+		if menuDragging and menuStart then
+			local delta = UserInputService:GetMouseLocation() - menuStart
+			if delta.Magnitude > 8 then
+				menuMoved = true
+			end
+			menuButton.Position = UDim2.new(menuPos.X.Scale, menuPos.X.Offset + delta.X, menuPos.Y.Scale, menuPos.Y.Offset + delta.Y)
+		end
+		if dragging and dragStart then
+			local delta = UserInputService:GetMouseLocation() - dragStart
+			main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+			if Ui.Drag == "Outline" then
+				main.BackgroundTransparency = 0.45
+			end
+		elseif Ui.Drag == "Outline" then
+			main.BackgroundTransparency = Ui.Transparent and 0.28 or 0
+		end
+		if Ui.MenuButton == "Hover" then
+			local mouse = UserInputService:GetMouseLocation()
+			local spot = menuButton.AbsolutePosition
+			local near = mouse.X < 70 or (mouse - spot).Magnitude < 80
+			menuButton.Visible = near or not main.Visible
+		end
+		local layerOn = (Ui.Weather ~= "Off" or Ui.Decor ~= "Off") and main.Visible
+		if layerOn ~= snowLayer.Visible then
+			snowLayer.Visible = layerOn
+		end
+		if layerOn ~= decorLayer.Visible then
+			decorLayer.Visible = layerOn
+		end
+		syncWeather()
+		syncDecor()
+		if layerOn then
+			local viewW = view.X
+			local viewH = view.Y
+			if Ui.WeatherMode == "Menu" then
+				snowLayer.Size = UDim2.fromOffset(main.AbsoluteSize.X, main.AbsoluteSize.Y)
+				snowLayer.Position = UDim2.fromOffset(main.AbsolutePosition.X, main.AbsolutePosition.Y)
+				snowLayer.ZIndex = main.ZIndex + 1
+				decorLayer.Size = UDim2.fromOffset(main.AbsoluteSize.X, main.AbsoluteSize.Y)
+				decorLayer.Position = UDim2.fromOffset(main.AbsolutePosition.X, main.AbsolutePosition.Y)
+				decorLayer.ZIndex = main.ZIndex + 2
+				viewW = main.AbsoluteSize.X
+				viewH = main.AbsoluteSize.Y
+			else
+				snowLayer.Size = UDim2.fromScale(1, 1)
+				snowLayer.Position = UDim2.fromOffset(0, 0)
+				snowLayer.ZIndex = 1
+				decorLayer.Size = UDim2.fromScale(1, 1)
+				decorLayer.Position = UDim2.fromOffset(0, 0)
+				decorLayer.ZIndex = 1
+			end
+			if snowLayer.AbsoluteSize.X > 10 and snowLayer.AbsoluteSize.Y > 10 then
+				viewW = snowLayer.AbsoluteSize.X
+				viewH = snowLayer.AbsoluteSize.Y
+			end
+			local width = math.max(viewW, 1)
+			local height = math.max(viewH, 1)
+			local decorOn = Ui.Decor ~= "Off"
+			if decorOn then
+				for _, part in decorParts do
+					part.y = part.y + part.speed * dt
+					part.phase = part.phase + dt * part.pulse
+					if part.y > 1.08 then
+						part.y = -0.08
+						part.x = math.random()
+						part.phase = math.random() * math.pi * 2
+					elseif part.y < -0.08 then
+						part.y = 1.08
+						part.x = math.random()
+					end
+					if part.spin ~= 0 then
+						part.frame.Rotation = (part.frame.Rotation + part.spin * dt) % 360
+					end
+					local drift = math.sin(part.phase) * part.sway
+					part.frame.Position = UDim2.fromOffset((part.x + drift) * width, part.y * height)
+					if part.twinkle then
+						part.group.GroupTransparency = math.clamp(
+							part.base + math.sin(part.phase * 2) * 0.28, 0, 1)
+					end
+				end
+			end
+			for _, flake in flakes do
+				flake.y = flake.y + flake.speed * dt
+				flake.x = flake.x + flake.vx * dt
+				flake.phase = flake.phase + dt * flake.pulse
+				if flake.spin ~= 0 then
+					flake.frame.Rotation = (flake.frame.Rotation + flake.spin * dt) % 360
+				end
+				if flake.y > 1.04 then
+					flake.y = -0.04
+					flake.x = math.random()
+					flake.phase = math.random() * math.pi * 2
+				elseif flake.y < -0.04 then
+					flake.y = 1.04
+					flake.x = math.random()
+					flake.phase = math.random() * math.pi * 2
+				end
+				local drift = math.sin(flake.phase) * flake.sway
+				local px = (flake.x + drift) * width
+				if px < -20 then
+					flake.x = flake.x + 1.05
+				elseif px > width + 20 then
+					flake.x = flake.x - 1.05
+				end
+				flake.frame.Position = UDim2.fromOffset((flake.x + drift) * width, flake.y * height)
+				if flake.twinkle then
+					local swing = flake.strongTwinkle and 0.55 or 0.3
+					flake.frame.BackgroundTransparency = math.clamp(
+						flake.base + math.sin(flake.phase * 2) * swing, 0, 1)
+				end
+			end
+		end
+	end))
+	track(UserInputService.InputBegan:Connect(function(input, processed)
+		if input.UserInputType ~= Enum.UserInputType.Keyboard then
+			return
+		end
+		if bindTarget then
+			if bindTarget.hide then
+				hideKey = input.KeyCode
+				bindTarget = nil
+				paintAll()
+				notify("Hide key set")
+				return
+			end
+			if input.KeyCode == Enum.KeyCode.Backspace then
+				bindTarget.key = nil
+				bindTarget = nil
+				paintAll()
+				notify("Hotkey cleared")
+				return
+			end
+			bindTarget.key = input.KeyCode
+			bindTarget = nil
+			paintAll()
+			notify("Key set")
+			return
+		end
+		if input.KeyCode == hideKey then
+			setMenu(not main.Visible)
+			return
+		end
+		if processed or UserInputService:GetFocusedTextBox() then
+			return
+		end
+		local entry = hotkeyMap[input.KeyCode]
+		if entry then
+			entry.flip()
+		end
+	end))
+
+	paintAll()
+	local autoload = readStore().autoload
+	if autoload ~= "" and readStore().configs[autoload] then
+		applyData(readStore().configs[autoload])
+		notify("Autoload " .. autoload)
+	end
+	syncWeather()
+	syncDecor()
+	main.Visible = false
+	menuButton.Text = "B"
+	applyMouse(false)
+	snowLayer.Visible = false
+	decorLayer.Visible = Ui.Decor ~= "Off" and main.Visible
+	dimmer.BackgroundTransparency = Ui.Dim and 0.45 or 1
+	-- Public API, usable from other scripts:
+	--   BunnyHub.Open()            -> true if it opened
+	--   BunnyHub.Close()           -> true if it closed
+	--   BunnyHub.SetPage("Runner") -> true if the page exists
+	--   BunnyHub.SetTheme("Mint")  -> true if the theme exists
+	--   BunnyHub.IsOpen()          -> boolean
+	--   BunnyHub.GetConfig()       -> the live settings table
+	local api = {}
+
+	local function guarded(fn)
+		return function(...)
+			if not running then
+				return false
+			end
+			return fn(...)
+		end
+	end
+
+	api.Open = guarded(function()
+		if main.Visible then
+			return false
+		end
+		setMenu(true)
+		return true
+	end)
+
+	api.Close = guarded(function()
+		if not main.Visible then
+			return false
+		end
+		setMenu(false)
+		return true
+	end)
+
+	api.SetPage = guarded(function(name)
+		if type(name) ~= "string" or not pageButtons[name] then
+			return false
+		end
+		showPage(name)
+		return true
+	end)
+
+	api.SetTheme = guarded(function(name)
+		if type(name) ~= "string" or not THEMES[name] then
+			return false
+		end
+		Ui.Theme = name
+		applyChrome()
+		return true
+	end)
+
+	api.SetWeather = guarded(function(name)
+		if type(name) ~= "string" or (name ~= "Off" and not WEATHER[name]) then
+			return false
+		end
+		Ui.Weather = name
+		applyChrome()
+		return true
+	end)
+
+	api.SetDecor = guarded(function(name)
+		if type(name) ~= "string" or (name ~= "Off" and not DECOR[name]) then
+			return false
+		end
+		Ui.Decor = name
+		applyChrome()
+		return true
+	end)
+
+	api.IsOpen = function()
+		return running and main.Visible == true
+	end
+
+	api.GetConfig = function()
+		return Ui
+	end
+
+	api.Stop = function()
+		shutdown()
+		return true
+	end
+
+	_G.BunnyHub = api
+
+	showPage("Home")
+	notify("Bunny Hub ready")
+end
+
+
+shutdown = function()
+	running = false
+	Config.SpeedOn = false
+	Config.CFrameSpeed = false
+	Config.JumpOn = false
+	Config.Noclip = false
+	Config.Fly = false
+	Config.Bright = false
+	Config.Freecam = false
+	Config.Zoom = false
+	pcall(applyMove, 0)
+	pcall(applyWorld)
+	pcall(clearVisuals)
+	if camState then
+		local camera = workspace.CurrentCamera
+		if camera then
+			pcall(function()
+				camera.CameraType = camState
+			end)
+		end
+		camState = nil
+	end
+	for _, conn in connections do
+		pcall(function()
+			conn:Disconnect()
+		end)
+	end
+	if gui then
+		gui:Destroy()
+	end
+end
+
+_G.BunnyUIStop = shutdown
+_G.__BunnyMonkeysStop = shutdown
+
+loadSettings()
+
+local okUi, uiErr = pcall(buildHub)
+if not okUi then
+	warn("[Bunny Hub] " .. tostring(uiErr))
+	statusText = "UI: " .. tostring(uiErr)
+end
+
+task.spawn(function()
+	for _, inst in workspace:GetDescendants() do
+		consider(inst)
+	end
+	pcall(scanWorld)
+end)
+track(workspace.DescendantAdded:Connect(consider))
+track(LocalPlayer.Idled:Connect(function()
+	if not Config.AntiAFK then
+		return
+	end
+	pcall(function()
+		VirtualUser:CaptureController()
+		VirtualUser:ClickButton2(Vector2.new())
+	end)
+end))
+
+local lastScan = 0
+local lastAuto = 0
+track(RunService.Heartbeat:Connect(function(dt)
+	if not running then
+		return
+	end
+	local now = os.clock()
+	if Config.Noclip or Config.FovOn or Config.JumpOn then
+		pcall(applyMove, dt)
+	end
+	if Config.Bright or Config.NoBlur or lightBackup then
+		pcall(applyWorld)
+	end
+	pcall(stepCombat)
+	if Config.Freecam or camState then
+		pcall(updateFreecam, dt)
+	end
+	if now - lastScan >= (Config.Scan or 0.5) then
+		lastScan = now
+		pcall(scanWorld)
+	end
+end))
+
