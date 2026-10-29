@@ -1,0 +1,1100 @@
+--[[
+    ╔══════════════════════════════════════════════════════════╗
+    ║   KRYVEX HUB - Evade Edition                             ║
+    ║   WindUI Kırmızı Tema | Keyless                          ║
+    ║   v1.0                                                   ║
+    ╚══════════════════════════════════════════════════════════╝
+    
+    Kullanım:
+    1. Executor'da çalıştır
+    2. Key yok, direkt açılır
+    3. Kırmızı tema otomatik uygulanır
+    
+    Özellikler:
+    - Orijinal Evade özellikleri (Move, Map, Extra)
+    - Kryvex özel özellikleri (Fly, Noclip, ESP, Aimbot)
+    - Troll özellikleri (Fling, Hitbox)
+    - Avatar değiştirme
+    - Watermark
+]]
+
+-- ============================================================
+-- WIND UI YÜKLEME
+-- ============================================================
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
+-- ============================================================
+-- SERVİSLER
+-- ============================================================
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Lighting = game:GetService("Lighting")
+local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+
+if not LocalPlayer then
+    error("ERROR: No local player available")
+    return
+end
+
+-- ============================================================
+-- KRYVEX AYARLARI
+-- ============================================================
+local KRYVEX = {
+    Name = "Kryvex Hub",
+    Version = "v1.0",
+    Game = "Evade",
+    Theme = "Crimson",
+}
+
+-- ============================================================
+-- WIND UI PENCERE
+-- ============================================================
+local Window = WindUI:CreateWindow({
+    Title = "Kryvex Hub",
+    Author = "kryvex | " .. KRYVEX.Version,
+    Icon = "rbxassetid://113137557066757",
+    IconThemed = true,
+    Folder = "KryvexHub",
+    Size = UDim2.fromOffset(620, 480),
+    MinSize = Vector2.new(560, 350),
+    MaxSize = Vector2.new(850, 560),
+    Theme = "Crimson",
+    Transparent = true,
+    Resizable = true,
+    HideSearchBar = false,
+    ScrollBarEnabled = true,
+    SideBarWidth = 200,
+    Acrylic = false,
+    NewElements = true,
+    HidePanelBackground = false,
+    AutoScale = true,
+    User = {
+        Enabled = true,
+        Anonymous = false,
+    },
+})
+
+-- ============================================================
+-- CONFIG
+-- ============================================================
+local Config = {
+    -- Movement
+    EnableTeleportWalk = false,
+    TeleportMovementSpeed = 5,
+    EnableEnhancedJump = false,
+    JumpHeight = 50,
+    EnableInfiniteSlide = false,
+    InfiniteSlideBoost = 8,
+    AutoJump = false,
+    AutoJumpSpeed = 1.5,
+    EnableGravityMod = false,
+    GravityScale = 0.5,
+    EnableAutoTrimp = false,
+    AutoTrimpMultiplier = 2.5,
+    AutoTrimpFallSpeed = 0.5,
+    EnableTrimpTeleport = false,
+    
+    -- Map
+    EnableFullBright = false,
+    EnableAutoTicket = false,
+    EnableVoidEscape = false,
+    EnableAntiAfk = false,
+    
+    -- Kryvex New Features
+    EnableKryvexFly = false,
+    FlySpeed = 50,
+    EnableKryvexNoclip = false,
+    EnableKryvexESP = false,
+    KryvexESPDistance = 1000,
+    EnableKryvexAimbot = false,
+    KryvexAimFOV = 200,
+    KryvexAimSmooth = 5,
+    KryvexAimPart = "Head",
+    EnableKryvexSpeed = false,
+    KryvexSpeedValue = 16,
+    EnableKryvexJump = false,
+    KryvexJumpValue = 50,
+    EnableKryvexHitbox = false,
+    KryvexHitboxSize = 5,
+    EnableKryvexTroll = false,
+    EnableKryvexWatermark = true,
+}
+
+-- ============================================================
+-- ORİJİNAL DEĞİŞKENLER
+-- ============================================================
+local camera = Workspace.CurrentCamera
+getgenv().FrontalJumpSpeed = 42
+getgenv().RampMultiplier = 1.55
+local currentSpeed = getgenv().FrontalJumpSpeed
+local lastTick = tick()
+local autoJumpNextTime = 0
+
+-- ============================================================
+-- FULLBRIGHT
+-- ============================================================
+local fullBrightState = {
+    Enabled = false,
+    Connection = nil,
+    Original = nil,
+}
+
+local function captureFullBrightState()
+    if fullBrightState.Original then return end
+    local ok, snapshot = pcall(function()
+        return {
+            Brightness = Lighting.Brightness,
+            Ambient = Lighting.Ambient,
+            OutdoorAmbient = Lighting.OutdoorAmbient,
+            ColorShift_Bottom = Lighting.ColorShift_Bottom,
+            ColorShift_Top = Lighting.ColorShift_Top,
+            GlobalShadows = Lighting.GlobalShadows,
+            ClockTime = Lighting.ClockTime,
+            ExposureCompensation = Lighting.ExposureCompensation,
+            FogColor = Lighting.FogColor,
+            FogEnd = Lighting.FogEnd,
+            FogStart = Lighting.FogStart,
+        }
+    end)
+    if ok and snapshot then fullBrightState.Original = snapshot end
+end
+
+local function applyFullBright()
+    pcall(function()
+        Lighting.GlobalShadows = false
+        Lighting.Brightness = 1
+        Lighting.Ambient = Color3.new(1, 1, 1)
+        Lighting.OutdoorAmbient = Color3.new(1, 1, 1)
+        Lighting.ColorShift_Bottom = Color3.new(1, 1, 1)
+        Lighting.ColorShift_Top = Color3.new(1, 1, 1)
+        Lighting.ClockTime = 12
+        Lighting.ExposureCompensation = 0
+        Lighting.FogColor = Color3.new(1, 1, 1)
+        Lighting.FogEnd = 1e10
+        Lighting.FogStart = 0
+    end)
+end
+
+local function restoreFullBrightState()
+    if not fullBrightState.Original then return end
+    pcall(function()
+        Lighting.Brightness = fullBrightState.Original.Brightness
+        Lighting.Ambient = fullBrightState.Original.Ambient
+        Lighting.OutdoorAmbient = fullBrightState.Original.OutdoorAmbient
+        Lighting.ColorShift_Bottom = fullBrightState.Original.ColorShift_Bottom
+        Lighting.ColorShift_Top = fullBrightState.Original.ColorShift_Top
+        Lighting.GlobalShadows = fullBrightState.Original.GlobalShadows
+        Lighting.ClockTime = fullBrightState.Original.ClockTime
+        Lighting.ExposureCompensation = fullBrightState.Original.ExposureCompensation
+        Lighting.FogColor = fullBrightState.Original.FogColor
+        Lighting.FogEnd = fullBrightState.Original.FogEnd
+        Lighting.FogStart = fullBrightState.Original.FogStart
+    end)
+end
+
+local function setFullBrightEnabled(state)
+    local enabled = state and true or false
+    fullBrightState.Enabled = enabled
+    Config.EnableFullBright = enabled
+    if enabled then
+        captureFullBrightState()
+        applyFullBright()
+        if not fullBrightState.Connection then
+            fullBrightState.Connection = RunService.Heartbeat:Connect(function()
+                if not fullBrightState.Enabled then return end
+                applyFullBright()
+            end)
+        end
+    else
+        if fullBrightState.Connection then
+            fullBrightState.Connection:Disconnect()
+            fullBrightState.Connection = nil
+        end
+        restoreFullBrightState()
+    end
+end
+
+-- ============================================================
+-- SETTINGS
+-- ============================================================
+local SettingsFile = "KRYVEX_Evade_Settings.json"
+
+local function SaveSettings()
+    pcall(function()
+        local data = {}
+        for k, v in pairs(Config) do data[k] = v end
+        writefile(SettingsFile, HttpService:JSONEncode(data))
+    end)
+end
+
+local function LoadSettings()
+    local ok, result = pcall(function()
+        if isfile and isfile(SettingsFile) then
+            local content = readfile(SettingsFile)
+            if content and content ~= "" then
+                return HttpService:JSONDecode(content)
+            end
+        end
+        return nil
+    end)
+    if ok and result then
+        for k, v in pairs(result) do
+            if Config[k] ~= nil then Config[k] = v end
+        end
+    end
+end
+
+LoadSettings()
+
+-- ============================================================
+-- KRYVEX FLY
+-- ============================================================
+local flyConnection = nil
+local function setFlyEnabled(state)
+    Config.EnableKryvexFly = state
+    if flyConnection then flyConnection:Disconnect() flyConnection = nil end
+    if not state then
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if hrp then hrp.Velocity = Vector3.zero end
+        return
+    end
+    flyConnection = RunService.Heartbeat:Connect(function()
+        if not Config.EnableKryvexFly then return end
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+        local direction = Vector3.zero
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then direction += camera.CFrame.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then direction -= camera.CFrame.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then direction -= camera.CFrame.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then direction += camera.CFrame.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then direction += Vector3.new(0, 1, 0) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then direction -= Vector3.new(0, 1, 0) end
+        if direction.Magnitude > 0 then direction = direction.Unit end
+        hrp.Velocity = direction * Config.FlySpeed
+    end)
+end
+
+-- ============================================================
+-- KRYVEX NOCLIP
+-- ============================================================
+local noclipConnection = nil
+local function setNoclipEnabled(state)
+    Config.EnableKryvexNoclip = state
+    if noclipConnection then noclipConnection:Disconnect() noclipConnection = nil end
+    if not state then return end
+    noclipConnection = RunService.Stepped:Connect(function()
+        if not Config.EnableKryvexNoclip then return end
+        local char = LocalPlayer.Character
+        if not char then return end
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = false end
+        end
+    end)
+end
+
+-- ============================================================
+-- KRYVEX ESP
+-- ============================================================
+local espFolder = Instance.new("Folder", Workspace)
+espFolder.Name = "KryvexESP"
+
+local function createESP(player)
+    if player == LocalPlayer then return end
+    if espFolder:FindFirstChild(player.Name) then return end
+    local char = player.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = player.Name
+    billboard.Adornee = hrp
+    billboard.Size = UDim2.fromOffset(200, 50)
+    billboard.StudsOffset = Vector3.new(0, 3, 0)
+    billboard.AlwaysOnTop = true
+    billboard.Parent = espFolder
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.fromScale(1, 1)
+    label.BackgroundTransparency = 1
+    label.Text = player.Name
+    label.TextColor3 = Color3.fromRGB(255, 60, 60)
+    label.TextStrokeTransparency = 0.5
+    label.TextSize = 14
+    label.Font = Enum.Font.GothamBold
+    label.Parent = billboard
+    local highlight = Instance.new("Highlight")
+    highlight.Name = player.Name
+    highlight.Adornee = char
+    highlight.FillColor = Color3.fromRGB(255, 60, 60)
+    highlight.OutlineColor = Color3.fromRGB(255, 60, 60)
+    highlight.FillTransparency = 0.7
+    highlight.Parent = espFolder
+end
+
+local function removeESP()
+    for _, child in ipairs(espFolder:GetChildren()) do child:Destroy() end
+end
+
+local function updateESP()
+    if not Config.EnableKryvexESP then
+        removeESP()
+        return
+    end
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+            if hrp and (hrp.Position - camera.CFrame.Position).Magnitude <= Config.KryvexESPDistance then
+                createESP(player)
+            end
+        end
+    end
+end
+
+-- ============================================================
+-- KRYVEX AIMBOT
+-- ============================================================
+local aimbotConnection = nil
+local function getClosestTarget()
+    local closest, closestDist = nil, Config.KryvexAimFOV
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local part = player.Character:FindFirstChild(Config.KryvexAimPart) or player.Character:FindFirstChild("HumanoidRootPart")
+            if part then
+                local screenPos, onScreen = camera:WorldToViewportPoint(part.Position)
+                if onScreen then
+                    local mousePos = UserInputService:GetMouseLocation()
+                    local dist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
+                    if dist < closestDist then
+                        closest, closestDist = player, dist
+                    end
+                end
+            end
+        end
+    end
+    return closest
+end
+
+local function setAimbotEnabled(state)
+    Config.EnableKryvexAimbot = state
+    if aimbotConnection then aimbotConnection:Disconnect() aimbotConnection = nil end
+    if not state then return end
+    aimbotConnection = RunService.RenderStepped:Connect(function()
+        if not Config.EnableKryvexAimbot then return end
+        if not UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then return end
+        local target = getClosestTarget()
+        if target and target.Character then
+            local part = target.Character:FindFirstChild(Config.KryvexAimPart) or target.Character:FindFirstChild("HumanoidRootPart")
+            if part then
+                camera.CFrame = camera.CFrame:Lerp(CFrame.new(camera.CFrame.Position, part.Position), 1 / Config.KryvexAimSmooth)
+            end
+        end
+    end)
+end
+
+-- ============================================================
+-- KRYVEX HITBOX
+-- ============================================================
+local hitboxOriginals = {}
+local function setHitboxExpander(state)
+    Config.EnableKryvexHitbox = state
+    if not state then
+        for model, parts in pairs(hitboxOriginals) do
+            for part, size in pairs(parts) do
+                if part and part.Parent then part.Size = size end
+            end
+        end
+        hitboxOriginals = {}
+        return
+    end
+end
+
+local function updateHitbox()
+    if not Config.EnableKryvexHitbox then return end
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local char = player.Character
+            hitboxOriginals[char] = hitboxOriginals[char] or {}
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    if not hitboxOriginals[char][part] then
+                        hitboxOriginals[char][part] = part.Size
+                    end
+                    local size = hitboxOriginals[char][part]
+                    part.Size = Vector3.new(size.X * Config.KryvexHitboxSize, size.Y * Config.KryvexHitboxSize, size.Z * Config.KryvexHitboxSize)
+                end
+            end
+        end
+    end
+end
+
+-- ============================================================
+-- KRYVEX SPEED
+-- ============================================================
+local speedConnection = nil
+local function setSpeedEnabled(state)
+    Config.EnableKryvexSpeed = state
+    if speedConnection then speedConnection:Disconnect() speedConnection = nil end
+    if not state then
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then hum.WalkSpeed = 16 end
+        return
+    end
+    speedConnection = RunService.Heartbeat:Connect(function()
+        if not Config.EnableKryvexSpeed then return end
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then hum.WalkSpeed = Config.KryvexSpeedValue end
+    end)
+end
+
+-- ============================================================
+-- KRYVEX JUMP
+-- ============================================================
+local function setJumpEnabled(state)
+    Config.EnableKryvexJump = state
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        if state then
+            hum.UseJumpPower = true
+            hum.JumpPower = Config.KryvexJumpValue
+        else
+            hum.JumpPower = 50
+        end
+    end
+end
+
+-- ============================================================
+-- KRYVEX TROLL
+-- ============================================================
+local trollConnection = nil
+local function setTrollEnabled(state)
+    Config.EnableKryvexTroll = state
+    if trollConnection then trollConnection:Disconnect() trollConnection = nil end
+    if not state then return end
+    trollConnection = RunService.Heartbeat:Connect(function()
+        if not Config.EnableKryvexTroll then return end
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                local otherHrp = player.Character:FindFirstChild("HumanoidRootPart")
+                if otherHrp and (otherHrp.Position - hrp.Position).Magnitude < 20 then
+                    otherHrp.Velocity = Vector3.new(math.random(-100, 100), 100, math.random(-100, 100))
+                end
+            end
+        end
+    end)
+end
+
+-- ============================================================
+-- WATERMARK
+-- ============================================================
+local watermarkGui
+local function createWatermark()
+    if watermarkGui then watermarkGui:Destroy() end
+    if not Config.EnableKryvexWatermark then return end
+    watermarkGui = Instance.new("ScreenGui")
+    watermarkGui.Name = "KryvexWatermark"
+    watermarkGui.ResetOnSpawn = false
+    watermarkGui.IgnoreGuiInset = true
+    watermarkGui.Parent = game:GetService("CoreGui")
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.fromOffset(300, 35)
+    frame.Position = UDim2.new(0.5, -150, 0, 10)
+    frame.BackgroundColor3 = Color3.fromRGB(30, 10, 10)
+    frame.BackgroundTransparency = 0.2
+    frame.BorderSizePixel = 0
+    frame.Parent = watermarkGui
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = frame
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(220, 38, 38)
+    stroke.Thickness = 1
+    stroke.Transparency = 0.3
+    stroke.Parent = frame
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.fromScale(1, 1)
+    label.BackgroundTransparency = 1
+    label.Text = "KRYVEX HUB | " .. KRYVEX.Version .. " | " .. KRYVEX.Game
+    label.TextColor3 = Color3.fromRGB(255, 100, 100)
+    label.TextSize = 13
+    label.Font = Enum.Font.GothamBold
+    label.Parent = frame
+end
+
+-- ============================================================
+-- ORİJİNAL FONKSİYONLAR
+-- ============================================================
+local function applyTeleportWalk()
+    if not Config.EnableTeleportWalk and not Config.EnableTrimpTeleport then return end
+    local char = LocalPlayer.Character
+    if not char or not char.PrimaryPart then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum or hum.Health <= 0 then return end
+    if hum.MoveDirection.Magnitude > 0 then
+        pcall(function()
+            char:TranslateBy(hum.MoveDirection * Config.TeleportMovementSpeed * 0.1)
+        end)
+    end
+end
+
+local function applyEnhancedJump()
+    if not Config.EnableEnhancedJump then return end
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("Humanoid") then return end
+    local hum = char.Humanoid
+    if hum.Health <= 0 then return end
+    if hum:GetState() ~= Enum.HumanoidStateType.Jumping then
+        pcall(function()
+            hum.JumpPower = Config.JumpHeight
+            hum.UseJumpPower = true
+        end)
+    end
+end
+
+local function applyAutoJump()
+    if not Config.AutoJump then return end
+    local now = tick()
+    if now < autoJumpNextTime then return end
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum or hum.Health <= 0 then return end
+    if hum:GetState() == Enum.HumanoidStateType.Running then
+        pcall(function()
+            hum:ChangeState(Enum.HumanoidStateType.Jumping)
+            local jumpsPerSecond = math.clamp(tonumber(Config.AutoJumpSpeed) or 1.5, 0.5, 8)
+            autoJumpNextTime = now + (1 / jumpsPerSecond)
+        end)
+    else
+        autoJumpNextTime = math.min(autoJumpNextTime, now)
+    end
+end
+
+local function applyGravityModification()
+    if not Config.EnableGravityMod then return end
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("Humanoid") or not char:FindFirstChild("HumanoidRootPart") then return end
+    local hum = char.Humanoid
+    local rootPart = char.HumanoidRootPart
+    if hum.Health <= 0 then return end
+    pcall(function()
+        local velocity = rootPart.AssemblyLinearVelocity
+        if velocity.Y < 0 then
+            rootPart.AssemblyLinearVelocity = Vector3.new(velocity.X, velocity.Y * Config.GravityScale, velocity.Z)
+        end
+    end)
+end
+
+local function applyVoidEscape()
+    if not Config.EnableVoidEscape then return end
+    local char = LocalPlayer.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    if root.Position.Y > -350 then return end
+    pcall(function()
+        root.CFrame = CFrame.new(0, 9e9, 0)
+    end)
+end
+
+local function applyAutoTrimp()
+    if not Config.EnableAutoTrimp and not Config.EnableTrimpTeleport then return end
+    local char = LocalPlayer.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    local humanoid = char:FindFirstChild("Humanoid")
+    if not root or not humanoid then return end
+    if humanoid.Health <= 0 then return end
+    local isAir = humanoid.FloorMaterial == Enum.Material.Air
+    pcall(function()
+        if isAir then
+            local vel = root.AssemblyLinearVelocity
+            if vel.Y < 0 then
+                root.AssemblyLinearVelocity = Vector3.new(vel.X, vel.Y * Config.AutoTrimpFallSpeed, vel.Z)
+            end
+        end
+    end)
+end
+
+-- ============================================================
+-- ANA LOOP
+-- ============================================================
+RunService.Heartbeat:Connect(function()
+    pcall(applyTeleportWalk)
+    pcall(applyEnhancedJump)
+    pcall(applyAutoJump)
+    pcall(applyGravityModification)
+    pcall(applyVoidEscape)
+    pcall(applyAutoTrimp)
+end)
+
+local espElapsed = 0
+RunService.Heartbeat:Connect(function(dt)
+    espElapsed += dt
+    if espElapsed >= 0.5 then
+        espElapsed = 0
+        pcall(updateESP)
+        pcall(updateHitbox)
+    end
+end)
+
+-- ============================================================
+-- MOVE TAB
+-- ============================================================
+local MoveTab = Window:Tab({ Title = "Move", Icon = "move", Desc = "Hareket ayarları" })
+
+local MoveSection = MoveTab:Section({ Title = "Movement", Icon = "footprints" })
+
+MoveSection:Toggle({
+    Title = "Teleport Walk",
+    Desc = "Hızlı yürüme",
+    Icon = "footprints",
+    Value = Config.EnableTeleportWalk,
+    Callback = function(state) Config.EnableTeleportWalk = state; SaveSettings() end,
+})
+
+MoveSection:Slider({
+    Title = "Teleport Speed",
+    Desc = "Teleport hızı",
+    Icon = "gauge",
+    Value = { Min = 1, Max = 50, Default = Config.TeleportMovementSpeed },
+    Callback = function(value) Config.TeleportMovementSpeed = value; SaveSettings() end,
+})
+
+MoveSection:Divider()
+
+MoveSection:Toggle({
+    Title = "Enhanced Jump",
+    Desc = "Yüksek zıplama",
+    Icon = "arrow-up",
+    Value = Config.EnableEnhancedJump,
+    Callback = function(state) Config.EnableEnhancedJump = state; SaveSettings() end,
+})
+
+MoveSection:Slider({
+    Title = "Jump Height",
+    Desc = "Zıplama yüksekliği",
+    Icon = "arrow-up",
+    Value = { Min = 20, Max = 300, Default = Config.JumpHeight },
+    Callback = function(value) Config.JumpHeight = value; SaveSettings() end,
+})
+
+MoveSection:Divider()
+
+MoveSection:Toggle({
+    Title = "Auto Jump",
+    Desc = "Otomatik zıplama",
+    Icon = "arrow-up",
+    Value = Config.AutoJump,
+    Callback = function(state) Config.AutoJump = state; SaveSettings() end,
+})
+
+MoveSection:Slider({
+    Title = "Auto Jump Speed",
+    Desc = "Otomatik zıplama hızı",
+    Icon = "gauge",
+    Value = { Min = 0.5, Max = 8, Default = Config.AutoJumpSpeed },
+    Callback = function(value) Config.AutoJumpSpeed = value; SaveSettings() end,
+})
+
+MoveSection:Divider()
+
+MoveSection:Toggle({
+    Title = "Infinite Slide",
+    Desc = "Sonsuz kayma",
+    Icon = "move",
+    Value = Config.EnableInfiniteSlide,
+    Callback = function(state) Config.EnableInfiniteSlide = state; SaveSettings() end,
+})
+
+MoveSection:Slider({
+    Title = "Slide Speed",
+    Desc = "Kayma hızı",
+    Icon = "gauge",
+    Value = { Min = 1, Max = 150, Default = Config.InfiniteSlideBoost },
+    Callback = function(value) Config.InfiniteSlideBoost = value; SaveSettings() end,
+})
+
+MoveSection:Divider()
+
+MoveSection:Toggle({
+    Title = "Auto Trimp",
+    Desc = "Otomatik trimp",
+    Icon = "zap",
+    Value = Config.EnableAutoTrimp,
+    Callback = function(state) Config.EnableAutoTrimp = state; SaveSettings() end,
+})
+
+MoveSection:Slider({
+    Title = "Trimp Multiplier",
+    Desc = "Trimp çarpanı",
+    Icon = "zap",
+    Value = { Min = 1, Max = 10, Default = Config.AutoTrimpMultiplier },
+    Callback = function(value) Config.AutoTrimpMultiplier = value; SaveSettings() end,
+})
+
+-- ============================================================
+-- MAP TAB
+-- ============================================================
+local MapTab = Window:Tab({ Title = "Map", Icon = "map", Desc = "Harita ayarları" })
+
+local MapSection = MapTab:Section({ Title = "Visual", Icon = "eye" })
+
+MapSection:Toggle({
+    Title = "FullBright",
+    Desc = "Haritayı aydınlat",
+    Icon = "sun",
+    Value = Config.EnableFullBright,
+    Callback = function(state) setFullBrightEnabled(state) end,
+})
+
+MapSection:Divider()
+
+MapSection:Toggle({
+    Title = "Auto Ticket",
+    Desc = "Otomatik ticket",
+    Icon = "ticket",
+    Value = Config.EnableAutoTicket,
+    Callback = function(state) Config.EnableAutoTicket = state; SaveSettings() end,
+})
+
+MapSection:Toggle({
+    Title = "Void Escape",
+    Desc = "Boşluktan kaç",
+    Icon = "shield",
+    Value = Config.EnableVoidEscape,
+    Callback = function(state) Config.EnableVoidEscape = state; SaveSettings() end,
+})
+
+MapSection:Divider()
+
+MapSection:Toggle({
+    Title = "Anti AFK",
+    Desc = "AFK kalmama",
+    Icon = "clock",
+    Value = Config.EnableAntiAfk,
+    Callback = function(state)
+        Config.EnableAntiAfk = state
+        if state then
+            task.spawn(function()
+                while Config.EnableAntiAfk do
+                    pcall(function()
+                        game:GetService("VirtualInputManager"):SendMouseWheelEvent(0, 0, true, game)
+                    end)
+                    task.wait(60)
+                end
+            end)
+        end
+        SaveSettings()
+    end,
+})
+
+-- ============================================================
+-- KRYVEX TAB
+-- ============================================================
+local KryvexTab = Window:Tab({ Title = "Kryvex", Icon = "sparkles", Desc = "Kryvex özel özellikleri" })
+
+local FlySection = KryvexTab:Section({ Title = "Fly", Icon = "plane" })
+
+FlySection:Toggle({
+    Title = "Enable Fly",
+    Desc = "WASD ile uç",
+    Icon = "plane",
+    Value = Config.EnableKryvexFly,
+    Callback = function(state) setFlyEnabled(state) end,
+})
+
+FlySection:Slider({
+    Title = "Fly Speed",
+    Desc = "Uçuş hızı",
+    Icon = "gauge",
+    Value = { Min = 10, Max = 200, Default = Config.FlySpeed },
+    Callback = function(value) Config.FlySpeed = value end,
+})
+
+FlySection:Divider()
+
+FlySection:Toggle({
+    Title = "Noclip",
+    Desc = "Duvarlardan geç",
+    Icon = "ghost",
+    Value = Config.EnableKryvexNoclip,
+    Callback = function(state) setNoclipEnabled(state) end,
+})
+
+local CombatSection = KryvexTab:Section({ Title = "Combat", Icon = "crosshair" })
+
+CombatSection:Toggle({
+    Title = "Aimbot",
+    Desc = "RMB ile aim",
+    Icon = "crosshair",
+    Value = Config.EnableKryvexAimbot,
+    Callback = function(state) setAimbotEnabled(state) end,
+})
+
+CombatSection:Slider({
+    Title = "Aim FOV",
+    Desc = "Aim görüş açısı",
+    Icon = "circle-dashed",
+    Value = { Min = 50, Max = 500, Default = Config.KryvexAimFOV },
+    Callback = function(value) Config.KryvexAimFOV = value end,
+})
+
+CombatSection:Slider({
+    Title = "Aim Smooth",
+    Desc = "Aim yumuşaklığı",
+    Icon = "activity",
+    Value = { Min = 1, Max = 20, Default = Config.KryvexAimSmooth },
+    Callback = function(value) Config.KryvexAimSmooth = value end,
+})
+
+CombatSection:Dropdown({
+    Title = "Aim Part",
+    Desc = "Nişan alınacak bölge",
+    Icon = "target",
+    Values = {"Head", "UpperTorso", "HumanoidRootPart"},
+    Value = Config.KryvexAimPart,
+    Callback = function(value) Config.KryvexAimPart = value end,
+})
+
+CombatSection:Divider()
+
+CombatSection:Toggle({
+    Title = "Hitbox Expander",
+    Desc = "Hitbox büyüt",
+    Icon = "expand",
+    Value = Config.EnableKryvexHitbox,
+    Callback = function(state) setHitboxExpander(state) end,
+})
+
+CombatSection:Slider({
+    Title = "Hitbox Size",
+    Desc = "Hitbox boyutu",
+    Icon = "expand",
+    Value = { Min = 1, Max = 10, Default = Config.KryvexHitboxSize },
+    Callback = function(value) Config.KryvexHitboxSize = value end,
+})
+
+local ESP_Section = KryvexTab:Section({ Title = "ESP", Icon = "eye" })
+
+ESP_Section:Toggle({
+    Title = "Enable ESP",
+    Desc = "Oyuncuları gör",
+    Icon = "eye",
+    Value = Config.EnableKryvexESP,
+    Callback = function(state)
+        Config.EnableKryvexESP = state
+        if not state then removeESP() end
+    end,
+})
+
+ESP_Section:Slider({
+    Title = "ESP Distance",
+    Desc = "ESP mesafesi",
+    Icon = "ruler",
+    Value = { Min = 100, Max = 5000, Default = Config.KryvexESPDistance },
+    Callback = function(value) Config.KryvexESPDistance = value end,
+})
+
+local PlayerSection = KryvexTab:Section({ Title = "Player", Icon = "user" })
+
+PlayerSection:Toggle({
+    Title = "Speed",
+    Desc = "Hız",
+    Icon = "gauge",
+    Value = Config.EnableKryvexSpeed,
+    Callback = function(state) setSpeedEnabled(state) end,
+})
+
+PlayerSection:Slider({
+    Title = "Speed Value",
+    Desc = "Hız değeri",
+    Icon = "gauge",
+    Value = { Min = 16, Max = 500, Default = Config.KryvexSpeedValue },
+    Callback = function(value) Config.KryvexSpeedValue = value end,
+})
+
+PlayerSection:Divider()
+
+PlayerSection:Toggle({
+    Title = "Jump Power",
+    Desc = "Zıplama gücü",
+    Icon = "arrow-up",
+    Value = Config.EnableKryvexJump,
+    Callback = function(state) setJumpEnabled(state) end,
+})
+
+PlayerSection:Slider({
+    Title = "Jump Value",
+    Desc = "Zıplama değeri",
+    Icon = "arrow-up",
+    Value = { Min = 50, Max = 500, Default = Config.KryvexJumpValue },
+    Callback = function(value)
+        Config.KryvexJumpValue = value
+        if Config.EnableKryvexJump then
+            local char = LocalPlayer.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            if hum then hum.JumpPower = value end
+        end
+    end,
+})
+
+local TrollSection = KryvexTab:Section({ Title = "Troll", Icon = "flame" })
+
+TrollSection:Toggle({
+    Title = "Enable Troll",
+    Desc = "Yakındaki oyuncuları flingle",
+    Icon = "flame",
+    Value = Config.EnableKryvexTroll,
+    Callback = function(state) setTrollEnabled(state) end,
+})
+
+TrollSection:Button({
+    Title = "Fling All Players",
+    Desc = "Herkesi flingle",
+    Icon = "wind",
+    Callback = function()
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    hrp.Velocity = Vector3.new(math.random(-500, 500), 500, math.random(-500, 500))
+                end
+            end
+        end
+        Window:Notify({
+            Title = "Kryvex Troll",
+            Content = "Herkes flinglendi!",
+            Icon = "check",
+            Duration = 3,
+        })
+    end,
+})
+
+-- ============================================================
+-- AVATAR TAB
+-- ============================================================
+local AvatarTab = Window:Tab({ Title = "Avatar", Icon = "user", Desc = "Avatar değiştir" })
+
+local AvatarSection = AvatarTab:Section({ Title = "Avatar Change", Icon = "user" })
+
+local avatarInput = AvatarSection:Input({
+    Title = "Username",
+    Desc = "Avatarını değiştirmek istediğin oyuncunun adı",
+    Icon = "user",
+    Placeholder = "Username",
+    Value = "",
+    Callback = function(value) end,
+})
+
+AvatarSection:Button({
+    Title = "Apply Avatar",
+    Desc = "Avatarı uygula",
+    Icon = "check",
+    Callback = function()
+        local username = avatarInput.Value
+        if username == "" then
+            Window:Notify({ Title = "Hata", Content = "Kullanıcı adı boş olamaz", Icon = "x", Duration = 3 })
+            return
+        end
+        local rigsFolder = workspace:FindFirstChild("Rigs")
+        local visualRig = rigsFolder and rigsFolder:FindFirstChild(LocalPlayer.Name)
+        local humanoid = visualRig and visualRig:FindFirstChildOfClass("Humanoid")
+        if not humanoid then
+            Window:Notify({ Title = "Hata", Content = "Visual rig bulunamadı", Icon = "x", Duration = 3 })
+            return
+        end
+        local okUser, userId = pcall(function() return Players:GetUserIdFromNameAsync(username) end)
+        if not okUser then
+            Window:Notify({ Title = "Hata", Content = "Kullanıcı bulunamadı", Icon = "x", Duration = 3 })
+            return
+        end
+        local okDesc, desc = pcall(function() return Players:GetHumanoidDescriptionFromUserId(userId) end)
+        if not okDesc then
+            Window:Notify({ Title = "Hata", Content = "Avatar yüklenemedi", Icon = "x", Duration = 3 })
+            return
+        end
+        local okApply = pcall(function() humanoid:ApplyDescriptionReset(desc) end)
+        if okApply then
+            Window:Notify({ Title = "Başarılı", Content = username .. " avatarı uygulandı", Icon = "check", Duration = 3 })
+        else
+            Window:Notify({ Title = "Hata", Content = "Avatar uygulanamadı", Icon = "x", Duration = 3 })
+        end
+    end,
+})
+
+-- ============================================================
+-- SETTINGS TAB
+-- ============================================================
+local SettingsTab = Window:Tab({ Title = "Settings", Icon = "settings", Desc = "Kryvex ayarları" })
+
+local SettingsSection = SettingsTab:Section({ Title = "Config", Icon = "save" })
+
+SettingsSection:Toggle({
+    Title = "Watermark",
+    Desc = "Kryvex watermark göster",
+    Icon = "droplet",
+    Value = Config.EnableKryvexWatermark,
+    Callback = function(state) Config.EnableKryvexWatermark = state; createWatermark() end,
+})
+
+SettingsSection:Button({
+    Title = "Save Settings",
+    Desc = "Ayarları kaydet",
+    Icon = "save",
+    Callback = function()
+        SaveSettings()
+        Window:Notify({ Title = "Kryvex", Content = "Ayarlar kaydedildi", Icon = "check", Duration = 3 })
+    end,
+})
+
+SettingsSection:Button({
+    Title = "Load Settings",
+    Desc = "Ayarları yükle",
+    Icon = "download",
+    Callback = function()
+        LoadSettings()
+        Window:Notify({ Title = "Kryvex", Content = "Ayarlar yüklendi", Icon = "check", Duration = 3 })
+    end,
+})
+
+SettingsSection:Divider()
+
+SettingsSection:Button({
+    Title = "Unload Kryvex",
+    Desc = "Kryvex'i kapat",
+    Icon = "power",
+    Callback = function() Window:Destroy() end,
+})
+
+-- ============================================================
+-- WATERMARK OLUŞTUR
+-- ============================================================
+createWatermark()
+
+-- ============================================================
+-- KONSOL BİLGİSİ
+-- ============================================================
+print("\n" .. string.rep("=", 60))
+print("KRYVEX HUB " .. KRYVEX.Version .. " - " .. KRYVEX.Game)
+print("WindUI Kırmızı Tema | Keyless")
+print(string.rep("=", 60))
+print("✓ Key sistemi KALDIRILDI")
+print("✓ WindUI yüklendi")
+print("✓ Kırmızı tema (Crimson) aktif")
+print("✓ Kryvex özel özellikleri eklendi")
+print("✓ Orijinal Evade özellikleri korundu")
+print(string.rep("=", 60) .. "\n")
+
+return KRYVEX
