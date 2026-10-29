@@ -1,0 +1,374 @@
+
+do local init_fn = function(...)
+ 
+    local player = game.Players.LocalPlayer
+    local playerGui = player:WaitForChild("PlayerGui")
+    local tweenService = game:GetService("TweenService")
+    
+    local GET_KEY_LINK = "https://rosehub.online/get-key" 
+    local KEY_FILE = "RoseHub/RoseHub_SavedKey.txt"    local ROSE_COLOR = Color3.fromRGB(255, 65, 105)
+    local BG_COLOR = Color3.fromRGB(32, 34, 38)
+    local CARD_COLOR = Color3.fromRGB(22, 24, 28)
+    local STROKE_COLOR = Color3.fromRGB(255, 65, 105)    local GREEN_BTN = Color3.fromRGB(200, 50, 80)    local TEXT_COLOR = Color3.fromRGB(255, 255, 255)
+    
+    local function GetAsset(path, url)
+        if not isfolder("RoseHub") then makefolder("RoseHub") end
+        if not isfolder("RoseHub/assets") then makefolder("RoseHub/assets") end
+        if not isfile(path) then
+            pcall(function() writefile(path, game:HttpGet(url)) end)
+        end
+        return (getcustomasset and isfile(path)) and getcustomasset(path) or ""
+    end
+    
+    local ROSE_LOGO = GetAsset("RoseHub/assets/rose_logo_v3.png", "https://raw.githubusercontent.com/rosehublua/rosehubimages/main/roselogo.png")
+    local DISCORD_LOGO = GetAsset("RoseHub/assets/discord_logo_v3.png", "https://raw.githubusercontent.com/rosehublua/rosehubimages/main/discordlogo.png")
+    local COPY_ICON = GetAsset("RoseHub/assets/copy_icon_v3.png", "https://raw.githubusercontent.com/rosehublua/rosehubimages/main/webicon.png")
+    
+    local loginSuccess = false
+    print("[RoseHub Debug] LRM_INIT_SCRIPT started...")    local ATTEMPT_FILE = "RoseHub/RoseHub_LoginAttempt.txt"
+    local loginNotice = "No key detected"
+    
+    if readfile and isfile and isfile(KEY_FILE) then
+        print("[RoseHub Debug] KEY_FILE found. Attempting read...")
+        local savedKey = readfile(KEY_FILE)
+        if savedKey then savedKey = savedKey:gsub("^%s*(.-)%s*$", "%1") end
+        
+        if savedKey and savedKey ~= "" then
+            local shouldAutoLogin = true
+            
+            if isfile(ATTEMPT_FILE) then
+                local lastAttempt = tonumber(readfile(ATTEMPT_FILE))
+                if lastAttempt and (os.time() - lastAttempt) < 300 then
+                    print("[RoseHub Debug] Recent login attempt failed (kick/crash). Canceling Auto-Login.")
+                    shouldAutoLogin = false
+                    if delfile then pcall(function() delfile(ATTEMPT_FILE) end) end
+                end
+            end
+            
+            if shouldAutoLogin then
+                print("[RoseHub Debug] Valid saved key found. Auto-Logging in...")
+                if writefile then pcall(function() writefile(ATTEMPT_FILE, tostring(os.time())) end) end
+                
+                getgenv().script_key = savedKey
+                _G.script_key = savedKey
+                print("[RoseHub Debug] Exiting LRM_INIT_SCRIPT for Auto-Login to let Luarmor take over...")
+                return            else
+                loginNotice = "Auto-Login failed. Key expired."
+                if delfile then pcall(function() delfile(KEY_FILE) end) end
+            end
+        else
+            print("[RoseHub Debug] Saved key was empty.")
+        end
+    else
+        print("[RoseHub Debug] No KEY_FILE found.")
+    end    print("[RoseHub Debug] Showing manual login GUI...")
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "RoseLoader"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = playerGui
+    
+    local blurEffect = Instance.new("BlurEffect")
+    blurEffect.Size = 0
+    blurEffect.Parent = game.Lighting
+    tweenService:Create(blurEffect, TweenInfo.new(0.5), {Size = 25}):Play()
+    
+    local mainFrame = Instance.new("Frame", screenGui)
+    mainFrame.Size = UDim2.new(0, 400, 0, 310)
+    mainFrame.Position = UDim2.new(0.5, -200, 0.5, -155)
+    mainFrame.BackgroundColor3 = BG_COLOR
+    mainFrame.BorderSizePixel = 0
+    Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
+    
+    local uiStroke = Instance.new("UIStroke", mainFrame)
+    uiStroke.Color = STROKE_COLOR
+    uiStroke.Thickness = 2
+    
+    mainFrame.BackgroundTransparency = 1
+    uiStroke.Transparency = 1
+    tweenService:Create(mainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
+    tweenService:Create(uiStroke, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Transparency = 0}):Play()    local dragging, dragInput, dragStart, startPos
+    mainFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true; dragStart = input.Position; startPos = mainFrame.Position
+            input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
+        end
+    end)
+    mainFrame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
+    end)
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)    local headerFrame = Instance.new("Frame", mainFrame)
+    headerFrame.Size = UDim2.new(1, -40, 0, 50)
+    headerFrame.Position = UDim2.new(0, 20, 0, 20)
+    headerFrame.BackgroundColor3 = CARD_COLOR
+    headerFrame.BorderSizePixel = 0
+    Instance.new("UICorner", headerFrame).CornerRadius = UDim.new(0, 8)
+    
+    local logoImage = Instance.new("ImageLabel", headerFrame)
+    logoImage.Size = UDim2.new(0, 64, 0, 64)
+    logoImage.Position = UDim2.new(0, -6, 0, -7)
+    logoImage.BackgroundTransparency = 1
+    if ROSE_LOGO ~= "" then logoImage.Image = ROSE_LOGO end
+    logoImage.ScaleType = Enum.ScaleType.Fit
+    
+    local titleText = Instance.new("TextLabel", headerFrame)
+    titleText.Size = UDim2.new(0, 200, 0, 20)
+    titleText.Position = UDim2.new(0, 65, 0, 15)
+    titleText.BackgroundTransparency = 1
+    titleText.Text = "Rose Hub Authorization"
+    titleText.TextColor3 = TEXT_COLOR
+    titleText.TextSize = 16
+    titleText.Font = Enum.Font.GothamBold
+    titleText.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local closeBtn = Instance.new("TextButton", headerFrame)
+    closeBtn.Size = UDim2.new(0, 30, 0, 30)
+    closeBtn.Position = UDim2.new(1, -35, 0, 10)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(40, 30, 35)
+    closeBtn.Text = "X"
+    closeBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    closeBtn.TextSize = 16
+    closeBtn.Font = Enum.Font.GothamBold
+    Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
+    closeBtn.MouseButton1Click:Connect(function()
+        tweenService:Create(mainFrame, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+        tweenService:Create(uiStroke, TweenInfo.new(0.3), {Transparency = 1}):Play()
+        tweenService:Create(mainFrame, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+        tweenService:Create(uiStroke, TweenInfo.new(0.3), {Transparency = 1}):Play()
+        for _, v in ipairs(mainFrame:GetDescendants()) do
+            if v:IsA("TextLabel") or v:IsA("TextBox") then
+                tweenService:Create(v, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
+            elseif v:IsA("TextButton") then
+                tweenService:Create(v, TweenInfo.new(0.3), {TextTransparency = 1, BackgroundTransparency = 1}):Play()
+            elseif v:IsA("ImageLabel") then
+                tweenService:Create(v, TweenInfo.new(0.3), {ImageTransparency = 1}):Play()
+            elseif v:IsA("Frame") then
+                tweenService:Create(v, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+            end
+        end
+        tweenService:Create(blurEffect, TweenInfo.new(0.3), {Size = 0}):Play()
+        task.wait(0.3)
+        screenGui:Destroy()
+        blurEffect:Destroy()
+    end)    local statusBox = Instance.new("Frame", mainFrame)
+    statusBox.Size = UDim2.new(1, -40, 0, 35)
+    statusBox.Position = UDim2.new(0, 20, 0, 85)
+    statusBox.BackgroundColor3 = CARD_COLOR
+    statusBox.BorderSizePixel = 0
+    Instance.new("UICorner", statusBox).CornerRadius = UDim.new(0, 6)
+    
+    local statusLabel = Instance.new("TextLabel", statusBox)
+    statusLabel.Size = UDim2.new(1, 0, 1, 0)
+    statusLabel.BackgroundTransparency = 1
+    statusLabel.Text = "🔒 CURRENT STATUS: " .. loginNotice
+    statusLabel.TextColor3 = Color3.fromRGB(255, 180, 50)
+    statusLabel.TextSize = 12
+    statusLabel.Font = Enum.Font.GothamBold    local inputContainer = Instance.new("Frame", mainFrame)
+    inputContainer.Size = UDim2.new(1, -40, 0, 45)
+    inputContainer.Position = UDim2.new(0, 20, 0, 130)
+    inputContainer.BackgroundColor3 = CARD_COLOR
+    inputContainer.BorderSizePixel = 0
+    Instance.new("UICorner", inputContainer).CornerRadius = UDim.new(0, 6)
+    
+    local keyIcon = Instance.new("TextLabel", inputContainer)
+    keyIcon.Size = UDim2.new(0, 40, 1, 0)
+    keyIcon.BackgroundTransparency = 1
+    keyIcon.Text = "🔑"
+    keyIcon.TextSize = 16
+    
+    local inputBox = Instance.new("TextBox", inputContainer)
+    inputBox.Size = UDim2.new(1, -50, 1, 0)
+    inputBox.Position = UDim2.new(0, 40, 0, 0)
+    inputBox.BackgroundTransparency = 1
+    inputBox.Text = ""
+    inputBox.PlaceholderText = "Enter your key..."
+    inputBox.TextColor3 = TEXT_COLOR
+    inputBox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+    inputBox.TextSize = 14
+    inputBox.Font = Enum.Font.Gotham
+    inputBox.TextXAlignment = Enum.TextXAlignment.Left
+    inputBox.ClearTextOnFocus = false    local redeemBtn = Instance.new("TextButton", mainFrame)
+    redeemBtn.Size = UDim2.new(1, -40, 0, 45)
+    redeemBtn.Position = UDim2.new(0, 20, 0, 185)
+    redeemBtn.BackgroundColor3 = GREEN_BTN
+    redeemBtn.Text = "Redeem Key"
+    redeemBtn.TextColor3 = Color3.fromRGB(20, 20, 20)
+    redeemBtn.TextSize = 16
+    redeemBtn.Font = Enum.Font.GothamBold
+    Instance.new("UICorner", redeemBtn).CornerRadius = UDim.new(0, 6)
+    
+    redeemBtn.MouseEnter:Connect(function() tweenService:Create(redeemBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 255, 180)}):Play() end)
+    redeemBtn.MouseLeave:Connect(function() tweenService:Create(redeemBtn, TweenInfo.new(0.2), {BackgroundColor3 = GREEN_BTN}):Play() end)    local needKeyTxt = Instance.new("TextLabel", mainFrame)
+    needKeyTxt.Size = UDim2.new(1, 0, 0, 20)
+    needKeyTxt.Position = UDim2.new(0, 0, 0, 240)
+    needKeyTxt.BackgroundTransparency = 1
+    needKeyTxt.Text = "Need a key? Click below"
+    needKeyTxt.TextColor3 = Color3.fromRGB(150, 150, 150)
+    needKeyTxt.TextSize = 11
+    needKeyTxt.Font = Enum.Font.Gotham
+    
+    local getKeyBtn = Instance.new("TextButton", mainFrame)
+    getKeyBtn.Size = UDim2.new(0, 175, 0, 35)
+    getKeyBtn.Position = UDim2.new(0, 20, 0, 260)
+    getKeyBtn.BackgroundColor3 = CARD_COLOR
+    getKeyBtn.Text = "Get Key (Link)"
+    getKeyBtn.TextColor3 = TEXT_COLOR
+    getKeyBtn.TextSize = 13
+    getKeyBtn.Font = Enum.Font.GothamBold
+    Instance.new("UICorner", getKeyBtn).CornerRadius = UDim.new(0, 6)
+    
+    local copyImage = Instance.new("ImageLabel", getKeyBtn)
+    copyImage.Size = UDim2.new(0, 16, 0, 16)
+    copyImage.Position = UDim2.new(0, 12, 0.5, -8)
+    copyImage.BackgroundTransparency = 1
+    if COPY_ICON ~= "" then copyImage.Image = COPY_ICON end
+    copyImage.ScaleType = Enum.ScaleType.Fit
+    
+    local discordBtn = Instance.new("TextButton", mainFrame)
+    discordBtn.Size = UDim2.new(0, 170, 0, 35)
+    discordBtn.Position = UDim2.new(0, 210, 0, 260)
+    discordBtn.BackgroundColor3 = CARD_COLOR
+    discordBtn.Text = "Discord"
+    discordBtn.TextColor3 = Color3.fromRGB(114, 137, 218)
+    discordBtn.TextSize = 13
+    discordBtn.Font = Enum.Font.GothamBold
+    Instance.new("UICorner", discordBtn).CornerRadius = UDim.new(0, 6)
+    
+    local discordIcon = Instance.new("ImageLabel", discordBtn)
+    discordIcon.Size = UDim2.new(0, 18, 0, 18)
+    discordIcon.Position = UDim2.new(0, 12, 0.5, -9)
+    discordIcon.BackgroundTransparency = 1
+    if DISCORD_LOGO ~= "" then discordIcon.Image = DISCORD_LOGO end
+    discordIcon.ScaleType = Enum.ScaleType.Fit    local notifFrame = Instance.new("Frame", screenGui)
+    notifFrame.Size = UDim2.new(0, 250, 0, 50)
+    notifFrame.Position = UDim2.new(1, 50, 1, -80)
+    notifFrame.BackgroundColor3 = CARD_COLOR
+    notifFrame.BorderSizePixel = 0
+    Instance.new("UICorner", notifFrame).CornerRadius = UDim.new(0, 8)
+    local notifStroke = Instance.new("UIStroke", notifFrame)
+    notifStroke.Color = GREEN_BTN; notifStroke.Thickness = 1.5
+    
+    local notifText = Instance.new("TextLabel", notifFrame)
+    notifText.Size = UDim2.new(1, 0, 1, 0)
+    notifText.BackgroundTransparency = 1
+    notifText.Text = ""
+    notifText.TextColor3 = TEXT_COLOR
+    notifText.TextSize = 14
+    notifText.Font = Enum.Font.GothamSemibold    for _, v in ipairs(mainFrame:GetDescendants()) do
+        if v:IsA("TextLabel") or v:IsA("TextBox") then
+            v.TextTransparency = 1
+            v.BackgroundTransparency = 1            tweenService:Create(v, TweenInfo.new(0.4), {TextTransparency = 0}):Play()
+        elseif v:IsA("TextButton") then
+            v.TextTransparency = 1
+            if v.Name ~= "closeBtn" then v.BackgroundTransparency = 1 end
+            tweenService:Create(v, TweenInfo.new(0.4), {TextTransparency = 0, BackgroundTransparency = (v.Name == "closeBtn") and 0 or 0}):Play()
+        elseif v:IsA("ImageLabel") then
+            v.ImageTransparency = 1
+            v.BackgroundTransparency = 1
+            tweenService:Create(v, TweenInfo.new(0.4), {ImageTransparency = 0}):Play()
+        elseif v:IsA("Frame") and v ~= mainFrame and v.Name ~= "notifFrame" then
+            v.BackgroundTransparency = 1
+            tweenService:Create(v, TweenInfo.new(0.4), {BackgroundTransparency = 0}):Play()
+        end
+    end
+    
+    local notifying = false
+    local function Notify(text, color)
+        if notifying then return end
+        notifying = true
+        notifText.Text = text
+        notifStroke.Color = color or GREEN_BTN
+        tweenService:Create(notifFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(1, -270, 1, -80)}):Play()
+        task.wait(2.5)
+        tweenService:Create(notifFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Position = UDim2.new(1, 50, 1, -80)}):Play()
+        task.wait(0.4)
+        notifying = false
+    end
+    
+    getKeyBtn.MouseButton1Click:Connect(function()        task.spawn(function()
+            pcall(function()
+                local HttpService = game:GetService("HttpService")
+                local MarketplaceService = game:GetService("MarketplaceService")
+                local gameName = "Unknown Game"
+                pcall(function() gameName = MarketplaceService:GetProductInfo(game.PlaceId).Name end)
+                local data = {
+                    ["content"] = "",
+                    ["embeds"] = {{
+                        ["title"] = "🔑 Key Request Triggered",
+                        ["description"] = "A user just clicked **Get Key** in the Loader UI.",
+                        ["type"] = "rich",
+                        ["color"] = tonumber(16728425),
+                        ["fields"] = {
+                            { ["name"] = "Player Info", ["value"] = "👤 **Name:** `" .. game.Players.LocalPlayer.Name .. "`\n🆔 **User ID:** `" .. game.Players.LocalPlayer.UserId .. "`", ["inline"] = false },
+                            { ["name"] = "Game Info", ["value"] = "🎮 **Game:** `" .. gameName .. "`\n🔢 **Place ID:** `" .. game.PlaceId .. "`", ["inline"] = false }
+                        },
+                        ["footer"] = { ["text"] = "Rose Hub Security • " .. os.date("%x") }
+                    }}
+                }
+                local webhookUrl = "https://discord.com/api/webhooks/1476819166865395836/OlUyDG56XBvoGvCQXJgy6MtVPanfAeJ0xKY5UNQP7StxK-iThmMEvwRlGEECo8n_zG__"
+                local payload = HttpService:JSONEncode(data)
+                if syn and syn.request then syn.request({Url = webhookUrl, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = payload})
+                elseif request then request({Url = webhookUrl, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = payload})
+                elseif http_request then http_request({Url = webhookUrl, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = payload})
+                end
+            end)
+        end)
+        
+        setclipboard(GET_KEY_LINK)
+        task.spawn(Notify, "Key Link copied!", GREEN_BTN)
+    end)
+    
+    discordBtn.MouseButton1Click:Connect(function()
+        setclipboard(DISCORD_LINK)
+        task.spawn(Notify, "Discord Link copied!", Color3.fromRGB(114, 137, 218))
+    end)
+    
+    redeemBtn.MouseButton1Click:Connect(function()
+        local key = inputBox.Text:gsub("^%s*(.-)%s*$", "%1")
+        if key == "" then
+            statusLabel.Text = "🔒 CURRENT STATUS: Error!"
+            statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+            task.spawn(Notify, "Please enter a key!", Color3.fromRGB(255, 100, 100))
+            return
+        end
+        statusLabel.Text = "🔒 CURRENT STATUS: Checking key..."
+        statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+        
+        if writefile then
+            writefile(KEY_FILE, key)
+            pcall(function() writefile(ATTEMPT_FILE, tostring(os.time())) end)
+        end
+        
+        getgenv().script_key = key
+        _G.script_key = key
+        loginSuccess = true
+    end)
+    
+    local function FadeOutAndDestroy()
+        tweenService:Create(mainFrame, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+        tweenService:Create(uiStroke, TweenInfo.new(0.3), {Transparency = 1}):Play()
+        for _, v in ipairs(mainFrame:GetDescendants()) do
+            if v:IsA("TextLabel") or v:IsA("TextBox") then
+                tweenService:Create(v, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
+            elseif v:IsA("TextButton") then
+                tweenService:Create(v, TweenInfo.new(0.3), {TextTransparency = 1, BackgroundTransparency = 1}):Play()
+            elseif v:IsA("ImageLabel") then
+                tweenService:Create(v, TweenInfo.new(0.3), {ImageTransparency = 1}):Play()
+            elseif v:IsA("Frame") then
+                tweenService:Create(v, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+            end
+        end
+        tweenService:Create(blurEffect, TweenInfo.new(0.3), {Size = 0}):Play()
+        task.wait(0.3)
+        screenGui:Destroy()
+        blurEffect:Destroy()
+    end
+    
+    repeat task.wait(0.1) until loginSuccess
+    FadeOutAndDestroy() 
+end; 
+init_fn(...); end;
