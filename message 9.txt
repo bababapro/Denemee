@@ -1,0 +1,2636 @@
+-- This file was created by Dominator Logger | By Dominator
+
+local tweenService = game:GetService("TweenService")
+local coreGui = game:GetService("CoreGui")
+local runService = game:GetService("RunService")
+local players = game:GetService("Players")
+local userInputService = game:GetService("UserInputService")
+local virtualUser = game:GetService("VirtualUser")
+local starterGui = game:GetService("StarterGui")
+
+local v1 = getgenv and getgenv() or _G
+v1.__HUB_SESSION = (v1.__HUB_SESSION or 0) + 1
+
+local v2, v3 = pcall(function()
+  local localPlayer = players.LocalPlayer
+
+  local playerGui = localPlayer:FindFirstChild("PlayerGui")
+    or localPlayer:WaitForChild("PlayerGui")
+
+  if coreGui:FindFirstChild("EgitimLoader_GUI") then
+    coreGui:FindFirstChild("EgitimLoader_GUI"):Destroy()
+  end
+
+  if playerGui:FindFirstChild("EgitimLoader_GUI") then
+    playerGui:FindFirstChild("EgitimLoader_GUI"):Destroy()
+  end
+
+  if coreGui:FindFirstChild("EgitimHub_GUI") then
+    coreGui:FindFirstChild("EgitimHub_GUI"):Destroy()
+  end
+
+  if playerGui:FindFirstChild("EgitimHub_GUI") then
+    playerGui:FindFirstChild("EgitimHub_GUI"):Destroy()
+  end
+
+  local function f1()
+    local v4 = {
+      "https://raw.githubusercontent.com/monkeydluffyezz123/roblox-hub/main/roblox/Universal_Hub.txt",
+      "https://raw.githubusercontent.com/monkeydluffyezz123/roblox-hub/main/Universal_Hub.txt",
+    }
+
+    local function f2()
+      task.wait(0.4)
+      local robloxUniversalHubTxt
+
+      for index, value in ipairs(v4) do
+        local v5 = value
+
+        pcall(function()
+          local httpGet = game:HttpGet(v5)
+
+          if httpGet and #httpGet > 100 then
+            robloxUniversalHubTxt = httpGet
+          end
+        end)
+
+        if robloxUniversalHubTxt then
+          break
+        end
+      end
+
+      if (not robloxUniversalHubTxt or #robloxUniversalHubTxt < 100) and readfile and isfile then
+        pcall(function()
+          if isfile("roblox/Universal_Hub.txt") then
+            robloxUniversalHubTxt = readfile("roblox/Universal_Hub.txt")
+          elseif isfile("Universal_Hub.txt") then
+            robloxUniversalHubTxt = readfile("Universal_Hub.txt")
+          end
+        end)
+      end
+
+      if robloxUniversalHubTxt and #robloxUniversalHubTxt > 100 then
+        local v6 = (loadstring or load)(robloxUniversalHubTxt)
+
+        if v6 then
+          return v6()
+        end
+
+        return
+      end
+    end
+
+    local v7 = {
+      "https://raw.githubusercontent.com/monkeydluffyezz123/roblox-hub/main/roblox/Muscle_Legends.txt",
+      "https://raw.githubusercontent.com/monkeydluffyezz123/roblox-hub/main/Muscle_Legends.txt",
+    }
+
+    local function f3()
+      task.wait(0.4)
+      local robloxMuscleLegendsTxt
+
+      for index2, value2 in ipairs(v7) do
+        local v8 = value2
+
+        pcall(function()
+          local httpGet2 = game:HttpGet(v8)
+
+          if httpGet2 and #httpGet2 > 100 then
+            robloxMuscleLegendsTxt = httpGet2
+          end
+        end)
+
+        if robloxMuscleLegendsTxt then
+          break
+        end
+      end
+
+      if (not robloxMuscleLegendsTxt or #robloxMuscleLegendsTxt < 100) and readfile and isfile then
+        pcall(function()
+          if isfile("roblox/Muscle_Legends.txt") then
+            robloxMuscleLegendsTxt = readfile("roblox/Muscle_Legends.txt")
+          elseif isfile("Muscle_Legends.txt") then
+            robloxMuscleLegendsTxt = readfile("Muscle_Legends.txt")
+          end
+        end)
+      end
+
+      if robloxMuscleLegendsTxt and #robloxMuscleLegendsTxt > 100 then
+        local v9 = (loadstring or load)(robloxMuscleLegendsTxt)
+
+        if v9 then
+          return v9()
+        end
+
+        return
+      end
+    end
+
+    local v10 = {
+      "https://raw.githubusercontent.com/monkeydluffyezz123/roblox-hub/main/roblox/Strongman_Simulator.txt",
+      "https://raw.githubusercontent.com/monkeydluffyezz123/roblox-hub/main/Strongman_Simulator.txt",
+    }
+
+    local function f4()
+      task.wait(0.4)
+      local robloxStrongmanSimulatorTxt
+
+      for index3, value3 in ipairs(v10) do
+        local v11 = value3
+
+        pcall(function()
+          local httpGet3 = game:HttpGet(v11)
+
+          if httpGet3 and #httpGet3 > 100 then
+            robloxStrongmanSimulatorTxt = httpGet3
+          end
+        end)
+
+        if robloxStrongmanSimulatorTxt then
+          break
+        end
+      end
+
+      if (not robloxStrongmanSimulatorTxt or #robloxStrongmanSimulatorTxt < 100) and readfile
+        and isfile then
+        pcall(function()
+          if isfile("roblox/Strongman_Simulator.txt") then
+            robloxStrongmanSimulatorTxt = readfile("roblox/Strongman_Simulator.txt")
+          elseif isfile("Strongman_Simulator.txt") then
+            robloxStrongmanSimulatorTxt = readfile("Strongman_Simulator.txt")
+          end
+        end)
+      end
+
+      if robloxStrongmanSimulatorTxt and #robloxStrongmanSimulatorTxt > 100 then
+        local v12 = (loadstring or load)(robloxStrongmanSimulatorTxt)
+
+        if v12 then
+          return v12()
+        end
+
+        return
+      end
+    end
+
+    local v13 = {
+      "https://raw.githubusercontent.com/monkeydluffyezz123/roblox-hub/main/roblox/Mog_Evolution.txt",
+      "https://raw.githubusercontent.com/monkeydluffyezz123/roblox-hub/main/Mog_Evolution.txt",
+    }
+
+    local function f5()
+      task.wait(0.4)
+      local robloxMogEvolutionTxt
+
+      for index4, value4 in ipairs(v13) do
+        local v14 = value4
+
+        pcall(function()
+          local httpGet4 = game:HttpGet(v14)
+
+          if httpGet4 and #httpGet4 > 100 then
+            robloxMogEvolutionTxt = httpGet4
+          end
+        end)
+
+        if robloxMogEvolutionTxt then
+          break
+        end
+      end
+
+      if (not robloxMogEvolutionTxt or #robloxMogEvolutionTxt < 100) and readfile and isfile then
+        pcall(function()
+          if isfile("roblox/Mog_Evolution.txt") then
+            robloxMogEvolutionTxt = readfile("roblox/Mog_Evolution.txt")
+          elseif isfile("Mog_Evolution.txt") then
+            robloxMogEvolutionTxt = readfile("Mog_Evolution.txt")
+          end
+        end)
+      end
+
+      if robloxMogEvolutionTxt and #robloxMogEvolutionTxt > 100 then
+        local v15 = (loadstring or load)(robloxMogEvolutionTxt)
+
+        if v15 then
+          return v15()
+        end
+
+        return
+      end
+    end
+
+    local v16 = {
+      "https://raw.githubusercontent.com/monkeydluffyezz123/roblox-hub/main/roblox/One_Tab.txt",
+      "https://raw.githubusercontent.com/monkeydluffyezz123/roblox-hub/main/One_Tab.txt",
+    }
+
+    local function f6()
+      task.wait(0.4)
+      local robloxOneTabTxt
+
+      for index5, value5 in ipairs(v16) do
+        local v17 = value5
+
+        pcall(function()
+          local httpGet5 = game:HttpGet(v17)
+
+          if httpGet5 and #httpGet5 > 100 then
+            robloxOneTabTxt = httpGet5
+          end
+        end)
+
+        if robloxOneTabTxt then
+          break
+        end
+      end
+
+      if (not robloxOneTabTxt or #robloxOneTabTxt < 100) and readfile and isfile then
+        pcall(function()
+          if isfile("roblox/One_Tab.txt") then
+            robloxOneTabTxt = readfile("roblox/One_Tab.txt")
+          elseif isfile("One_Tab.txt") then
+            robloxOneTabTxt = readfile("One_Tab.txt")
+          end
+        end)
+      end
+
+      if robloxOneTabTxt and #robloxOneTabTxt > 100 then
+        local v18 = (loadstring or load)(robloxOneTabTxt)
+
+        if v18 then
+          return v18()
+        end
+
+        return
+      end
+    end
+
+    local v19 = {
+      "https://raw.githubusercontent.com/monkeydluffyezz123/roblox-hub/main/roblox/Owner.txt",
+      "https://raw.githubusercontent.com/monkeydluffyezz123/roblox-hub/main/Owner.txt",
+    }
+
+    local function f7()
+      task.wait(0.4)
+      local robloxOwnerTxt
+
+      for index6, value6 in ipairs(v19) do
+        local v20 = value6
+
+        pcall(function()
+          local httpGet6 = game:HttpGet(v20)
+
+          if httpGet6 and #httpGet6 > 100 then
+            robloxOwnerTxt = httpGet6
+          end
+        end)
+
+        if robloxOwnerTxt then
+          break
+        end
+      end
+
+      if (not robloxOwnerTxt or #robloxOwnerTxt < 100) and readfile and isfile then
+        pcall(function()
+          if isfile("roblox/Owner.txt") then
+            robloxOwnerTxt = readfile("roblox/Owner.txt")
+          elseif isfile("Owner.txt") then
+            robloxOwnerTxt = readfile("Owner.txt")
+          end
+        end)
+      end
+
+      if robloxOwnerTxt and #robloxOwnerTxt > 100 then
+        local v21 = (loadstring or load)(robloxOwnerTxt)
+
+        if v21 then
+          return v21()
+        end
+
+        return
+      end
+    end
+
+    local function f8()
+      local localPlayer2 = players.LocalPlayer
+
+      local v22 = {}
+      v22.ColorRGB = Color3.fromRGB(250, 7, 7)
+
+      function v22:Create(p1, p2, p3)
+        local instance = Instance.new(p1)
+
+        for key, value7 in pairs(p2) do
+          instance[key] = value7
+        end
+
+        if p3 then
+          instance.Parent = p3
+        end
+
+        return instance
+      end
+
+      function v22.EnabledAFK(p4)
+        localPlayer2.Idled:Connect(function()
+          virtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+          task.wait(1)
+          virtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+        end)
+      end
+
+      local function f9()
+        local create = v22:Create("ScreenGui", { ZIndexBehavior = Enum.ZIndexBehavior.Sibling }, runService:IsStudio() and localPlayer2.PlayerGui
+          or gethui and gethui() or cloneref and cloneref(coreGui) or coreGui)
+
+        local create2 = v22:Create("ImageButton", {
+          BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+          BorderColor3 = Color3.fromRGB(255, 0, 0),
+          BackgroundTransparency = 1,
+          Position = UDim2.new(0.1021, 0, 0.0743, 0),
+          Size = UDim2.new(0, 59, 0, 49),
+          Image = "rbxassetid://136890595976124",
+          Visible = false,
+        }, create)
+
+        v22:Create("UICorner", { Name = "MainCorner", CornerRadius = UDim.new(0, 9) }, create2)
+        local v23 = false
+        local position, position2
+
+        local function f10(p5)
+          local v24 = p5.Position - position
+
+          create2.Position = UDim2.new(
+            position2.X.Scale, position2.X.Offset + v24.X, position2.Y.Scale,
+            position2.Y.Offset + v24.Y
+          )
+        end
+
+        create2.InputBegan:Connect(function(input)
+          if input.UserInputType == Enum.UserInputType.Touch
+            or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            v23 = true
+            position = input.Position
+            position2 = create2.Position
+
+            input.Changed:Connect(function()
+              if input.UserInputState == Enum.UserInputState.End then
+                v23 = false
+              end
+            end)
+          end
+        end)
+
+        create2.InputChanged:Connect(function(input2)
+          if v23
+            and (input2.UserInputType == Enum.UserInputType.MouseMovement
+              or input2.UserInputType == Enum.UserInputType.Touch) then
+            f10(input2)
+          end
+        end)
+
+        return create2
+      end
+
+      local v25 = f9()
+
+      local function f11(p6, p7)
+        local v26 = false
+        local position3, position4
+
+        local function f12(p8)
+          local v27 = p8.Position - position3
+
+          p7.Position = UDim2.new(
+            position4.X.Scale, position4.X.Offset + v27.X, position4.Y.Scale,
+            position4.Y.Offset + v27.Y
+          )
+        end
+
+        p6.InputBegan:Connect(function(input3)
+          if input3.UserInputType == Enum.UserInputType.MouseButton1
+            or input3.UserInputType == Enum.UserInputType.Touch then
+            v26 = true
+            position3 = input3.Position
+            position4 = p7.Position
+
+            input3.Changed:Connect(function()
+              if input3.UserInputState == Enum.UserInputState.End then
+                v26 = false
+              end
+            end)
+          end
+        end)
+
+        p6.InputChanged:Connect(function(input4)
+          if v26
+            and (input4.UserInputType == Enum.UserInputType.MouseMovement
+              or input4.UserInputType == Enum.UserInputType.Touch) then
+            f12(input4)
+          end
+        end)
+      end
+
+      function CircleClick(p9, p10, p11)
+        task.spawn(function()
+          p9.ClipsDescendants = true
+
+          local circle = Instance.new("ImageLabel")
+          circle.Image = "rbxassetid://106471194043211"
+          circle.ImageColor3 = Color3.fromRGB(80, 80, 80)
+          circle.ImageTransparency = 0.8999999761581421
+          circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+          circle.BackgroundTransparency = 1
+          circle.ZIndex = 10
+          circle.Name = "Circle"
+          circle.Parent = p9
+
+          circle.Position = UDim2.new(
+            0, p10 - p9.AbsolutePosition.X, 0, p11 - p9.AbsolutePosition.Y
+          )
+
+          local v28 = math.max(p9.AbsoluteSize.X, p9.AbsoluteSize.Y) * 1.5
+
+          local create3 = tweenService:Create(circle, TweenInfo.new(
+            0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out
+          ), {
+            Size = UDim2.new(0, v28, 0, v28),
+            Position = UDim2.new(0.5, -v28 / 2, 0.5, -v28 / 2),
+          })
+
+          create3:Play()
+
+          create3.Completed:Connect(function()
+            for i = 1, 10 do
+              circle.ImageTransparency = circle.ImageTransparency + 0.01
+              wait(0.05)
+            end
+
+            circle:Destroy()
+          end)
+        end)
+      end
+
+      local v29 = {}
+      local v30 = {}
+
+      v29.Unloaded = false
+
+      function v29.SetNotification(p12, p13)
+        local title = p13[1] or p13.Title or ""
+        local description = p13[2] or p13.Description or ""
+        local content = p13[3] or p13.Content or ""
+        local time = p13[5] or p13.Time or 0.5
+        local delay = p13[6] or p13.Delay or 5
+
+        local create4 = v22:Create("ScreenGui", { ZIndexBehavior = Enum.ZIndexBehavior.Sibling }, runService:IsStudio() and localPlayer2.PlayerGui
+          or gethui and gethui() or cloneref and cloneref(coreGui) or coreGui)
+
+        local create5 = v22:Create("Frame", {
+          AnchorPoint = Vector2.new(1, 1),
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.999,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Position = UDim2.new(1, -30, 1, -30),
+          Size = UDim2.new(0, 320, 1, 0),
+          Name = "NotificationLayout",
+        }, create4)
+
+        local v31 = 0
+
+        create5.ChildRemoved:Connect(function()
+          v31 = 0
+
+          local tweenInfo = TweenInfo.new(
+            0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut
+          )
+
+          for index7, value8 in ipairs(create5:GetChildren()) do
+            tweenService:Create(value8, tweenInfo, {
+              Position = UDim2.new(0, 0, 1, -((value8.Size.Y.Offset + 12) * v31)),
+            }):Play()
+
+            v31 = v31 + 1
+          end
+        end)
+
+        local v32 = 0
+
+        for index8, value9 in ipairs(create5:GetChildren()) do
+          v32 = -value9.Position.Y.Offset + value9.Size.Y.Offset + 12
+        end
+
+        local create6 = v22:Create("Frame", {
+          BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Size = UDim2.new(1, 0, 0, 150),
+          Name = "NotificationFrame",
+          BackgroundTransparency = 1,
+          AnchorPoint = Vector2.new(0, 1),
+          Position = UDim2.new(0, 0, 1, -v32),
+        }, create5)
+
+        local create7 = v22:Create("Frame", {
+          BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Position = UDim2.new(0, 400, 0, 0),
+          Size = UDim2.new(1, 0, 1, 0),
+          Name = "NotificationFrameReal",
+        }, create6)
+
+        v22:Create("UICorner", { CornerRadius = UDim.new(0, 8) }, create7)
+
+        local create8 = v22:Create("Frame", {
+          BackgroundTransparency = 1,
+          BorderSizePixel = 0,
+          Size = UDim2.new(1, 0, 1, 0),
+          ZIndex = 0,
+          Name = "DropShadowHolder",
+          Parent = create7,
+        })
+
+        v22:Create("ImageLabel", {
+          Image = "",
+          ImageColor3 = Color3.fromRGB(0, 0, 0),
+          ImageTransparency = 0.5,
+          ScaleType = Enum.ScaleType.Slice,
+          SliceCenter = Rect.new(49, 49, 450, 450),
+          AnchorPoint = Vector2.new(0.5, 0.5),
+          BackgroundTransparency = 1,
+          BorderSizePixel = 0,
+          Position = UDim2.new(0.5, 0, 0.5, 0),
+          Size = UDim2.new(1, 47, 1, 47),
+          ZIndex = 0,
+          Name = "DropShadow",
+          Parent = create8,
+        })
+
+        local create9 = v22:Create("Frame", {
+          BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+          BackgroundTransparency = 0.999,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Size = UDim2.new(1, 0, 0, 36),
+          Name = "Top",
+          Parent = create7,
+        })
+
+        local create10 = v22:Create("TextLabel", {
+          Font = Enum.Font.GothamBold,
+          Text = title,
+          TextColor3 = Color3.fromRGB(255, 255, 255),
+          TextSize = 14,
+          TextXAlignment = Enum.TextXAlignment.Left,
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.999,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Size = UDim2.new(1, 0, 1, 0),
+          Position = UDim2.new(0, 10, 0, 0),
+          Parent = create9,
+        })
+
+        v22:Create("UIStroke", {
+          Color = Color3.fromRGB(255, 255, 255),
+          Thickness = 0.3,
+          Parent = create10,
+        })
+
+        v22:Create("UICorner", { Parent = create9, CornerRadius = UDim.new(0, 5) })
+
+        local color = Color3.fromRGB(255, 255, 255)
+        local color2 = Color3.fromRGB(0, 0, 0)
+        local udim = UDim2.new(1, 0, 1, 0)
+        local udim2 = UDim2.new(0, create10.TextBounds.X + 15, 0, 0)
+
+        local create11 = v22:Create("TextLabel", {
+          Font = Enum.Font.GothamBold,
+          Text = description,
+          TextColor3 = v22.ColorRGB,
+          TextSize = 14,
+          TextXAlignment = Enum.TextXAlignment.Left,
+          BackgroundColor3 = color,
+          BackgroundTransparency = 0.999,
+          BorderColor3 = color2,
+          BorderSizePixel = 0,
+          Size = udim,
+          Position = udim2,
+          Parent = create9,
+        })
+
+        v22:Create("UIStroke", { Color = v22.ColorRGB, Thickness = 0.4, Parent = create11 })
+
+        local create12 = v22:Create("TextButton", {
+          Font = Enum.Font.SourceSans,
+          Text = "X",
+          TextColor3 = Color3.fromRGB(255, 255, 255),
+          TextSize = 18,
+          AnchorPoint = Vector2.new(1, 0.5),
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.999,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Position = UDim2.new(1, -5, 0.5, 0),
+          Size = UDim2.new(0, 25, 0, 25),
+          Name = "Close",
+          Parent = create9,
+        })
+
+        local create13 = v22:Create("TextLabel", {
+          Font = Enum.Font.GothamBold,
+          TextColor3 = Color3.fromRGB(255, 255, 255),
+          TextSize = 13,
+          Text = content,
+          TextXAlignment = Enum.TextXAlignment.Left,
+          TextYAlignment = Enum.TextYAlignment.Top,
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.999,
+          TextColor3 = Color3.fromRGB(150, 150, 150),
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Position = UDim2.new(0, 10, 0, 27),
+          Size = UDim2.new(1, -20, 0, 13),
+          Parent = create7,
+        })
+
+        create13.Size = UDim2.new(1, -20, 0, 13
+          + 13 * math.floor(create13.TextBounds.X / create13.AbsoluteSize.X))
+
+        create13.TextWrapped = true
+
+        if create13.AbsoluteSize.Y < 27 then
+          create6.Size = UDim2.new(1, 0, 0, 65)
+        else
+          create6.Size = UDim2.new(1, 0, 0, create13.AbsoluteSize.Y + 40)
+        end
+
+        local v33 = false
+
+        function v30:Close()
+          if v33 then
+            return false
+          end
+
+          v33 = true
+
+          tweenService:Create(create7, TweenInfo.new(
+            tonumber(time), Enum.EasingStyle.Back, Enum.EasingDirection.InOut
+          ), { Position = UDim2.new(0, 400, 0, 0) }):Play()
+
+          task.wait(tonumber(time) / 1.2)
+          create6:Destroy()
+          v33 = false
+        end
+
+        create12.Activated:Connect(function() v30:Close() end)
+
+        tweenService:Create(create7, TweenInfo.new(
+          tonumber(time), Enum.EasingStyle.Back, Enum.EasingDirection.InOut
+        ), { Position = UDim2.new(0, 0, 0, 0) }):Play()
+
+        task.wait(tonumber(delay))
+        v30:Close()
+        return v30
+      end
+
+      function v29:CreateWindow(p14)
+        local title2 = p14[1] or p14.Title or ""
+        local description2 = p14[2] or p14.Description or ""
+        local tabWidth = p14[3] or p14["Tab Width"] or 120
+        local sizeUi = p14[4] or p14.SizeUi or UDim2.fromOffset(550, 315)
+
+        local create14 = v22:Create("ScreenGui", { ZIndexBehavior = Enum.ZIndexBehavior.Sibling }, runService:IsStudio() and localPlayer2.PlayerGui
+          or gethui and gethui() or cloneref and cloneref(coreGui) or coreGui)
+
+        local create15 = v22:Create("Frame", {
+          BackgroundTransparency = 1,
+          BorderSizePixel = 0,
+          Size = UDim2.new(0, 455, 0, 350),
+          ZIndex = 0,
+          Name = "DropShadowHolder",
+          Position = UDim2.new(
+            0, math.floor(create14.AbsoluteSize.X / 2) - math.floor(227.5), 0,
+            math.floor(create14.AbsoluteSize.Y / 2) - math.floor(175)
+          ),
+        }, create14)
+
+        local color3 = Color3.fromRGB(15, 15, 15)
+        local rect = Rect.new(49, 49, 450, 450)
+        local vector = Vector2.new(0.5, 0.5)
+        local udim3 = UDim2.new(0.5, 0, 0.5, 0)
+
+        local create16 = v22:Create("ImageLabel", {
+          Image = "",
+          ImageColor3 = color3,
+          ImageTransparency = 0.5,
+          ScaleType = Enum.ScaleType.Slice,
+          SliceCenter = rect,
+          AnchorPoint = vector,
+          BackgroundTransparency = 1,
+          BorderSizePixel = 0,
+          Position = udim3,
+          Size = sizeUi,
+          ZIndex = 0,
+          Name = "DropShadow",
+        }, create15)
+
+        local create17 = v22:Create("Frame", {
+          AnchorPoint = Vector2.new(0.5, 0.5),
+          BackgroundColor3 = Color3.fromRGB(15, 15, 15),
+          BackgroundTransparency = 0.1,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Position = UDim2.new(0.5, 0, 0.5, 0),
+          Size = sizeUi,
+          Name = "Main",
+        }, create16)
+
+        v22:Create("UICorner", {}, create17)
+
+        v22:Create(
+          "UIStroke", { Color = Color3.fromRGB(50, 50, 50), Thickness = 1.6 }, create17
+        )
+
+        local create18 = v22:Create("Frame", {
+          BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+          BackgroundTransparency = 0.9990000128746,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Size = UDim2.new(1, 0, 0, 38),
+          Name = "Top",
+        }, create17)
+
+        local create19 = v22:Create("TextLabel", {
+          Font = Enum.Font.GothamBold,
+          Text = title2,
+          TextColor3 = Color3.fromRGB(255, 255, 255),
+          TextSize = 14,
+          TextXAlignment = Enum.TextXAlignment.Left,
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.9990000128746,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Size = UDim2.new(1, -100, 1, 0),
+          Position = UDim2.new(0, 10, 0, 0),
+        }, create18)
+
+        v22:Create("UICorner", {}, create18)
+
+        local create20 = v22:Create("TextLabel", {
+          Font = Enum.Font.GothamBold,
+          Text = description2,
+          TextColor3 = v22.ColorRGB,
+          TextSize = 14,
+          TextXAlignment = Enum.TextXAlignment.Left,
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.9990000128746,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Size = UDim2.new(1, -(create19.TextBounds.X + 104), 1, 0),
+          Position = UDim2.new(0, create19.TextBounds.X + 15, 0, 0),
+        }, create18)
+
+        v22:Create("UIStroke", { Color = v22.ColorRGB, Thickness = 0.4 }, create20)
+
+        local create21 = v22:Create("TextButton", {
+          Font = Enum.Font.SourceSans,
+          Text = "X",
+          TextColor3 = Color3.fromRGB(255, 255, 255),
+          TextSize = 18,
+          AnchorPoint = Vector2.new(1, 0.5),
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.9990000128746,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Position = UDim2.new(1, -8, 0.5, 0),
+          Size = UDim2.new(0, 25, 0, 25),
+          Name = "Close",
+        }, create18)
+
+        local create22 = v22:Create("TextButton", {
+          Font = Enum.Font.SourceSans,
+          Text = "-",
+          TextColor3 = Color3.fromRGB(255, 255, 255),
+          TextSize = 18,
+          AnchorPoint = Vector2.new(1, 0.5),
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.9990000128746,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Position = UDim2.new(1, -42, 0.5, 0),
+          Size = UDim2.new(0, 25, 0, 25),
+          Name = "Min",
+        }, create18)
+
+        local create23 = v22:Create("Frame", {
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.9990000128746,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Position = UDim2.new(0, 9, 0, 50),
+          Size = UDim2.new(0, tabWidth, 1, -59),
+          Name = "LayersTab",
+        }, create17)
+
+        v22:Create("UICorner", { CornerRadius = UDim.new(0, 2) }, create23)
+
+        v22:Create("Frame", {
+          AnchorPoint = Vector2.new(0.5, 0),
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.85,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Position = UDim2.new(0.5, 0, 0, 38),
+          Size = UDim2.new(1, 0, 0, 1),
+          Name = "DecideFrame",
+        }, create17)
+
+        local create24 = v22:Create("Frame", {
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.9990000128746,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Position = UDim2.new(0, tabWidth + 18, 0, 50),
+          Size = UDim2.new(1, -(tabWidth + 9 + 18), 1, -59),
+          Name = "Layers",
+        }, create17)
+
+        v22:Create("UICorner", { CornerRadius = UDim.new(0, 2) }, create24)
+
+        local create25 = v22:Create("TextLabel", {
+          Font = Enum.Font.GothamBold,
+          Text = "",
+          TextColor3 = Color3.fromRGB(255, 255, 255),
+          TextSize = 24,
+          TextWrapped = true,
+          TextXAlignment = Enum.TextXAlignment.Left,
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.9990000128746,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Size = UDim2.new(1, 0, 0, 30),
+          Name = "NameTab",
+        }, create24)
+
+        local create26 = v22:Create("Folder", { Name = "LayersFolder" }, (v22:Create("Frame", {
+          AnchorPoint = Vector2.new(0, 1),
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.9990000128746033,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          ClipsDescendants = true,
+          Position = UDim2.new(0, 0, 1, 0),
+          Size = UDim2.new(1, 0, 1, -33),
+          Name = "LayersReal",
+        }, create24)))
+
+        local create27 = v22:Create("UIPageLayout", {
+          SortOrder = Enum.SortOrder.LayoutOrder,
+          Name = "LayersPageLayout",
+          TweenTime = 0.5,
+          EasingDirection = Enum.EasingDirection.InOut,
+          EasingStyle = Enum.EasingStyle.Quad,
+        }, create26)
+
+        local create28 = v22:Create("ScrollingFrame", {
+          CanvasSize = UDim2.new(0, 0, 2.10000002, 0),
+          ScrollBarImageColor3 = Color3.fromRGB(0, 0, 0),
+          ScrollBarThickness = 0,
+          Active = true,
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.9990000128746,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Size = UDim2.new(1, 0, 1, -10),
+          Name = "ScrollTab",
+        }, create23)
+
+        v22:Create(
+          "UIListLayout", { Padding = UDim.new(0, 0), SortOrder = Enum.SortOrder.LayoutOrder },
+          create28
+        )
+
+        local function f13()
+          local v34 = 0
+
+          for key2, value10 in pairs(create28:GetChildren()) do
+            if value10.Name ~= "UIListLayout" then
+              v34 = v34 + 3 + value10.Size.Y.Offset
+            end
+          end
+
+          create28.CanvasSize = UDim2.new(0, 0, 0, v34)
+        end
+
+        create28.ChildAdded:Connect(f13)
+        create28.ChildRemoved:Connect(f13)
+
+        create22.Activated:Connect(function()
+          CircleClick(create22, localPlayer2:GetMouse().X, localPlayer2:GetMouse().Y)
+          create15.Visible = false
+
+          if not v25.Visible then
+            v25.Visible = true
+          end
+        end)
+
+        v25.Activated:Connect(function()
+          create15.Visible = true
+
+          if v25.Visible then
+            v25.Visible = false
+          end
+        end)
+
+        create21.Activated:Connect(function()
+          CircleClick(create21, localPlayer2:GetMouse().X, localPlayer2:GetMouse().Y)
+
+          if create14 then
+            create14:Destroy()
+          end
+
+          if not v29.Unloaded then
+            v29.Unloaded = true
+          end
+        end)
+
+        create15.Size = UDim2.new(
+          0, 115 + create19.TextBounds.X + 1 + create20.TextBounds.X, 0, 350
+        )
+
+        f11(create18, create15)
+
+        local create29 = v22:Create("Frame", {
+          AnchorPoint = Vector2.new(1, 1),
+          BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+          BackgroundTransparency = 1,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          ClipsDescendants = true,
+          Position = UDim2.new(1, 8, 1, 8),
+          Size = UDim2.new(1, 154, 1, 54),
+          Visible = false,
+          Name = "MoreBlur",
+        }, create24)
+
+        local create30 = v22:Create("Frame", {
+          BackgroundTransparency = 1,
+          BorderSizePixel = 0,
+          Size = UDim2.new(1, 0, 1, 0),
+          ZIndex = 0,
+          Name = "DropShadowHolder",
+        }, create29)
+
+        v22:Create("ImageLabel", {
+          Image = "",
+          ImageColor3 = Color3.fromRGB(0, 0, 0),
+          ImageTransparency = 0.5,
+          ScaleType = Enum.ScaleType.Slice,
+          SliceCenter = Rect.new(49, 49, 450, 450),
+          AnchorPoint = Vector2.new(0.5, 0.5),
+          BackgroundTransparency = 1,
+          BorderSizePixel = 0,
+          Position = UDim2.new(0.5, 0, 0.5, 0),
+          Size = UDim2.new(1, 35, 1, 35),
+          ZIndex = 0,
+          Name = "DropShadow",
+        }, create30)
+
+        v22:Create("UICorner", {}, create29)
+
+        local create31 = v22:Create("TextButton", {
+          Font = Enum.Font.SourceSans,
+          Text = "",
+          TextColor3 = Color3.fromRGB(0, 0, 0),
+          TextSize = 14,
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.999,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Size = UDim2.new(1, 0, 1, 0),
+          Name = "ConnectButton",
+        }, create29)
+
+        local create32 = v22:Create("Frame", {
+          AnchorPoint = Vector2.new(1, 0.5),
+          BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          LayoutOrder = 1,
+          Position = UDim2.new(1, 172, 0.5, 0),
+          Size = UDim2.new(0, 160, 1, -16),
+          Name = "DropdownSelect",
+          ClipsDescendants = true,
+        }, create29)
+
+        create31.Activated:Connect(function()
+          if create29.Visible then
+            local tweenInfo2 = TweenInfo.new(0.2)
+
+            local create33 = tweenService:Create(create29, tweenInfo2, {
+              BackgroundTransparency = 0.999,
+            })
+
+            local create34 = tweenService:Create(create32, tweenInfo2, {
+              Position = UDim2.new(1, 172, 0.5, 0),
+            })
+
+            create33:Play()
+            create34:Play()
+            task.wait(0.2)
+            create29.Visible = false
+          end
+        end)
+
+        v22:Create("UICorner", { CornerRadius = UDim.new(0, 3), Parent = create32 })
+
+        v22:Create("UIStroke", {
+          Color = Color3.fromRGB(255, 255, 255),
+          Thickness = 2.5,
+          Transparency = 0.8,
+          Parent = create32,
+        })
+
+        local create35 = v22:Create("Folder", {
+          Name = "DropdownFolder",
+          Parent = v22:Create("Frame", {
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+            BackgroundTransparency = 0.999,
+            BorderColor3 = Color3.fromRGB(0, 0, 0),
+            BorderSizePixel = 0,
+            LayoutOrder = 1,
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            Size = UDim2.new(1, -10, 1, -10),
+            Name = "DropdownSelectReal",
+            Parent = create32,
+          }),
+        })
+
+        local create36 = v22:Create("UIPageLayout", {
+          EasingDirection = Enum.EasingDirection.InOut,
+          EasingStyle = Enum.EasingStyle.Quad,
+          TweenTime = 0.01,
+          SortOrder = Enum.SortOrder.LayoutOrder,
+          Archivable = false,
+          Name = "DropPageLayout",
+          Parent = create35,
+        })
+
+        local v35 = {}
+        local count = 0
+        local count2 = 0
+
+        function v35:CreateTab(p15)
+          local name = p15[1] or p15.Name or ""
+          local icon = p15[2] or p15.Icon or ""
+
+          local create37 = v22:Create("ScrollingFrame", {
+            ScrollBarImageColor3 = Color3.fromRGB(80, 80, 80),
+            ScrollBarThickness = 0,
+            Active = true,
+            LayoutOrder = count,
+            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+            BackgroundTransparency = 0.999,
+            BorderColor3 = Color3.fromRGB(0, 0, 0),
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, 0, 1, 0),
+            Name = "ScrolLayers",
+            Parent = create26,
+          })
+
+          v22:Create("UIListLayout", {
+            Padding = UDim.new(0, 3),
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Parent = create37,
+          })
+
+          local create38 = v22:Create("Frame", {
+            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+            BackgroundTransparency = count == 0 and 0.92 or 0.999,
+            BorderColor3 = Color3.fromRGB(0, 0, 0),
+            BorderSizePixel = 0,
+            LayoutOrder = count,
+            Size = UDim2.new(1, 0, 0, 30),
+            Name = "Tab",
+            Parent = create28,
+          })
+
+          v22:Create("UICorner", { CornerRadius = UDim.new(0, 4), Parent = create38 })
+
+          local create39 = v22:Create("TextButton", {
+            Font = Enum.Font.GothamBold,
+            Text = "",
+            TextColor3 = Color3.fromRGB(255, 255, 255),
+            TextSize = 13,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+            BackgroundTransparency = 0.999,
+            BorderColor3 = Color3.fromRGB(0, 0, 0),
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, 0, 1, 0),
+            Name = "TabButton",
+          }, create38)
+
+          v22:Create("TextLabel", {
+            Font = Enum.Font.GothamBold,
+            Text = name,
+            TextColor3 = Color3.fromRGB(255, 255, 255),
+            TextSize = 13,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+            BackgroundTransparency = 0.999,
+            BorderColor3 = Color3.fromRGB(0, 0, 0),
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, 0, 1, 0),
+            Position = UDim2.new(0, 30, 0, 0),
+            Name = "TabName",
+          }, create38)
+
+          v22:Create("ImageLabel", {
+            Image = icon,
+            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+            BackgroundTransparency = 0.999,
+            BorderColor3 = Color3.fromRGB(0, 0, 0),
+            BorderSizePixel = 0,
+            Position = UDim2.new(0, 9, 0, 7),
+            Size = UDim2.new(0, 16, 0, 16),
+            Name = "FeatureImg",
+          }, create38)
+
+          if count == 0 then
+            create27:JumpToIndex(0)
+            create25.Text = name
+
+            local create40 = v22:Create("Frame", {
+              BackgroundColor3 = v22.ColorRGB,
+              BorderColor3 = Color3.fromRGB(0, 0, 0),
+              BorderSizePixel = 0,
+              Position = UDim2.new(0, 2, 0, 9),
+              Size = UDim2.new(0, 1, 0, 12),
+              Name = "ChooseFrame",
+            }, create38)
+
+            v22:Create("UIStroke", { Color = v22.ColorRGB, Thickness = 1.6 }, create40)
+            v22:Create("UICorner", {}, create40)
+          end
+
+          create39.Activated:Connect(function()
+            CircleClick(create39, localPlayer2:GetMouse().X, localPlayer2:GetMouse().Y)
+            local v36
+
+            for key3, value11 in pairs(create28:GetChildren()) do
+              for key4, value12 in pairs(value11:GetChildren()) do
+                if value12.Name == "ChooseFrame" then
+                  v36 = value12
+                  break
+                end
+              end
+
+              if v36 then
+                break
+              end
+            end
+
+            if v36 and create38.LayoutOrder ~= create27.CurrentPage.LayoutOrder then
+              for key5, value13 in pairs(create28:GetChildren()) do
+                if value13.Name == "Tab" then
+                  tweenService:Create(value13, TweenInfo.new(
+                    0.2, Enum.EasingStyle.Back, Enum.EasingDirection.InOut
+                  ), { BackgroundTransparency = 0.999 }):Play()
+                end
+              end
+
+              local create41 = tweenService:Create(create38, TweenInfo.new(
+                0.6, Enum.EasingStyle.Back, Enum.EasingDirection.InOut
+              ), { BackgroundTransparency = 0.92 })
+
+              local create42 = tweenService:Create(v36, TweenInfo.new(
+                0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut
+              ), {
+                Position = UDim2.new(0, 2, 0, 9 + 33 * create38.LayoutOrder),
+              })
+
+              create41:Play()
+              create42:Play()
+              create27:JumpToIndex(create38.LayoutOrder)
+              task.wait(0.05)
+              create25.Text = name
+
+              tweenService:Create(v36, TweenInfo.new(
+                0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut
+              ), { Size = UDim2.new(0, 1, 0, 20) }):Play()
+
+              task.wait(0.2)
+
+              tweenService:Create(v36, TweenInfo.new(
+                0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut
+              ), { Size = UDim2.new(0, 1, 0, 12) }):Play()
+            end
+          end)
+
+          local v37 = {}
+          local layoutOrder = 0
+
+          function v37:AddSection(p16, p17)
+            local text = p16 or ""
+            local v38 = p17 or false
+
+            local create43 = v22:Create("Frame", {
+              BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+              BackgroundTransparency = 0.999,
+              BorderColor3 = Color3.fromRGB(0, 0, 0),
+              BorderSizePixel = 0,
+              ClipsDescendants = true,
+              LayoutOrder = layoutOrder,
+              Size = UDim2.new(1, 0, 0, 30),
+              Name = "Section",
+            }, create37)
+
+            local create44 = v22:Create("Frame", {
+              AnchorPoint = Vector2.new(0.5, 0),
+              BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+              BackgroundTransparency = 0.935,
+              BorderColor3 = Color3.fromRGB(0, 0, 0),
+              BorderSizePixel = 0,
+              LayoutOrder = 1,
+              Position = UDim2.new(0.5, 0, 0, 0),
+              Size = UDim2.new(1, 1, 0, 30),
+              Name = "SectionReal",
+            }, create43)
+
+            v22:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, create44)
+
+            local create45 = v22:Create("TextButton", {
+              Font = Enum.Font.SourceSans,
+              Text = "",
+              TextColor3 = Color3.fromRGB(0, 0, 0),
+              TextSize = 14,
+              BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+              BackgroundTransparency = 0.9990000128746033,
+              BorderColor3 = Color3.fromRGB(0, 0, 0),
+              BorderSizePixel = 0,
+              Size = UDim2.new(1, 0, 1, 0),
+              Name = "SectionButton",
+            }, create44)
+
+            local create46 = v22:Create("Frame", {
+              AnchorPoint = Vector2.new(1, 0.5),
+              BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+              BackgroundTransparency = 0.9990000128746,
+              BorderColor3 = Color3.fromRGB(0, 0, 0),
+              BorderSizePixel = 0,
+              Position = UDim2.new(1, -5, 0.5, 0),
+              Size = UDim2.new(0, 20, 0, 20),
+              Name = "FeatureFrame",
+            }, create44)
+
+            v22:Create("ImageLabel", {
+              Image = "rbxassetid://125609963478878",
+              AnchorPoint = Vector2.new(0.5, 0.5),
+              BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+              BackgroundTransparency = 0.9990000128746,
+              BorderColor3 = Color3.fromRGB(0, 0, 0),
+              BorderSizePixel = 0,
+              Position = UDim2.new(0.5, 0, 0.5, 0),
+              Rotation = -90,
+              Size = UDim2.new(1, 6, 1, 6),
+              Name = "FeatureImg",
+            }, create46)
+
+            v22:Create("TextLabel", {
+              Font = Enum.Font.GothamBold,
+              Text = text,
+              TextColor3 = Color3.fromRGB(230, 230, 230),
+              TextSize = 13,
+              TextXAlignment = Enum.TextXAlignment.Left,
+              TextYAlignment = Enum.TextYAlignment.Top,
+              AnchorPoint = Vector2.new(0, 0.5),
+              BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+              BackgroundTransparency = 0.9990000128746,
+              BorderColor3 = Color3.fromRGB(0, 0, 0),
+              BorderSizePixel = 0,
+              Position = UDim2.new(0, 10, 0.5, 0),
+              Size = UDim2.new(1, -50, 0, 13),
+              Name = "SectionTitle",
+            }, create44)
+
+            local create47 = v22:Create("Frame", {
+              BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+              BorderColor3 = Color3.fromRGB(0, 0, 0),
+              BorderSizePixel = 0,
+              AnchorPoint = Vector2.new(0.5, 0),
+              Position = UDim2.new(0.5, 0, 0, 33),
+              Size = UDim2.new(0, 0, 0, 2),
+              Name = "SectionDecideFrame",
+            }, create43)
+
+            v22:Create("UICorner", {}, create47)
+
+            v22:Create("UIGradient", {
+              Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 20, 20)),
+                ColorSequenceKeypoint.new(0.5, v22.ColorRGB),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20)),
+              }),
+            }, create47)
+
+            local create48 = v22:Create("Frame", {
+              AnchorPoint = Vector2.new(0.5, 0),
+              BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+              BackgroundTransparency = 0.9990000128746,
+              BorderColor3 = Color3.fromRGB(0, 0, 0),
+              BorderSizePixel = 0,
+              ClipsDescendants = true,
+              LayoutOrder = 1,
+              Position = UDim2.new(0.5, 0, 0, 38),
+              Size = UDim2.new(1, 0, 0, 100),
+              Name = "SectionAdd",
+            }, create43)
+
+            v22:Create("UICorner", { CornerRadius = UDim.new(0, 2) }, create48)
+
+            v22:Create(
+              "UIListLayout",
+              { Padding = UDim.new(0, 3), SortOrder = Enum.SortOrder.LayoutOrder }, create48
+            )
+
+            local function f14()
+              local v39 = 0
+
+              for key6, value14 in pairs(create37:GetChildren()) do
+                if value14.Name ~= "UIListLayout" then
+                  v39 = v39 + 3 + value14.Size.Y.Offset
+                end
+              end
+
+              create37.CanvasSize = UDim2.new(0, 0, 0, v39)
+            end
+
+            local function f15()
+              if v38 then
+                local v40 = 38
+
+                for key7, value15 in pairs(create48:GetChildren()) do
+                  if value15.Name ~= "UIListLayout" and value15.Name ~= "UICorner" then
+                    v40 = v40 + value15.Size.Y.Offset + 3
+                  end
+                end
+
+                tweenService:Create(create46, TweenInfo.new(0.1), { Rotation = 90 }):Play()
+
+                tweenService:Create(create43, TweenInfo.new(0.1), {
+                  Size = UDim2.new(1, 1, 0, v40),
+                }):Play()
+
+                tweenService:Create(create48, TweenInfo.new(0.1), {
+                  Size = UDim2.new(1, 0, 0, v40 - 38),
+                }):Play()
+
+                tweenService:Create(create47, TweenInfo.new(0.1), {
+                  Size = UDim2.new(1, 0, 0, 2),
+                }):Play()
+
+                task.wait(0.5)
+                f14()
+              end
+            end
+
+            create45.Activated:Connect(function()
+              CircleClick(create45, localPlayer2:GetMouse().X, localPlayer2:GetMouse().Y)
+
+              if v38 then
+                tweenService:Create(create46, TweenInfo.new(0.1), { Rotation = 0 }):Play()
+
+                tweenService:Create(create43, TweenInfo.new(0.1), {
+                  Size = UDim2.new(1, 1, 0, 30),
+                }):Play()
+
+                tweenService:Create(create47, TweenInfo.new(0.1), {
+                  Size = UDim2.new(0, 0, 0, 2),
+                }):Play()
+
+                v38 = false
+                task.wait(0.1)
+                f14()
+              else
+                v38 = true
+                f15()
+              end
+            end)
+
+            create48.ChildAdded:Connect(f15)
+            create48.ChildRemoved:Connect(f15)
+
+            f14()
+            local count3 = 0
+
+            local v41 = {}
+
+            function v41:AddParagraph(p18)
+              local title3 = p18[1] or p18.Title or ""
+              local content2 = p18[2] or p18.Content or ""
+              local v42 = {}
+
+              local create49 = v22:Create("Frame", {
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.935,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                LayoutOrder = count3,
+                Size = UDim2.new(1, 0, 0, 35),
+                Name = "Paragraph",
+              }, create48)
+
+              v22:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, create49)
+
+              local create50 = v22:Create("TextLabel", {
+                Font = Enum.Font.GothamBold,
+                Text = title3,
+                TextColor3 = Color3.fromRGB(231, 231, 231),
+                TextSize = 13,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Top,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 10, 0, 10),
+                Size = UDim2.new(1, -16, 0, 13),
+                Name = "ParagraphTitle",
+              }, create49)
+
+              local create51 = v22:Create("TextLabel", {
+                Font = Enum.Font.GothamBold,
+                Text = content2,
+                TextColor3 = Color3.fromRGB(255, 255, 255),
+                TextSize = 12,
+                TextTransparency = 0.6,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Bottom,
+                BackgroundTransparency = 0.999,
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 10, 0, 23),
+                Name = "ParagraphContent",
+              }, create49)
+
+              local function f16()
+                create51.TextWrapped = false
+                local v43 = math.ceil(create51.TextBounds.X / create51.AbsoluteSize.X)
+                create51.Size = UDim2.new(1, -16, 0, 12 + 12 * v43)
+                create49.Size = UDim2.new(1, 0, 0, create51.AbsoluteSize.Y + 33)
+                create51.TextWrapped = true
+                f15()
+              end
+
+              f16()
+
+              create51:GetPropertyChangedSignal("AbsoluteSize"):Connect(f16)
+
+              function v42:Set(p19)
+                local title4 = p19[1] or p19.Title or ""
+                local content3 = p19[2] or p19.Content or ""
+                create50.Text = title4
+                create51.Text = content3
+                f16()
+              end
+
+              return v42
+            end
+
+            function v41.AddSeperator(p20, p21)
+              local title5 = p21[1] or p21.Title or ""
+              local v44 = {}
+
+              local create52 = v22:Create("Frame", {
+                BackgroundColor3 = Color3.fromRGB(70, 70, 70),
+                BackgroundTransparency = 0.1,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 1,
+                LayoutOrder = count3,
+                Size = UDim2.new(1, 0, 0, 30),
+                Name = "Seperator",
+              }, create48)
+
+              local create53 = v22:Create("TextLabel", {
+                Font = Enum.Font.GothamBold,
+                Text = title5,
+                TextColor3 = Color3.fromRGB(231, 231, 231),
+                TextStrokeColor3 = Color3.fromRGB(0, 0, 0),
+                TextStrokeTransparency = 0.8,
+                TextSize = 14,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Center,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 1,
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 12, 0, 0),
+                Size = UDim2.new(1, -16, 1, 0),
+                Name = "SeperatorTitle",
+              }, create52)
+
+              v22:Create("UICorner", { CornerRadius = UDim.new(0, 6) }, create52)
+
+              v22:Create("UIGradient", {
+                Color = ColorSequence.new({
+                  ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 120, 120)),
+                  ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 120, 120)),
+                }),
+                Rotation = 90,
+              }, create52)
+
+              function v44:Set(p22)
+                create53.Text = p22[1] or p22.Title or ""
+              end
+
+              count3 = count3 + 1
+              return v44
+            end
+
+            function v41.AddLine(p23)
+              local create54 = v22:Create("Frame", {
+                BackgroundColor3 = Color3.fromRGB(90, 90, 90),
+                BackgroundTransparency = 0.2,
+                BorderSizePixel = 0,
+                LayoutOrder = count3,
+                Size = UDim2.new(1, 0, 0, 7),
+                Name = "Line",
+              }, create48)
+
+              v22:Create("UICorner", { CornerRadius = UDim.new(0, 3) }, create54)
+
+              v22:Create("UIGradient", {
+                Color = ColorSequence.new({
+                  ColorSequenceKeypoint.new(0, Color3.fromRGB(80, 80, 80)),
+                  ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 80, 80)),
+                }),
+                Rotation = 0,
+              }, create54)
+
+              count3 = count3 + 1
+              return {}
+            end
+
+            function v41:AddButton(p24)
+              local title6 = p24[1] or p24.Title or ""
+              local content4 = p24[2] or p24.Content or ""
+              local icon2 = p24[3] or p24.Icon or "rbxassetid://7734010488"
+              local callback = p24[4] or p24.Callback or function() end
+
+              local create55 = v22:Create("Frame", {
+                Name = "Button",
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.935,
+                BorderSizePixel = 0,
+                LayoutOrder = count3,
+                Size = UDim2.new(1, 0, 0, 35),
+              }, create48)
+
+              v22:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, create55)
+
+              v22:Create("TextLabel", {
+                Name = "ButtonTitle",
+                Font = Enum.Font.GothamBold,
+                Text = title6,
+                TextColor3 = Color3.fromRGB(231, 231, 231),
+                TextSize = 13,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Top,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 10, 0, 10),
+                Size = UDim2.new(1, -100, 0, 13),
+              }, create55)
+
+              local create56 = v22:Create("TextLabel", {
+                Name = "ButtonContent",
+                Font = Enum.Font.GothamBold,
+                Text = content4,
+                TextColor3 = Color3.fromRGB(255, 255, 255),
+                TextSize = 12,
+                TextTransparency = 0.6,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Bottom,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 10, 0, 23),
+                Size = UDim2.new(1, -100, 0, 12),
+              }, create55)
+
+              local function f17()
+                local v45 = math.floor(create56.TextBounds.X / create56.AbsoluteSize.X)
+                create56.Size = UDim2.new(1, -100, 0, 12 + 12 * v45)
+                create55.Size = UDim2.new(1, 0, 0, create56.AbsoluteSize.Y + 33)
+              end
+
+              create56.TextWrapped = true
+              f17()
+
+              create56:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+                create56.TextWrapped = false
+                f17()
+                create56.TextWrapped = true
+                f15()
+              end)
+
+              local create57 = v22:Create("TextButton", {
+                Name = "ButtonButton",
+                Font = Enum.Font.SourceSans,
+                Text = "",
+                TextColor3 = Color3.fromRGB(0, 0, 0),
+                TextSize = 14,
+                BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+                BackgroundTransparency = 0.999,
+                BorderSizePixel = 0,
+                Size = UDim2.new(1, 0, 1, 0),
+              }, create55)
+
+              local create58 = v22:Create("Frame", {
+                Name = "FeatureFrame",
+                AnchorPoint = Vector2.new(1, 0.5),
+                BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+                BackgroundTransparency = 0.999,
+                BorderSizePixel = 0,
+                Position = UDim2.new(1, -15, 0.5, 0),
+                Size = UDim2.new(0, 25, 0, 25),
+              }, create55)
+
+              v22:Create("ImageLabel", {
+                Name = "FeatureImg",
+                Image = icon2,
+                AnchorPoint = Vector2.new(0.5, 0.5),
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderSizePixel = 0,
+                Position = UDim2.new(0.5, 0, 0.5, 0),
+                Size = UDim2.new(1, 0, 1, 0),
+              }, create58)
+
+              create57.Activated:Connect(function()
+                CircleClick(create57, localPlayer2:GetMouse().X, localPlayer2:GetMouse().Y)
+                callback()
+              end)
+
+              count3 = count3 + 1
+              return {}
+            end
+
+            function v41.AddToggle(p25, p26)
+              local title7 = p26[1] or p26.Title or ""
+              local content5 = p26[2] or p26.Content or ""
+              local default = p26[3] or p26.Default or false
+              local callback2 = p26[4] or p26.Callback or function() end
+              local v46 = { Value = default }
+
+              local create59 = v22:Create("Frame", {
+                Name = "Toggle",
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.935,
+                BorderSizePixel = 0,
+                LayoutOrder = count3,
+                Size = UDim2.new(1, 0, 0, 35),
+              }, create48)
+
+              v22:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, create59)
+
+              local create60 = v22:Create("TextLabel", {
+                Name = "ToggleTitle",
+                Font = Enum.Font.GothamBold,
+                Text = title7,
+                TextSize = 13,
+                TextColor3 = Color3.fromRGB(231, 231, 231),
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Top,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 10, 0, 10),
+                Size = UDim2.new(1, -100, 0, 13),
+              }, create59)
+
+              local color4 = Color3.fromRGB(255, 255, 255)
+              local color5 = Color3.fromRGB(255, 255, 255)
+              local udim4 = UDim2.new(0, 10, 0, 23)
+              local udim5 = UDim2.new(1, -100, 0, 12)
+
+              local create61 = v22:Create("TextLabel", {
+                Name = "ToggleContent",
+                Font = Enum.Font.GothamBold,
+                Text = content5,
+                TextSize = 12,
+                TextColor3 = color4,
+                TextTransparency = 0.6,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Bottom,
+                BackgroundColor3 = color5,
+                BackgroundTransparency = 0.999,
+                BorderSizePixel = 0,
+                Position = udim4,
+                Size = udim5,
+              }, create59)
+
+              local function f18()
+                create61.TextWrapped = false
+
+                create61.Size = UDim2.new(1, -100, 0, 12
+                  + 12 * math.ceil(create61.TextBounds.X / create61.AbsoluteSize.X))
+
+                create59.Size = UDim2.new(1, 0, 0, create61.AbsoluteSize.Y + 33)
+                create61.TextWrapped = true
+              end
+
+              f18()
+
+              create61:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+                f18()
+                f15()
+              end)
+
+              local create62 = v22:Create("TextButton", {
+                Name = "ToggleButton",
+                Font = Enum.Font.SourceSans,
+                Text = "",
+                TextColor3 = Color3.fromRGB(0, 0, 0),
+                TextSize = 14,
+                BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+                BackgroundTransparency = 0.999,
+                BorderSizePixel = 0,
+                Size = UDim2.new(1, 0, 1, 0),
+              }, create59)
+
+              local create63 = v22:Create("Frame", {
+                Name = "FeatureFrame2",
+                AnchorPoint = Vector2.new(1, 0.5),
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.92,
+                BorderSizePixel = 0,
+                Position = UDim2.new(1, -15, 0.5, 0),
+                Size = UDim2.new(0, 30, 0, 15),
+              }, create59)
+
+              v22:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, create63)
+
+              local create64 = v22:Create("UIStroke", {
+                Color = Color3.fromRGB(255, 255, 255),
+                Thickness = 2,
+                Transparency = 0.9,
+              }, create63)
+
+              local create65 = v22:Create("Frame", {
+                Name = "ToggleCircle",
+                BackgroundColor3 = Color3.fromRGB(230, 230, 230),
+                BorderSizePixel = 0,
+                Size = UDim2.new(0, 14, 0, 14),
+                Position = UDim2.new(0, 0, 0, 0),
+              }, create63)
+
+              v22:Create("UICorner", { CornerRadius = UDim.new(0, 15) }, create65)
+
+              local function f19(p27)
+                local colorRGB = p27 and v22.ColorRGB or Color3.fromRGB(230, 230, 230)
+                local udim6 = p27 and UDim2.new(0, 15, 0, 0) or UDim2.new(0, 0, 0, 0)
+                local colorRGB2 = p27 and v22.ColorRGB or Color3.fromRGB(255, 255, 255)
+                local transparency = p27 and 0 or 0.9
+                local colorRGB3 = p27 and v22.ColorRGB or Color3.fromRGB(255, 255, 255)
+
+                local tweenInfo3 = TweenInfo.new(
+                  0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut
+                )
+
+                tweenService:Create(create60, tweenInfo3, { TextColor3 = colorRGB }):Play()
+                tweenService:Create(create65, tweenInfo3, { Position = udim6 }):Play()
+
+                tweenService:Create(create64, tweenInfo3, {
+                  Color = colorRGB2,
+                  Transparency = transparency,
+                }):Play()
+
+                tweenService:Create(create63, tweenInfo3, {
+                  BackgroundColor3 = colorRGB3,
+                  BackgroundTransparency = p27 and 0 or 0.92,
+                }):Play()
+              end
+
+              create62.Activated:Connect(function()
+                CircleClick(create62, localPlayer2:GetMouse().X, localPlayer2:GetMouse().Y)
+                v46.Value = not v46.Value
+                v46:Set(v46.Value)
+              end)
+
+              function v46:Set(p28)
+                callback2(p28)
+                f19(p28)
+              end
+
+              v46:Set(v46.Value)
+
+              count3 = count3 + 1
+              return v46
+            end
+
+            function v41.AddSlider(p29, p30)
+              local title8 = p30[1] or p30.Title or ""
+              local content6 = p30[2] or p30.Content or ""
+              local increment = p30[3] or p30.Increment or 1
+              local min = p30[4] or p30.Min or 0
+              local max = p30[5] or p30.Max or 100
+              local default2 = p30[6] or p30.Default or 50
+              local callback3 = p30[7] or p30.Callback or function() end
+              local v47 = { Value = default2 }
+
+              local create66 = v22:Create("Frame", {
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.93500000238419,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                LayoutOrder = count3,
+                Size = UDim2.new(1, 0, 0, 35),
+                Name = "Slider",
+              }, create48)
+
+              v22:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, create66)
+
+              v22:Create("TextLabel", {
+                Font = Enum.Font.GothamBold,
+                Text = title8,
+                TextColor3 = Color3.fromRGB(230, 230, 230),
+                TextSize = 13,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Top,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.9990000128746,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 10, 0, 10),
+                Size = UDim2.new(1, -180, 0, 13),
+                Name = "SliderTitle",
+              }, create66)
+
+              local create67 = v22:Create("TextLabel", {
+                Font = Enum.Font.GothamBold,
+                Text = content6,
+                TextColor3 = Color3.fromRGB(255, 255, 255),
+                TextSize = 12,
+                TextTransparency = 0.6000000238418579,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Bottom,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.9990000128746,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 10, 0, 23),
+                Size = UDim2.new(1, -180, 0, 12),
+                Name = "SliderContent",
+              }, create66)
+
+              local function f20()
+                create67.TextWrapped = false
+
+                create67.Size = UDim2.new(1, -180, 0, 12
+                  + 12 * math.floor(create67.TextBounds.X / create67.AbsoluteSize.X))
+
+                create66.Size = UDim2.new(1, 0, 0, create67.AbsoluteSize.Y + 33)
+                create67.TextWrapped = true
+              end
+
+              create67:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+                f20()
+                f15()
+              end)
+
+              f20()
+
+              local create68 = v22:Create("Frame", {
+                AnchorPoint = Vector2.new(0, 0.5),
+                BackgroundColor3 = v22.ColorRGB,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(1, -155, 0.5, 0),
+                Size = UDim2.new(0, 28, 0, 20),
+                Name = "SliderInput",
+              }, create66)
+
+              v22:Create("UICorner", { CornerRadius = UDim.new(0, 2) }, create68)
+
+              local create69 = v22:Create("TextBox", {
+                Font = Enum.Font.GothamBold,
+                Text = "90",
+                TextColor3 = Color3.fromRGB(255, 255, 255),
+                TextSize = 13,
+                TextWrapped = true,
+                BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+                BackgroundTransparency = 0.9990000128746033,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, -1, 0, 0),
+                Size = UDim2.new(1, 0, 1, 0),
+              }, create68)
+
+              local create70 = v22:Create("Frame", {
+                AnchorPoint = Vector2.new(1, 0.5),
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.800000011920929,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(1, -20, 0.5, 0),
+                Size = UDim2.new(0, 100, 0, 3),
+                Name = "SliderFrame",
+              }, create66)
+
+              v22:Create("UICorner", {}, create70)
+
+              local create71 = v22:Create("Frame", {
+                AnchorPoint = Vector2.new(0, 0.5),
+                BackgroundColor3 = v22.ColorRGB,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 0, 0.5, 0),
+                Size = UDim2.new(0.899999976, 0, 0, 1),
+                Name = "SliderDraggable",
+              }, create70)
+
+              v22:Create("UICorner", {}, create71)
+
+              local create72 = v22:Create("Frame", {
+                AnchorPoint = Vector2.new(1, 0.5),
+                BackgroundColor3 = v22.ColorRGB,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(1, 4, 0.5, 0),
+                Size = UDim2.new(0, 8, 0, 8),
+                Name = "SliderCircle",
+              }, create71)
+
+              v22:Create("UICorner", {}, create72)
+              v22:Create("UIStroke", { Color = v22.ColorRGB }, create72)
+
+              local v48 = false
+
+              local function f21(p31, p32)
+                local v49 = math.floor(p31 / p32 + math.sign(p31) * 0.5) * p32
+
+                if v49 < 0 then
+                  v49 = v49 + p32
+                end
+
+                return v49
+              end
+
+              function v47:Set(p33)
+                local v50 = math.clamp(f21(p33, increment), min, max)
+                v47.Value = v50
+                create69.Text = tostring(v50)
+
+                tweenService:Create(create71, TweenInfo.new(
+                  0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out
+                ), { Size = UDim2.fromScale((v50 - min) / (max - min), 1) }):Play()
+              end
+
+              create70.InputBegan:Connect(function(input5)
+                if input5.UserInputType == Enum.UserInputType.MouseButton1
+                  or input5.UserInputType == Enum.UserInputType.Touch then
+                  v48 = true
+                end
+              end)
+
+              create70.InputEnded:Connect(function(input6)
+                if input6.UserInputType == Enum.UserInputType.MouseButton1
+                  or input6.UserInputType == Enum.UserInputType.Touch then
+                  v48 = false
+                  callback3(v47.Value)
+                end
+              end)
+
+              local v51
+
+              userInputService.InputChanged:Connect(function(input7)
+                if v48 then
+                  local x = input7.Position.X
+
+                  if x ~= v51 then
+                    v51 = x
+
+                    v47:Set(min + (max - min) * math.clamp(
+                      (x - create70.AbsolutePosition.X) / create70.AbsoluteSize.X, 0, 1
+                    ))
+                  end
+                end
+              end)
+
+              create69:GetPropertyChangedSignal("Text"):Connect(function()
+                local gsub = create69.Text:gsub("[^%d]", "")
+
+                if gsub ~= "" then
+                  local v52 = tonumber(gsub)
+                  create69.Text = tostring((math.min(v52, max)))
+                else
+                  create69.Text = "0"
+                end
+              end)
+
+              create69.FocusLost:Connect(function()
+                if create69.Text ~= "" then
+                  v47:Set(tonumber(create69.Text))
+                  callback3(v47.Value)
+                else
+                  v47:Set(0)
+                  callback3(v47.Value)
+                end
+              end)
+
+              v47:Set(tonumber(default2))
+              callback3(v47.Value)
+              count3 = count3 + 1
+              return v47
+            end
+
+            function v41.AddInput(p34, p35)
+              local title9 = p35[1] or p35.Title or ""
+              local content7 = p35[2] or p35.Content or ""
+              local default3 = p35[3] or p35.Default or ""
+              local callback4 = p35[4] or p35.Callback or function() end
+              local v53 = { Value = default3 }
+
+              local create73 = v22:Create("Frame", {
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.935,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                LayoutOrder = count3,
+                Size = UDim2.new(1, 0, 0, 35),
+                Name = "Input",
+              }, create48)
+
+              v22:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, create73)
+
+              v22:Create("TextLabel", {
+                Font = Enum.Font.GothamBold,
+                Text = title9,
+                TextColor3 = Color3.fromRGB(230, 230, 230),
+                TextSize = 13,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Top,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 10, 0, 10),
+                Size = UDim2.new(1, -180, 0, 13),
+                Name = "InputTitle",
+              }, create73)
+
+              local create74 = v22:Create("TextLabel", {
+                Font = Enum.Font.GothamBold,
+                Text = content7,
+                TextColor3 = Color3.fromRGB(255, 255, 255),
+                TextSize = 12,
+                TextTransparency = 0.6,
+                TextWrapped = true,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Bottom,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 10, 0, 23),
+                Size = UDim2.new(1, -180, 0, 12),
+                Name = "InputContent",
+                Parent = create73,
+              })
+
+              local function f22()
+                local v54 = math.floor(create74.TextBounds.X / create74.AbsoluteSize.X)
+                create74.Size = UDim2.new(1, -180, 0, 12 + 12 * v54)
+                create73.Size = UDim2.new(1, 0, 0, create74.AbsoluteSize.Y + 33)
+              end
+
+              f22()
+
+              create74:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+                create74.TextWrapped = false
+                f22()
+                create74.TextWrapped = true
+                f15()
+              end)
+
+              local create75 = v22:Create("Frame", {
+                AnchorPoint = Vector2.new(1, 0.5),
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.95,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                ClipsDescendants = true,
+                Position = UDim2.new(1, -7, 0.5, 0),
+                Size = UDim2.new(0, 148, 0, 30),
+                Name = "InputFrame",
+              }, create73)
+
+              v22:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, create75)
+
+              local create76 = v22:Create("TextBox", {
+                CursorPosition = -1,
+                Font = Enum.Font.GothamBold,
+                PlaceholderColor3 = Color3.fromRGB(120, 120, 120),
+                PlaceholderText = "Write your input there",
+                Text = "",
+                TextColor3 = Color3.fromRGB(255, 255, 255),
+                TextSize = 12,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                AnchorPoint = Vector2.new(0, 0.5),
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 5, 0.5, 0),
+                Size = UDim2.new(1, -10, 1, -8),
+                Name = "InputTextBox",
+              }, create75)
+
+              function v53:Set(p36)
+                create76.Text = p36
+                v53.Value = p36
+                callback4(p36)
+              end
+
+              create76.FocusLost:Connect(function() v53:Set(create76.Text) end)
+              v53:Set(default3)
+              count3 = count3 + 1
+              return v53
+            end
+
+            function v41.AddDropdown(p37, p38)
+              local title10 = p38[1] or p38.Title or ""
+              local content8 = p38[2] or p38.Content or ""
+              local multi = p38[3] or p38.Multi or false
+              local options = p38[4] or p38.Options or {}
+              local default4 = p38[5] or p38.Default or {}
+              local callback5 = p38[6] or p38.Callback or function() end
+              local v55 = { Value = default4, Options = options }
+
+              local create77 = v22:Create("Frame", {
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.935,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                LayoutOrder = count3,
+                Size = UDim2.new(1, 0, 0, 35),
+                Name = "Dropdown",
+              }, create48)
+
+              local create78 = v22:Create("TextButton", {
+                Font = Enum.Font.SourceSans,
+                Text = "",
+                TextColor3 = Color3.fromRGB(0, 0, 0),
+                TextSize = 14,
+                BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+                BackgroundTransparency = 0.999,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Size = UDim2.new(1, 0, 1, 0),
+                Name = "ToggleButton",
+              }, create77)
+
+              v22:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, create77)
+
+              v22:Create("TextLabel", {
+                Font = Enum.Font.GothamBold,
+                Text = title10,
+                TextColor3 = Color3.fromRGB(230, 230, 230),
+                TextSize = 13,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Top,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 10, 0, 10),
+                Size = UDim2.new(1, -180, 0, 13),
+                Name = "DropdownTitle",
+                Parent = create77,
+              })
+
+              local create79 = v22:Create("TextLabel", {
+                Font = Enum.Font.GothamBold,
+                Text = content8,
+                TextColor3 = Color3.fromRGB(255, 255, 255),
+                TextSize = 12,
+                TextTransparency = 0.6,
+                TextWrapped = true,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Bottom,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 10, 0, 23),
+                Size = UDim2.new(1, -180, 0, 12),
+                Name = "DropdownContent",
+                Parent = create77,
+              })
+
+              create79.Size = UDim2.new(1, -180, 0, 12
+                + 12 * math.floor(create79.TextBounds.X / create79.AbsoluteSize.X))
+
+              create79.TextWrapped = true
+
+              create77.Size = UDim2.new(1, 0, 0, create79.AbsoluteSize.Y + 33)
+
+              create79:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+                create79.TextWrapped = false
+
+                create79.Size = UDim2.new(1, -180, 0, 12
+                  + 12 * math.floor(create79.TextBounds.X / create79.AbsoluteSize.X))
+
+                create77.Size = UDim2.new(1, 0, 0, create79.AbsoluteSize.Y + 33)
+                create79.TextWrapped = true
+                f15()
+              end)
+
+              local create80 = v22:Create("Frame", {
+                AnchorPoint = Vector2.new(1, 0.5),
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.95,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(1, -7, 0.5, 0),
+                Size = UDim2.new(0, 148, 0, 30),
+                Name = "SelectOptionsFrame",
+                LayoutOrder = count2,
+              }, create77)
+
+              v22:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, create80)
+
+              create78.Activated:Connect(function()
+                if not create29.Visible then
+                  create29.Visible = true
+                  local tweenInfo4 = TweenInfo.new(0.1)
+                  create36:JumpToIndex(create80.LayoutOrder)
+
+                  local create81 = tweenService:Create(create29, tweenInfo4, {
+                    BackgroundTransparency = 0.7,
+                  })
+
+                  local create82 = tweenService:Create(create32, tweenInfo4, {
+                    Position = UDim2.new(1, -11, 0.5, 0),
+                  })
+
+                  create81:Play()
+                  create82:Play()
+                end
+              end)
+
+              local create83 = v22:Create("TextLabel", {
+                Font = Enum.Font.GothamBold,
+                Text = "",
+                TextColor3 = Color3.fromRGB(255, 255, 255),
+                TextSize = 12,
+                TextTransparency = 0.6,
+                TextWrapped = true,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                AnchorPoint = Vector2.new(0, 0.5),
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 5, 0.5, 0),
+                Size = UDim2.new(1, -30, 1, -8),
+                Name = "OptionSelecting",
+              }, create80)
+
+              v22:Create("ImageLabel", {
+                Image = "rbxassetid://90200523188815",
+                ImageColor3 = Color3.fromRGB(231, 231, 231),
+                AnchorPoint = Vector2.new(1, 0.5),
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(1, 0, 0.5, 0),
+                Size = UDim2.new(0, 25, 0, 25),
+                Name = "OptionImg",
+              }, create80)
+
+              local create84 = v22:Create("ScrollingFrame", {
+                CanvasSize = UDim2.new(0, 0, 0, 0),
+                ScrollBarImageColor3 = Color3.fromRGB(0, 0, 0),
+                ScrollBarThickness = 0,
+                Active = true,
+                LayoutOrder = count2,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Size = UDim2.new(1, 0, 1, 0),
+                Name = "ScrollSelect",
+              }, create35)
+
+              v22:Create(
+                "UIListLayout",
+                { Padding = UDim.new(0, 3), SortOrder = Enum.SortOrder.LayoutOrder }, create84
+              )
+
+              local create85 = v22:Create("TextBox", {
+                Font = Enum.Font.GothamBold,
+                PlaceholderText = "Search",
+                PlaceholderColor3 = Color3.fromRGB(120, 120, 120),
+                Text = "",
+                TextColor3 = Color3.fromRGB(255, 255, 255),
+                TextSize = 12,
+                BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+                BackgroundTransparency = 0.9,
+                BorderColor3 = Color3.fromRGB(255, 0, 0),
+                BorderSizePixel = 1,
+                Size = UDim2.new(1, 0, 0, 20),
+                Name = "SearchBar",
+              }, create84)
+
+              create85:GetPropertyChangedSignal("Text"):Connect(function()
+                local v56 = string.lower(create85.Text)
+
+                for key8, value16 in pairs(create84:GetChildren()) do
+                  if value16:IsA("Frame") and value16.Name == "Option"
+                    and value16.Name ~= "SearchBar" then
+                    local optionText = value16:FindFirstChild("OptionText")
+
+                    if optionText then
+                      value16.Visible = string.find(string.lower(optionText.Text), v56) ~= nil
+                    end
+                  end
+                end
+              end)
+
+              local count4 = 0
+
+              function v55:Clear()
+                for key9, value17 in pairs(create84:GetChildren()) do
+                  if value17.Name == "Option" then
+                    v55.Value = {}
+                    v55.Options = {}
+
+                    create83.Text = "Select Options"
+                    value17:Destroy()
+                  end
+                end
+              end
+
+              function v55:Set(p39)
+                v55.Value = p39 or v55.Value
+
+                for key10, value18 in pairs(create84:GetChildren()) do
+                  if value18.Name ~= "UIListLayout" and value18.Name ~= "SearchBar" then
+                    local v57 = table.find(v55.Value, value18.OptionText.Text)
+
+                    local tweenInfo5 = TweenInfo.new(
+                      0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut
+                    )
+
+                    local udim7 = v57
+                    udim7 = v57 and UDim2.new(0, 1, 0, 12)
+
+                    local udim8 = udim7
+                    udim8 = udim7 or UDim2.new(0, 0, 0, 0)
+
+                    tweenService:Create(value18.ChooseFrame, tweenInfo5, { Size = udim8 }):Play()
+
+                    tweenService:Create(value18.ChooseFrame.UIStroke, tweenInfo5, {
+                      Transparency = v57 and 0 or 0.999,
+                    }):Play()
+
+                    tweenService:Create(value18, tweenInfo5, {
+                      BackgroundTransparency = v57 and 0.935 or 0.999,
+                    }):Play()
+                  end
+                end
+
+                local v58 = table.concat(v55.Value, ", ")
+                create83.Text = v58 ~= "" and v58 or "Select Options"
+                callback5(v55.Value)
+              end
+
+              function v55:AddOption(p40)
+                local v59 = p40
+                v59 = v59 or "Option"
+
+                local create86 = v22:Create("Frame", {
+                  BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                  BackgroundTransparency = 0.999,
+                  BorderColor3 = Color3.fromRGB(0, 0, 0),
+                  BorderSizePixel = 0,
+                  LayoutOrder = count4,
+                  Size = UDim2.new(1, 0, 0, 30),
+                  Name = "Option",
+                }, create84)
+
+                v22:Create("UICorner", { CornerRadius = UDim.new(0, 3) }, create86)
+
+                local create87 = v22:Create("TextButton", {
+                  Font = Enum.Font.GothamBold,
+                  Text = "",
+                  TextColor3 = Color3.fromRGB(255, 255, 255),
+                  TextSize = 13,
+                  TextXAlignment = Enum.TextXAlignment.Left,
+                  BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                  BackgroundTransparency = 0.999,
+                  BorderColor3 = Color3.fromRGB(0, 0, 0),
+                  BorderSizePixel = 0,
+                  Size = UDim2.new(1, 0, 1, 0),
+                  Name = "OptionButton",
+                }, create86)
+
+                v22:Create("TextLabel", {
+                  Font = Enum.Font.GothamBold,
+                  Text = v59,
+                  TextSize = 13,
+                  TextColor3 = Color3.fromRGB(230, 230, 230),
+                  TextXAlignment = Enum.TextXAlignment.Left,
+                  TextYAlignment = Enum.TextYAlignment.Top,
+                  BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                  BackgroundTransparency = 0.999,
+                  BorderColor3 = Color3.fromRGB(0, 0, 0),
+                  BorderSizePixel = 0,
+                  Position = UDim2.new(0, 8, 0, 8),
+                  Size = UDim2.new(1, -100, 0, 13),
+                  Name = "OptionText",
+                }, create86)
+
+                local create88 = v22:Create("Frame", {
+                  AnchorPoint = Vector2.new(0, 0.5),
+                  BackgroundColor3 = v22.ColorRGB,
+                  BorderColor3 = Color3.fromRGB(0, 0, 0),
+                  BorderSizePixel = 0,
+                  Position = UDim2.new(0, 2, 0.5, 0),
+                  Size = UDim2.new(0, 0, 0, 0),
+                  Name = "ChooseFrame",
+                }, create86)
+
+                v22:Create(
+                  "UIStroke", { Color = v22.ColorRGB, Thickness = 1.6, Transparency = 0.999 },
+                  create88
+                )
+
+                v22:Create("UICorner", {}, create88)
+
+                create87.Activated:Connect(function()
+                  CircleClick(create87, localPlayer2:GetMouse().X, localPlayer2:GetMouse().Y)
+                  local v60 = create86.BackgroundTransparency > 0.95
+
+                  if multi then
+                    if v60 then
+                      if not table.find(v55.Value, v59) then
+                        table.insert(v55.Value, v59)
+                      end
+                    else
+                      for index9, value19 in ipairs(v55.Value) do
+                        if value19 == v59 then
+                          table.remove(v55.Value, index9)
+                          break
+                        end
+                      end
+                    end
+                  else
+                    v55.Value = { v59 }
+                  end
+
+                  v55:Set(v55.Value)
+                end)
+
+                local function f23()
+                  local v61 = 0
+
+                  for index10, value20 in ipairs(create84:GetChildren()) do
+                    if value20.Name ~= "UIListLayout" and value20.Name ~= "SearchBar" then
+                      v61 = v61 + 5 + value20.Size.Y.Offset
+                    end
+                  end
+
+                  create84.CanvasSize = UDim2.new(0, 0, 0, v61)
+                end
+
+                f23()
+
+                count4 = count4 + 1
+              end
+
+              function v55:Refresh(p41, p42)
+                local v62 = p41 or {}
+                local v63 = p42 or {}
+                v55:Clear()
+
+                for index11, value21 in ipairs(v62) do
+                  v55:AddOption(value21)
+                end
+
+                v55.Options = v62
+                v55:Set(v63)
+              end
+
+              v55:Refresh(v55.Options, v55.Value)
+
+              count3 = count3 + 1
+              count2 = count2 + 1
+              return v55
+            end
+
+            count3 = count3 + 1
+            return v41
+          end
+
+          count = count + 1
+          return v37
+        end
+
+        return v35
+      end
+
+      return v29
+    end
+
+    local tab = f8():CreateWindow({ "LIFTHUB", "Select a hub" }):CreateTab({ "Hubs" })
+    local addSection = tab:AddSection("Hubs", true)
+
+    tab:AddSection("Credits", false):AddParagraph({
+      "Credits",
+      [[
+Owner: Monkey.d.luffy.ezz
+Owner: Rectslayer]],
+    })
+
+    tab:AddSection("Inspiration", false):AddParagraph({ "Inspiration", "Speed Hub [Menu]" })
+
+    addSection:AddButton({
+      "UNIVERSAL HUB", "Works in all games", "rbxassetid://7734010488", function() f2() end,
+    })
+
+    addSection:AddButton({
+      "MUSCLE LEGENDS", "Only for Muscle Legends", "rbxassetid://7734010488",
+      function() f3() end,
+    })
+
+    addSection:AddButton({
+      "STRONGMAN SIMULATOR", "Only for Strongman Simulator", "rbxassetid://7734010488",
+      function() f4() end,
+    })
+
+    addSection:AddButton({
+      "MOG EVOLUTION", "Only for Mog Evolution", "rbxassetid://7734010488", function() f5() end,
+    })
+
+    addSection:AddButton({
+      "ONE TAB", "Universal combat cheats", "rbxassetid://7734010488", function() f6() end,
+    })
+
+    addSection:AddButton({
+      "OWNER", "Owner only", "rbxassetid://7734010488", function() f7() end,
+    })
+
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, 0, 0, 18)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = "Loader + 4 hubs. Loads one at a time."
+    textLabel.TextColor3 = Color3.fromRGB(100, 100, 110)
+    textLabel.TextSize = 9
+    textLabel.Font = Enum.Font.Gotham
+    textLabel.Parent = Content
+
+    local textLabel2 = Instance.new("TextLabel")
+    textLabel2.Size = UDim2.new(1, 0, 0, 18)
+    textLabel2.BackgroundTransparency = 1
+    textLabel2.Text = "KEY SYSTEM: ACTIVE"
+    textLabel2.TextColor3 = Color3.fromRGB(0, 200, 100)
+    textLabel2.TextSize = 11
+    textLabel2.Font = Enum.Font.GothamBold
+    textLabel2.Parent = Content
+
+    pcall(function()
+      starterGui:SetCore("SendNotification", {
+        Title = "Loader ready!",
+        Text = "2 hubs ready",
+        Duration = 4,
+      })
+    end)
+
+    print("========================================")
+    print("  LOADER v4.4 - 4 Hub Hazir")
+    print("  1) UNIVERSAL HUB 1.0")
+    print("  2) MUSCLE LEGENDS")
+    print("========================================")
+  end
+
+  f1()
+end)
+
+if not v2 then
+  warn("[Loader] Load error: " .. tostring(v3))
+
+  pcall(function()
+    starterGui:SetCore("SendNotification", {
+      Title = "Loader Hatasi",
+      Text = tostring(v3):sub(1, 60),
+      Duration = 5,
+    })
+  end)
+end

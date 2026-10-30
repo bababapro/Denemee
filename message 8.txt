@@ -1,0 +1,2985 @@
+-- This file was created by Dominator Logger | By Dominator
+
+local players = game:GetService("Players")
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local tweenService = game:GetService("TweenService")
+local coreGui = game:GetService("CoreGui")
+local httpService = game:GetService("HttpService")
+local runService = game:GetService("RunService")
+local userInputService = game:GetService("UserInputService")
+local virtualUser = game:GetService("VirtualUser")
+local teleportService = game:GetService("TeleportService")
+
+local function f1(p1, p2, p3)
+end
+
+local v1 = getgenv and getgenv() or _G
+v1.__HUB_SESSION = (v1.__HUB_SESSION or 0) + 1
+
+local hubSESSION = v1.__HUB_SESSION
+
+local function f2()
+  return v1.__HUB_SESSION == hubSESSION
+end
+
+local function f3()
+  local v2, v3 = pcall(function()
+    local localPlayer = players.LocalPlayer
+
+    if not localPlayer:FindFirstChild("PlayerGui") then
+      localPlayer:WaitForChild("PlayerGui")
+    end
+
+    local v4 = {}
+    local v5 = {}
+
+    local function f4()
+      pcall(function()
+        if readfile and isfile and isfile("HubCfg_Muscle.json") then
+          local jsonDecode = httpService:JSONDecode(readfile("HubCfg_Muscle.json"))
+
+          if type(jsonDecode) == "table" then
+            v4 = jsonDecode
+          end
+        end
+      end)
+
+      for index, value in ipairs(v5) do
+        local defTrue = v4[value.key]
+
+        if defTrue == nil then
+          defTrue = value.defTrue
+        end
+
+        if defTrue ~= value.cur then
+          value.cur = defTrue
+          pcall(value.fire, defTrue)
+        end
+      end
+    end
+
+    local function f5(p4, p5, p6, p7, p8, p9)
+      local v6 = v4[p7] == true
+
+      if p9 == "on" and v4[p7] == nil then
+        v6 = true
+      end
+
+      local addToggle = p4:AddToggle({
+        p5, p6, v6,
+        function(p10)
+          v4[p7] = p10
+          pcall(p8, p10)
+        end,
+      })
+
+      table.insert(v5, {
+        key = p7,
+        defTrue = v6 == true,
+        cur = v6,
+        fire = function(p11)
+          pcall(function() addToggle:Set(p11) end)
+          pcall(p8, p11)
+        end,
+      })
+
+      if v6 then
+        task.spawn(function()
+          task.wait(1)
+
+          if f2() then
+            pcall(p8, true)
+          end
+        end)
+      end
+
+      return addToggle
+    end
+
+    local function f6(p12, p13, p14, p15)
+      p12:AddButton({ p13, p14, "rbxassetid://7734010488", function() end })
+    end
+
+    local function f7()
+      local localPlayer2 = players.LocalPlayer
+
+      local v7 = {}
+      v7.ColorRGB = Color3.fromRGB(250, 7, 7)
+
+      function v7:Create(p16, p17, p18)
+        local instance = Instance.new(p16)
+
+        for key, value2 in pairs(p17) do
+          instance[key] = value2
+        end
+
+        if p18 then
+          instance.Parent = p18
+        end
+
+        return instance
+      end
+
+      function v7.EnabledAFK(p19)
+        localPlayer2.Idled:Connect(function()
+          virtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+          task.wait(1)
+          virtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+        end)
+      end
+
+      local function f8()
+        local create = v7:Create("ScreenGui", {
+          ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+          Name = "MuscleHubX_GUI",
+        }, runService:IsStudio() and localPlayer2.PlayerGui
+          or gethui and gethui() or cloneref and cloneref(coreGui) or coreGui)
+
+        local create2 = v7:Create("ImageButton", {
+          BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+          BorderColor3 = Color3.fromRGB(255, 0, 0),
+          BackgroundTransparency = 1,
+          Position = UDim2.new(0.1021, 0, 0.0743, 0),
+          Size = UDim2.new(0, 59, 0, 49),
+          Image = "rbxassetid://136890595976124",
+          Visible = false,
+        }, create)
+
+        v7:Create("UICorner", { Name = "MainCorner", CornerRadius = UDim.new(0, 9) }, create2)
+        local v8 = false
+        local position, position2
+
+        local function f9(p20)
+          local v9 = p20.Position - position
+
+          create2.Position = UDim2.new(
+            position2.X.Scale, position2.X.Offset + v9.X, position2.Y.Scale,
+            position2.Y.Offset + v9.Y
+          )
+        end
+
+        create2.InputBegan:Connect(function(input)
+          if input.UserInputType == Enum.UserInputType.Touch
+            or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            v8 = true
+            position = input.Position
+            position2 = create2.Position
+
+            input.Changed:Connect(function()
+              if input.UserInputState == Enum.UserInputState.End then
+                v8 = false
+              end
+            end)
+          end
+        end)
+
+        create2.InputChanged:Connect(function(input2)
+          if v8
+            and (input2.UserInputType == Enum.UserInputType.MouseMovement
+              or input2.UserInputType == Enum.UserInputType.Touch) then
+            f9(input2)
+          end
+        end)
+
+        return create2
+      end
+
+      local v10 = f8()
+
+      local function f10(p21, p22)
+        local v11 = false
+        local position3, position4
+
+        local function f11(p23)
+          local v12 = p23.Position - position3
+
+          p22.Position = UDim2.new(
+            position4.X.Scale, position4.X.Offset + v12.X, position4.Y.Scale,
+            position4.Y.Offset + v12.Y
+          )
+        end
+
+        p21.InputBegan:Connect(function(input3)
+          if input3.UserInputType == Enum.UserInputType.MouseButton1
+            or input3.UserInputType == Enum.UserInputType.Touch then
+            v11 = true
+            position3 = input3.Position
+            position4 = p22.Position
+
+            input3.Changed:Connect(function()
+              if input3.UserInputState == Enum.UserInputState.End then
+                v11 = false
+              end
+            end)
+          end
+        end)
+
+        p21.InputChanged:Connect(function(input4)
+          if v11
+            and (input4.UserInputType == Enum.UserInputType.MouseMovement
+              or input4.UserInputType == Enum.UserInputType.Touch) then
+            f11(input4)
+          end
+        end)
+      end
+
+      function CircleClick(p24, p25, p26)
+        task.spawn(function()
+          p24.ClipsDescendants = true
+
+          local circle = Instance.new("ImageLabel")
+          circle.Image = "rbxassetid://106471194043211"
+          circle.ImageColor3 = Color3.fromRGB(80, 80, 80)
+          circle.ImageTransparency = 0.89999997615814
+          circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+          circle.BackgroundTransparency = 1
+          circle.ZIndex = 10
+          circle.Name = "Circle"
+          circle.Parent = p24
+
+          circle.Position = UDim2.new(
+            0, p25 - p24.AbsolutePosition.X, 0, p26 - p24.AbsolutePosition.Y
+          )
+
+          local v13 = math.max(p24.AbsoluteSize.X, p24.AbsoluteSize.Y) * 1.5
+
+          local create3 = tweenService:Create(circle, TweenInfo.new(
+            0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out
+          ), {
+            Size = UDim2.new(0, v13, 0, v13),
+            Position = UDim2.new(0.5, -v13 / 2, 0.5, -v13 / 2),
+          })
+
+          create3:Play()
+
+          create3.Completed:Connect(function()
+            local count = 0
+
+            while true do
+              count = 1 + count
+
+              if not (10 >= count) then
+                break
+              end
+
+              circle.ImageTransparency = circle.ImageTransparency + 0.01
+              wait(0.05)
+            end
+
+            circle:Destroy()
+          end)
+        end)
+      end
+
+      local v14 = {}
+      local v15 = {}
+
+      v14.Unloaded = false
+
+      function v14.SetNotification(p27, p28)
+        local title = p28[1] or p28.Title or ""
+        local description = p28[2] or p28.Description or ""
+        local content = p28[3] or p28.Content or ""
+        local time = p28[5] or p28.Time or 0.5
+        local delay = p28[6] or p28.Delay or 5
+
+        local create4 = v7:Create("ScreenGui", {
+          ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+          Name = "MuscleHubX_GUI",
+        }, runService:IsStudio() and localPlayer2.PlayerGui
+          or gethui and gethui() or cloneref and cloneref(coreGui) or coreGui)
+
+        local create5 = v7:Create("Frame", {
+          AnchorPoint = Vector2.new(1, 1),
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.999,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Position = UDim2.new(1, -30, 1, -30),
+          Size = UDim2.new(0, 320, 1, 0),
+          Name = "NotificationLayout",
+        }, create4)
+
+        local v16 = 0
+
+        create5.ChildRemoved:Connect(function()
+          v16 = 0
+
+          local tweenInfo = TweenInfo.new(
+            0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut
+          )
+
+          for index2, value3 in ipairs(create5:GetChildren()) do
+            tweenService:Create(value3, tweenInfo, {
+              Position = UDim2.new(0, 0, 1, -((value3.Size.Y.Offset + 12) * v16)),
+            }):Play()
+
+            v16 = v16 + 1
+          end
+        end)
+
+        local v17 = 0
+
+        for index3, value4 in ipairs(create5:GetChildren()) do
+          v17 = -value4.Position.Y.Offset + value4.Size.Y.Offset + 12
+        end
+
+        local create6 = v7:Create("Frame", {
+          BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Size = UDim2.new(1, 0, 0, 150),
+          Name = "NotificationFrame",
+          BackgroundTransparency = 1,
+          AnchorPoint = Vector2.new(0, 1),
+          Position = UDim2.new(0, 0, 1, -v17),
+        }, create5)
+
+        local create7 = v7:Create("Frame", {
+          BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Position = UDim2.new(0, 400, 0, 0),
+          Size = UDim2.new(1, 0, 1, 0),
+          Name = "NotificationFrameReal",
+        }, create6)
+
+        v7:Create("UICorner", { CornerRadius = UDim.new(0, 8) }, create7)
+
+        local create8 = v7:Create("Frame", {
+          BackgroundTransparency = 1,
+          BorderSizePixel = 0,
+          Size = UDim2.new(1, 0, 1, 0),
+          ZIndex = 0,
+          Name = "DropShadowHolder",
+          Parent = create7,
+        })
+
+        v7:Create("ImageLabel", {
+          Image = "",
+          ImageColor3 = Color3.fromRGB(0, 0, 0),
+          ImageTransparency = 0.5,
+          ScaleType = Enum.ScaleType.Slice,
+          SliceCenter = Rect.new(49, 49, 450, 450),
+          AnchorPoint = Vector2.new(0.5, 0.5),
+          BackgroundTransparency = 1,
+          BorderSizePixel = 0,
+          Position = UDim2.new(0.5, 0, 0.5, 0),
+          Size = UDim2.new(1, 47, 1, 47),
+          ZIndex = 0,
+          Name = "DropShadow",
+          Parent = create8,
+        })
+
+        local create9 = v7:Create("Frame", {
+          BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+          BackgroundTransparency = 0.999,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Size = UDim2.new(1, 0, 0, 36),
+          Name = "Top",
+          Parent = create7,
+        })
+
+        local create10 = v7:Create("TextLabel", {
+          Font = Enum.Font.GothamBold,
+          Text = title,
+          TextColor3 = Color3.fromRGB(255, 255, 255),
+          TextSize = 14,
+          TextXAlignment = Enum.TextXAlignment.Left,
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.999,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Size = UDim2.new(1, 0, 1, 0),
+          Position = UDim2.new(0, 10, 0, 0),
+          Parent = create9,
+        })
+
+        v7:Create("UIStroke", {
+          Color = Color3.fromRGB(255, 255, 255),
+          Thickness = 0.3,
+          Parent = create10,
+        })
+
+        v7:Create("UICorner", { Parent = create9, CornerRadius = UDim.new(0, 5) })
+
+        local color = Color3.fromRGB(255, 255, 255)
+        local color2 = Color3.fromRGB(0, 0, 0)
+        local udim = UDim2.new(1, 0, 1, 0)
+        local udim2 = UDim2.new(0, create10.TextBounds.X + 15, 0, 0)
+
+        local create11 = v7:Create("TextLabel", {
+          Font = Enum.Font.GothamBold,
+          Text = description,
+          TextColor3 = v7.ColorRGB,
+          TextSize = 14,
+          TextXAlignment = Enum.TextXAlignment.Left,
+          BackgroundColor3 = color,
+          BackgroundTransparency = 0.999,
+          BorderColor3 = color2,
+          BorderSizePixel = 0,
+          Size = udim,
+          Position = udim2,
+          Parent = create9,
+        })
+
+        v7:Create("UIStroke", { Color = v7.ColorRGB, Thickness = 0.4, Parent = create11 })
+
+        local create12 = v7:Create("TextButton", {
+          Font = Enum.Font.SourceSans,
+          Text = "X",
+          TextColor3 = Color3.fromRGB(255, 255, 255),
+          TextSize = 18,
+          AnchorPoint = Vector2.new(1, 0.5),
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.999,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Position = UDim2.new(1, -5, 0.5, 0),
+          Size = UDim2.new(0, 25, 0, 25),
+          Name = "Close",
+          Parent = create9,
+        })
+
+        local create13 = v7:Create("TextLabel", {
+          Font = Enum.Font.GothamBold,
+          TextColor3 = Color3.fromRGB(255, 255, 255),
+          TextSize = 13,
+          Text = content,
+          TextXAlignment = Enum.TextXAlignment.Left,
+          TextYAlignment = Enum.TextYAlignment.Top,
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.999,
+          TextColor3 = Color3.fromRGB(150, 150, 150),
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Position = UDim2.new(0, 10, 0, 27),
+          Size = UDim2.new(1, -20, 0, 13),
+          Parent = create7,
+        })
+
+        create13.Size = UDim2.new(1, -20, 0, 13
+          + 13 * math.floor(create13.TextBounds.X / create13.AbsoluteSize.X))
+
+        create13.TextWrapped = true
+
+        if create13.AbsoluteSize.Y < 27 then
+          create6.Size = UDim2.new(1, 0, 0, 65)
+        else
+          create6.Size = UDim2.new(1, 0, 0, create13.AbsoluteSize.Y + 40)
+        end
+
+        local v18 = false
+
+        function v15:Close()
+          if v18 then
+            return false
+          end
+
+          v18 = true
+
+          tweenService:Create(create7, TweenInfo.new(
+            tonumber(time), Enum.EasingStyle.Back, Enum.EasingDirection.InOut
+          ), { Position = UDim2.new(0, 400, 0, 0) }):Play()
+
+          task.wait(tonumber(time) / 1.2)
+          create6:Destroy()
+          v18 = false
+        end
+
+        create12.Activated:Connect(function() v15:Close() end)
+
+        tweenService:Create(create7, TweenInfo.new(
+          tonumber(time), Enum.EasingStyle.Back, Enum.EasingDirection.InOut
+        ), { Position = UDim2.new(0, 0, 0, 0) }):Play()
+
+        task.wait(tonumber(delay))
+        v15:Close()
+        return v15
+      end
+
+      function v14:CreateWindow(p29)
+        local title2 = p29[1] or p29.Title or ""
+        local description2 = p29[2] or p29.Description or ""
+        local tabWidth = p29[3] or p29["Tab Width"] or 120
+        local sizeUi = p29[4] or p29.SizeUi or UDim2.fromOffset(550, 315)
+
+        local create14 = v7:Create("ScreenGui", {
+          ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+          Name = "MuscleHubX_GUI",
+        }, runService:IsStudio() and localPlayer2.PlayerGui
+          or gethui and gethui() or cloneref and cloneref(coreGui) or coreGui)
+
+        local create15 = v7:Create("Frame", {
+          BackgroundTransparency = 1,
+          BorderSizePixel = 0,
+          Size = UDim2.new(0, 455, 0, 350),
+          ZIndex = 0,
+          Name = "DropShadowHolder",
+          Position = UDim2.new(
+            0, math.floor(create14.AbsoluteSize.X / 2) - math.floor(227.5), 0,
+            math.floor(create14.AbsoluteSize.Y / 2) - math.floor(175)
+          ),
+        }, create14)
+
+        local color3 = Color3.fromRGB(15, 15, 15)
+        local rect = Rect.new(49, 49, 450, 450)
+        local vector = Vector2.new(0.5, 0.5)
+        local udim3 = UDim2.new(0.5, 0, 0.5, 0)
+
+        local create16 = v7:Create("ImageLabel", {
+          Image = "",
+          ImageColor3 = color3,
+          ImageTransparency = 0.5,
+          ScaleType = Enum.ScaleType.Slice,
+          SliceCenter = rect,
+          AnchorPoint = vector,
+          BackgroundTransparency = 1,
+          BorderSizePixel = 0,
+          Position = udim3,
+          Size = sizeUi,
+          ZIndex = 0,
+          Name = "DropShadow",
+        }, create15)
+
+        local create17 = v7:Create("Frame", {
+          AnchorPoint = Vector2.new(0.5, 0.5),
+          BackgroundColor3 = Color3.fromRGB(15, 15, 15),
+          BackgroundTransparency = 0.1,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Position = UDim2.new(0.5, 0, 0.5, 0),
+          Size = sizeUi,
+          Name = "Main",
+        }, create16)
+
+        v7:Create("UICorner", {}, create17)
+        v7:Create("UIStroke", { Color = Color3.fromRGB(50, 50, 50), Thickness = 1.6 }, create17)
+
+        local create18 = v7:Create("Frame", {
+          BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+          BackgroundTransparency = 0.9990000128746,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Size = UDim2.new(1, 0, 0, 38),
+          Name = "Top",
+        }, create17)
+
+        local create19 = v7:Create("TextLabel", {
+          Font = Enum.Font.GothamBold,
+          Text = title2,
+          TextColor3 = Color3.fromRGB(255, 255, 255),
+          TextSize = 14,
+          TextXAlignment = Enum.TextXAlignment.Left,
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.9990000128746,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Size = UDim2.new(1, -100, 1, 0),
+          Position = UDim2.new(0, 10, 0, 0),
+        }, create18)
+
+        v7:Create("UICorner", {}, create18)
+
+        local create20 = v7:Create("TextLabel", {
+          Font = Enum.Font.GothamBold,
+          Text = description2,
+          TextColor3 = v7.ColorRGB,
+          TextSize = 14,
+          TextXAlignment = Enum.TextXAlignment.Left,
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.9990000128746,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Size = UDim2.new(1, -(create19.TextBounds.X + 104), 1, 0),
+          Position = UDim2.new(0, create19.TextBounds.X + 15, 0, 0),
+        }, create18)
+
+        v7:Create("UIStroke", { Color = v7.ColorRGB, Thickness = 0.4 }, create20)
+
+        local create21 = v7:Create("TextButton", {
+          Font = Enum.Font.SourceSans,
+          Text = "X",
+          TextColor3 = Color3.fromRGB(255, 255, 255),
+          TextSize = 18,
+          AnchorPoint = Vector2.new(1, 0.5),
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.9990000128746,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Position = UDim2.new(1, -8, 0.5, 0),
+          Size = UDim2.new(0, 25, 0, 25),
+          Name = "Close",
+        }, create18)
+
+        local create22 = v7:Create("TextButton", {
+          Font = Enum.Font.SourceSans,
+          Text = "-",
+          TextColor3 = Color3.fromRGB(255, 255, 255),
+          TextSize = 18,
+          AnchorPoint = Vector2.new(1, 0.5),
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.9990000128746033,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Position = UDim2.new(1, -42, 0.5, 0),
+          Size = UDim2.new(0, 25, 0, 25),
+          Name = "Min",
+        }, create18)
+
+        local create23 = v7:Create("Frame", {
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.9990000128746,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Position = UDim2.new(0, 9, 0, 50),
+          Size = UDim2.new(0, tabWidth, 1, -59),
+          Name = "LayersTab",
+        }, create17)
+
+        v7:Create("UICorner", { CornerRadius = UDim.new(0, 2) }, create23)
+
+        v7:Create("Frame", {
+          AnchorPoint = Vector2.new(0.5, 0),
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.85,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Position = UDim2.new(0.5, 0, 0, 38),
+          Size = UDim2.new(1, 0, 0, 1),
+          Name = "DecideFrame",
+        }, create17)
+
+        local create24 = v7:Create("Frame", {
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.9990000128746,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Position = UDim2.new(0, tabWidth + 18, 0, 50),
+          Size = UDim2.new(1, -(tabWidth + 9 + 18), 1, -59),
+          Name = "Layers",
+        }, create17)
+
+        v7:Create("UICorner", { CornerRadius = UDim.new(0, 2) }, create24)
+
+        local create25 = v7:Create("TextLabel", {
+          Font = Enum.Font.GothamBold,
+          Text = "",
+          TextColor3 = Color3.fromRGB(255, 255, 255),
+          TextSize = 24,
+          TextWrapped = true,
+          TextXAlignment = Enum.TextXAlignment.Left,
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.9990000128746,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Size = UDim2.new(1, 0, 0, 30),
+          Name = "NameTab",
+        }, create24)
+
+        local create26 = v7:Create("Folder", { Name = "LayersFolder" }, (v7:Create("Frame", {
+          AnchorPoint = Vector2.new(0, 1),
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.9990000128746,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          ClipsDescendants = true,
+          Position = UDim2.new(0, 0, 1, 0),
+          Size = UDim2.new(1, 0, 1, -33),
+          Name = "LayersReal",
+        }, create24)))
+
+        local create27 = v7:Create("UIPageLayout", {
+          SortOrder = Enum.SortOrder.LayoutOrder,
+          Name = "LayersPageLayout",
+          TweenTime = 0.5,
+          EasingDirection = Enum.EasingDirection.InOut,
+          EasingStyle = Enum.EasingStyle.Quad,
+        }, create26)
+
+        local create28 = v7:Create("ScrollingFrame", {
+          CanvasSize = UDim2.new(0, 0, 2.10000002, 0),
+          ScrollBarImageColor3 = Color3.fromRGB(0, 0, 0),
+          ScrollBarThickness = 0,
+          Active = true,
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.9990000128746,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Size = UDim2.new(1, 0, 1, -10),
+          Name = "ScrollTab",
+        }, create23)
+
+        v7:Create(
+          "UIListLayout", { Padding = UDim.new(0, 0), SortOrder = Enum.SortOrder.LayoutOrder },
+          create28
+        )
+
+        local function f12()
+          local v19 = 0
+
+          for key2, value5 in pairs(create28:GetChildren()) do
+            if value5.Name ~= "UIListLayout" then
+              v19 = v19 + 3 + value5.Size.Y.Offset
+            end
+          end
+
+          create28.CanvasSize = UDim2.new(0, 0, 0, v19)
+        end
+
+        create28.ChildAdded:Connect(f12)
+        create28.ChildRemoved:Connect(f12)
+
+        create22.Activated:Connect(function()
+          CircleClick(create22, localPlayer2:GetMouse().X, localPlayer2:GetMouse().Y)
+          create15.Visible = false
+
+          if not v10.Visible then
+            v10.Visible = true
+          end
+        end)
+
+        v10.Activated:Connect(function()
+          create15.Visible = true
+
+          if v10.Visible then
+            v10.Visible = false
+          end
+        end)
+
+        create21.Activated:Connect(function()
+          CircleClick(create21, localPlayer2:GetMouse().X, localPlayer2:GetMouse().Y)
+
+          if create14 then
+            create14:Destroy()
+          end
+
+          if not v14.Unloaded then
+            v14.Unloaded = true
+          end
+        end)
+
+        create15.Size = UDim2.new(
+          0, 115 + create19.TextBounds.X + 1 + create20.TextBounds.X, 0, 350
+        )
+
+        f10(create18, create15)
+
+        local create29 = v7:Create("Frame", {
+          AnchorPoint = Vector2.new(1, 1),
+          BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+          BackgroundTransparency = 1,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          ClipsDescendants = true,
+          Position = UDim2.new(1, 8, 1, 8),
+          Size = UDim2.new(1, 154, 1, 54),
+          Visible = false,
+          Name = "MoreBlur",
+        }, create24)
+
+        local create30 = v7:Create("Frame", {
+          BackgroundTransparency = 1,
+          BorderSizePixel = 0,
+          Size = UDim2.new(1, 0, 1, 0),
+          ZIndex = 0,
+          Name = "DropShadowHolder",
+        }, create29)
+
+        v7:Create("ImageLabel", {
+          Image = "",
+          ImageColor3 = Color3.fromRGB(0, 0, 0),
+          ImageTransparency = 0.5,
+          ScaleType = Enum.ScaleType.Slice,
+          SliceCenter = Rect.new(49, 49, 450, 450),
+          AnchorPoint = Vector2.new(0.5, 0.5),
+          BackgroundTransparency = 1,
+          BorderSizePixel = 0,
+          Position = UDim2.new(0.5, 0, 0.5, 0),
+          Size = UDim2.new(1, 35, 1, 35),
+          ZIndex = 0,
+          Name = "DropShadow",
+        }, create30)
+
+        v7:Create("UICorner", {}, create29)
+
+        local create31 = v7:Create("TextButton", {
+          Font = Enum.Font.SourceSans,
+          Text = "",
+          TextColor3 = Color3.fromRGB(0, 0, 0),
+          TextSize = 14,
+          BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+          BackgroundTransparency = 0.999,
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          Size = UDim2.new(1, 0, 1, 0),
+          Name = "ConnectButton",
+        }, create29)
+
+        local create32 = v7:Create("Frame", {
+          AnchorPoint = Vector2.new(1, 0.5),
+          BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+          BorderColor3 = Color3.fromRGB(0, 0, 0),
+          BorderSizePixel = 0,
+          LayoutOrder = 1,
+          Position = UDim2.new(1, 172, 0.5, 0),
+          Size = UDim2.new(0, 160, 1, -16),
+          Name = "DropdownSelect",
+          ClipsDescendants = true,
+        }, create29)
+
+        create31.Activated:Connect(function()
+          if create29.Visible then
+            local tweenInfo2 = TweenInfo.new(0.2)
+
+            local create33 = tweenService:Create(create29, tweenInfo2, {
+              BackgroundTransparency = 0.999,
+            })
+
+            local create34 = tweenService:Create(create32, tweenInfo2, {
+              Position = UDim2.new(1, 172, 0.5, 0),
+            })
+
+            create33:Play()
+            create34:Play()
+            task.wait(0.2)
+            create29.Visible = false
+          end
+        end)
+
+        v7:Create("UICorner", { CornerRadius = UDim.new(0, 3), Parent = create32 })
+
+        v7:Create("UIStroke", {
+          Color = Color3.fromRGB(255, 255, 255),
+          Thickness = 2.5,
+          Transparency = 0.8,
+          Parent = create32,
+        })
+
+        local create35 = v7:Create("Folder", {
+          Name = "DropdownFolder",
+          Parent = v7:Create("Frame", {
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+            BackgroundTransparency = 0.999,
+            BorderColor3 = Color3.fromRGB(0, 0, 0),
+            BorderSizePixel = 0,
+            LayoutOrder = 1,
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            Size = UDim2.new(1, -10, 1, -10),
+            Name = "DropdownSelectReal",
+            Parent = create32,
+          }),
+        })
+
+        local create36 = v7:Create("UIPageLayout", {
+          EasingDirection = Enum.EasingDirection.InOut,
+          EasingStyle = Enum.EasingStyle.Quad,
+          TweenTime = 0.01,
+          SortOrder = Enum.SortOrder.LayoutOrder,
+          Archivable = false,
+          Name = "DropPageLayout",
+          Parent = create35,
+        })
+
+        local v20 = {}
+        local count2 = 0
+        local count3 = 0
+
+        function v20:CreateTab(p30)
+          local name = p30[1] or p30.Name or ""
+          local icon = p30[2] or p30.Icon or ""
+
+          local create37 = v7:Create("ScrollingFrame", {
+            ScrollBarImageColor3 = Color3.fromRGB(80, 80, 80),
+            ScrollBarThickness = 0,
+            Active = true,
+            LayoutOrder = count2,
+            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+            BackgroundTransparency = 0.999,
+            BorderColor3 = Color3.fromRGB(0, 0, 0),
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, 0, 1, 0),
+            Name = "ScrolLayers",
+            Parent = create26,
+          })
+
+          v7:Create("UIListLayout", {
+            Padding = UDim.new(0, 3),
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Parent = create37,
+          })
+
+          local create38 = v7:Create("Frame", {
+            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+            BackgroundTransparency = count2 == 0 and 0.92 or 0.999,
+            BorderColor3 = Color3.fromRGB(0, 0, 0),
+            BorderSizePixel = 0,
+            LayoutOrder = count2,
+            Size = UDim2.new(1, 0, 0, 30),
+            Name = "Tab",
+            Parent = create28,
+          })
+
+          v7:Create("UICorner", { CornerRadius = UDim.new(0, 4), Parent = create38 })
+
+          local create39 = v7:Create("TextButton", {
+            Font = Enum.Font.GothamBold,
+            Text = "",
+            TextColor3 = Color3.fromRGB(255, 255, 255),
+            TextSize = 13,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+            BackgroundTransparency = 0.999,
+            BorderColor3 = Color3.fromRGB(0, 0, 0),
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, 0, 1, 0),
+            Name = "TabButton",
+          }, create38)
+
+          v7:Create("TextLabel", {
+            Font = Enum.Font.GothamBold,
+            Text = name,
+            TextColor3 = Color3.fromRGB(255, 255, 255),
+            TextSize = 13,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+            BackgroundTransparency = 0.999,
+            BorderColor3 = Color3.fromRGB(0, 0, 0),
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, 0, 1, 0),
+            Position = UDim2.new(0, 30, 0, 0),
+            Name = "TabName",
+          }, create38)
+
+          v7:Create("ImageLabel", {
+            Image = icon,
+            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+            BackgroundTransparency = 0.999,
+            BorderColor3 = Color3.fromRGB(0, 0, 0),
+            BorderSizePixel = 0,
+            Position = UDim2.new(0, 9, 0, 7),
+            Size = UDim2.new(0, 16, 0, 16),
+            Name = "FeatureImg",
+          }, create38)
+
+          if count2 == 0 then
+            create27:JumpToIndex(0)
+            create25.Text = name
+
+            local create40 = v7:Create("Frame", {
+              BackgroundColor3 = v7.ColorRGB,
+              BorderColor3 = Color3.fromRGB(0, 0, 0),
+              BorderSizePixel = 0,
+              Position = UDim2.new(0, 2, 0, 9),
+              Size = UDim2.new(0, 1, 0, 12),
+              Name = "ChooseFrame",
+            }, create38)
+
+            v7:Create("UIStroke", { Color = v7.ColorRGB, Thickness = 1.6 }, create40)
+            v7:Create("UICorner", {}, create40)
+          end
+
+          create39.Activated:Connect(function()
+            CircleClick(create39, localPlayer2:GetMouse().X, localPlayer2:GetMouse().Y)
+            local v21
+
+            for key3, value6 in pairs(create28:GetChildren()) do
+              for key4, value7 in pairs(value6:GetChildren()) do
+                if value7.Name == "ChooseFrame" then
+                  v21 = value7
+                  break
+                end
+              end
+
+              if v21 then
+                break
+              end
+            end
+
+            if v21 and create38.LayoutOrder ~= create27.CurrentPage.LayoutOrder then
+              for key5, value8 in pairs(create28:GetChildren()) do
+                if value8.Name == "Tab" then
+                  tweenService:Create(value8, TweenInfo.new(
+                    0.2, Enum.EasingStyle.Back, Enum.EasingDirection.InOut
+                  ), { BackgroundTransparency = 0.999 }):Play()
+                end
+              end
+
+              local create41 = tweenService:Create(create38, TweenInfo.new(
+                0.6, Enum.EasingStyle.Back, Enum.EasingDirection.InOut
+              ), { BackgroundTransparency = 0.92 })
+
+              local create42 = tweenService:Create(v21, TweenInfo.new(
+                0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut
+              ), {
+                Position = UDim2.new(0, 2, 0, 9 + 33 * create38.LayoutOrder),
+              })
+
+              create41:Play()
+              create42:Play()
+              create27:JumpToIndex(create38.LayoutOrder)
+              task.wait(0.05)
+              create25.Text = name
+
+              tweenService:Create(v21, TweenInfo.new(
+                0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut
+              ), { Size = UDim2.new(0, 1, 0, 20) }):Play()
+
+              task.wait(0.2)
+
+              tweenService:Create(v21, TweenInfo.new(
+                0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut
+              ), { Size = UDim2.new(0, 1, 0, 12) }):Play()
+            end
+          end)
+
+          local v22 = {}
+
+          function v22:AddSection(p31, p32)
+            local text = p31 or ""
+            local v23 = p32 or false
+
+            local create43 = v7:Create("Frame", {
+              BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+              BackgroundTransparency = 0.999,
+              BorderColor3 = Color3.fromRGB(0, 0, 0),
+              BorderSizePixel = 0,
+              ClipsDescendants = true,
+              LayoutOrder = 0,
+              Size = UDim2.new(1, 0, 0, 30),
+              Name = "Section",
+            }, create37)
+
+            local create44 = v7:Create("Frame", {
+              AnchorPoint = Vector2.new(0.5, 0),
+              BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+              BackgroundTransparency = 0.935,
+              BorderColor3 = Color3.fromRGB(0, 0, 0),
+              BorderSizePixel = 0,
+              LayoutOrder = 1,
+              Position = UDim2.new(0.5, 0, 0, 0),
+              Size = UDim2.new(1, 1, 0, 30),
+              Name = "SectionReal",
+            }, create43)
+
+            v7:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, create44)
+
+            local create45 = v7:Create("TextButton", {
+              Font = Enum.Font.SourceSans,
+              Text = "",
+              TextColor3 = Color3.fromRGB(0, 0, 0),
+              TextSize = 14,
+              BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+              BackgroundTransparency = 0.9990000128746033,
+              BorderColor3 = Color3.fromRGB(0, 0, 0),
+              BorderSizePixel = 0,
+              Size = UDim2.new(1, 0, 1, 0),
+              Name = "SectionButton",
+            }, create44)
+
+            local create46 = v7:Create("Frame", {
+              AnchorPoint = Vector2.new(1, 0.5),
+              BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+              BackgroundTransparency = 0.9990000128746033,
+              BorderColor3 = Color3.fromRGB(0, 0, 0),
+              BorderSizePixel = 0,
+              Position = UDim2.new(1, -5, 0.5, 0),
+              Size = UDim2.new(0, 20, 0, 20),
+              Name = "FeatureFrame",
+            }, create44)
+
+            v7:Create("ImageLabel", {
+              Image = "rbxassetid://125609963478878",
+              AnchorPoint = Vector2.new(0.5, 0.5),
+              BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+              BackgroundTransparency = 0.9990000128746,
+              BorderColor3 = Color3.fromRGB(0, 0, 0),
+              BorderSizePixel = 0,
+              Position = UDim2.new(0.5, 0, 0.5, 0),
+              Rotation = -90,
+              Size = UDim2.new(1, 6, 1, 6),
+              Name = "FeatureImg",
+            }, create46)
+
+            v7:Create("TextLabel", {
+              Font = Enum.Font.GothamBold,
+              Text = text,
+              TextColor3 = Color3.fromRGB(230, 230, 230),
+              TextSize = 13,
+              TextXAlignment = Enum.TextXAlignment.Left,
+              TextYAlignment = Enum.TextYAlignment.Top,
+              AnchorPoint = Vector2.new(0, 0.5),
+              BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+              BackgroundTransparency = 0.9990000128746,
+              BorderColor3 = Color3.fromRGB(0, 0, 0),
+              BorderSizePixel = 0,
+              Position = UDim2.new(0, 10, 0.5, 0),
+              Size = UDim2.new(1, -50, 0, 13),
+              Name = "SectionTitle",
+            }, create44)
+
+            local create47 = v7:Create("Frame", {
+              BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+              BorderColor3 = Color3.fromRGB(0, 0, 0),
+              BorderSizePixel = 0,
+              AnchorPoint = Vector2.new(0.5, 0),
+              Position = UDim2.new(0.5, 0, 0, 33),
+              Size = UDim2.new(0, 0, 0, 2),
+              Name = "SectionDecideFrame",
+            }, create43)
+
+            v7:Create("UICorner", {}, create47)
+
+            v7:Create("UIGradient", {
+              Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 20, 20)),
+                ColorSequenceKeypoint.new(0.5, v7.ColorRGB),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20)),
+              }),
+            }, create47)
+
+            local create48 = v7:Create("Frame", {
+              AnchorPoint = Vector2.new(0.5, 0),
+              BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+              BackgroundTransparency = 0.9990000128746,
+              BorderColor3 = Color3.fromRGB(0, 0, 0),
+              BorderSizePixel = 0,
+              ClipsDescendants = true,
+              LayoutOrder = 1,
+              Position = UDim2.new(0.5, 0, 0, 38),
+              Size = UDim2.new(1, 0, 0, 100),
+              Name = "SectionAdd",
+            }, create43)
+
+            v7:Create("UICorner", { CornerRadius = UDim.new(0, 2) }, create48)
+
+            v7:Create(
+              "UIListLayout",
+              { Padding = UDim.new(0, 3), SortOrder = Enum.SortOrder.LayoutOrder }, create48
+            )
+
+            local function f13()
+              local v24 = 0
+
+              for key6, value9 in pairs(create37:GetChildren()) do
+                if value9.Name ~= "UIListLayout" then
+                  v24 = v24 + 3 + value9.Size.Y.Offset
+                end
+              end
+
+              create37.CanvasSize = UDim2.new(0, 0, 0, v24)
+            end
+
+            local function f14()
+              if v23 then
+                local v25 = 38
+
+                for key7, value10 in pairs(create48:GetChildren()) do
+                  if value10.Name ~= "UIListLayout" and value10.Name ~= "UICorner" then
+                    v25 = v25 + value10.Size.Y.Offset + 3
+                  end
+                end
+
+                tweenService:Create(create46, TweenInfo.new(0.1), { Rotation = 90 }):Play()
+
+                tweenService:Create(create43, TweenInfo.new(0.1), {
+                  Size = UDim2.new(1, 1, 0, v25),
+                }):Play()
+
+                tweenService:Create(create48, TweenInfo.new(0.1), {
+                  Size = UDim2.new(1, 0, 0, v25 - 38),
+                }):Play()
+
+                tweenService:Create(create47, TweenInfo.new(0.1), {
+                  Size = UDim2.new(1, 0, 0, 2),
+                }):Play()
+
+                task.wait(0.5)
+                f13()
+              end
+            end
+
+            create45.Activated:Connect(function()
+              CircleClick(create45, localPlayer2:GetMouse().X, localPlayer2:GetMouse().Y)
+
+              if v23 then
+                tweenService:Create(create46, TweenInfo.new(0.1), { Rotation = 0 }):Play()
+
+                tweenService:Create(create43, TweenInfo.new(0.1), {
+                  Size = UDim2.new(1, 1, 0, 30),
+                }):Play()
+
+                tweenService:Create(create47, TweenInfo.new(0.1), {
+                  Size = UDim2.new(0, 0, 0, 2),
+                }):Play()
+
+                v23 = false
+                task.wait(0.1)
+                f13()
+              else
+                v23 = true
+                f14()
+              end
+            end)
+
+            create48.ChildAdded:Connect(f14)
+            create48.ChildRemoved:Connect(f14)
+
+            f13()
+            local v26 = {}
+            local count4 = 0
+
+            function v26:AddParagraph(p33)
+              local title3 = p33[1] or p33.Title or ""
+              local content2 = p33[2] or p33.Content or ""
+              local v27 = {}
+
+              local create49 = v7:Create("Frame", {
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.935,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                LayoutOrder = count4,
+                Size = UDim2.new(1, 0, 0, 35),
+                Name = "Paragraph",
+              }, create48)
+
+              v7:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, create49)
+
+              local create50 = v7:Create("TextLabel", {
+                Font = Enum.Font.GothamBold,
+                Text = title3,
+                TextColor3 = Color3.fromRGB(231, 231, 231),
+                TextSize = 13,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Top,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 10, 0, 10),
+                Size = UDim2.new(1, -16, 0, 13),
+                Name = "ParagraphTitle",
+              }, create49)
+
+              local create51 = v7:Create("TextLabel", {
+                Font = Enum.Font.GothamBold,
+                Text = content2,
+                TextColor3 = Color3.fromRGB(255, 255, 255),
+                TextSize = 12,
+                TextTransparency = 0.6,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Bottom,
+                BackgroundTransparency = 0.999,
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 10, 0, 23),
+                Name = "ParagraphContent",
+              }, create49)
+
+              local function f15()
+                create51.TextWrapped = false
+                local v28 = math.ceil(create51.TextBounds.X / create51.AbsoluteSize.X)
+                create51.Size = UDim2.new(1, -16, 0, 12 + 12 * v28)
+                create49.Size = UDim2.new(1, 0, 0, create51.AbsoluteSize.Y + 33)
+                create51.TextWrapped = true
+                f14()
+              end
+
+              f15()
+
+              create51:GetPropertyChangedSignal("AbsoluteSize"):Connect(f15)
+
+              function v27:Set(p34)
+                local title4 = p34[1] or p34.Title or ""
+                local content3 = p34[2] or p34.Content or ""
+                create50.Text = title4
+                create51.Text = content3
+                f15()
+              end
+
+              return v27
+            end
+
+            function v26.AddSeperator(p35, p36)
+              local title5 = p36[1] or p36.Title or ""
+              local v29 = {}
+
+              local create52 = v7:Create("Frame", {
+                BackgroundColor3 = Color3.fromRGB(70, 70, 70),
+                BackgroundTransparency = 0.1,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 1,
+                LayoutOrder = count4,
+                Size = UDim2.new(1, 0, 0, 30),
+                Name = "Seperator",
+              }, create48)
+
+              local create53 = v7:Create("TextLabel", {
+                Font = Enum.Font.GothamBold,
+                Text = title5,
+                TextColor3 = Color3.fromRGB(231, 231, 231),
+                TextStrokeColor3 = Color3.fromRGB(0, 0, 0),
+                TextStrokeTransparency = 0.8,
+                TextSize = 14,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Center,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 1,
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 12, 0, 0),
+                Size = UDim2.new(1, -16, 1, 0),
+                Name = "SeperatorTitle",
+              }, create52)
+
+              v7:Create("UICorner", { CornerRadius = UDim.new(0, 6) }, create52)
+
+              v7:Create("UIGradient", {
+                Color = ColorSequence.new({
+                  ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 120, 120)),
+                  ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 120, 120)),
+                }),
+                Rotation = 90,
+              }, create52)
+
+              function v29:Set(p37)
+                create53.Text = p37[1] or p37.Title or ""
+              end
+
+              count4 = count4 + 1
+              return v29
+            end
+
+            function v26.AddLine(p38)
+              local create54 = v7:Create("Frame", {
+                BackgroundColor3 = Color3.fromRGB(90, 90, 90),
+                BackgroundTransparency = 0.2,
+                BorderSizePixel = 0,
+                LayoutOrder = count4,
+                Size = UDim2.new(1, 0, 0, 7),
+                Name = "Line",
+              }, create48)
+
+              v7:Create("UICorner", { CornerRadius = UDim.new(0, 3) }, create54)
+
+              v7:Create("UIGradient", {
+                Color = ColorSequence.new({
+                  ColorSequenceKeypoint.new(0, Color3.fromRGB(80, 80, 80)),
+                  ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 80, 80)),
+                }),
+                Rotation = 0,
+              }, create54)
+
+              count4 = count4 + 1
+              return {}
+            end
+
+            function v26:AddButton(p39)
+              local title6 = p39[1] or p39.Title or ""
+              local content4 = p39[2] or p39.Content or ""
+              local icon2 = p39[3] or p39.Icon or "rbxassetid://7734010488"
+              local callback = p39[4] or p39.Callback or function() end
+
+              local create55 = v7:Create("Frame", {
+                Name = "Button",
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.935,
+                BorderSizePixel = 0,
+                LayoutOrder = count4,
+                Size = UDim2.new(1, 0, 0, 35),
+              }, create48)
+
+              v7:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, create55)
+
+              v7:Create("TextLabel", {
+                Name = "ButtonTitle",
+                Font = Enum.Font.GothamBold,
+                Text = title6,
+                TextColor3 = Color3.fromRGB(231, 231, 231),
+                TextSize = 13,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Top,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 10, 0, 10),
+                Size = UDim2.new(1, -100, 0, 13),
+              }, create55)
+
+              local create56 = v7:Create("TextLabel", {
+                Name = "ButtonContent",
+                Font = Enum.Font.GothamBold,
+                Text = content4,
+                TextColor3 = Color3.fromRGB(255, 255, 255),
+                TextSize = 12,
+                TextTransparency = 0.6,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Bottom,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 10, 0, 23),
+                Size = UDim2.new(1, -100, 0, 12),
+              }, create55)
+
+              local function f16()
+                local v30 = math.floor(create56.TextBounds.X / create56.AbsoluteSize.X)
+                create56.Size = UDim2.new(1, -100, 0, 12 + 12 * v30)
+                create55.Size = UDim2.new(1, 0, 0, create56.AbsoluteSize.Y + 33)
+              end
+
+              create56.TextWrapped = true
+              f16()
+
+              create56:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+                create56.TextWrapped = false
+                f16()
+                create56.TextWrapped = true
+                f14()
+              end)
+
+              local create57 = v7:Create("TextButton", {
+                Name = "ButtonButton",
+                Font = Enum.Font.SourceSans,
+                Text = "",
+                TextColor3 = Color3.fromRGB(0, 0, 0),
+                TextSize = 14,
+                BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+                BackgroundTransparency = 0.999,
+                BorderSizePixel = 0,
+                Size = UDim2.new(1, 0, 1, 0),
+              }, create55)
+
+              local create58 = v7:Create("Frame", {
+                Name = "FeatureFrame",
+                AnchorPoint = Vector2.new(1, 0.5),
+                BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+                BackgroundTransparency = 0.999,
+                BorderSizePixel = 0,
+                Position = UDim2.new(1, -15, 0.5, 0),
+                Size = UDim2.new(0, 25, 0, 25),
+              }, create55)
+
+              v7:Create("ImageLabel", {
+                Name = "FeatureImg",
+                Image = icon2,
+                AnchorPoint = Vector2.new(0.5, 0.5),
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderSizePixel = 0,
+                Position = UDim2.new(0.5, 0, 0.5, 0),
+                Size = UDim2.new(1, 0, 1, 0),
+              }, create58)
+
+              create57.Activated:Connect(function()
+                CircleClick(create57, localPlayer2:GetMouse().X, localPlayer2:GetMouse().Y)
+                callback()
+              end)
+
+              count4 = count4 + 1
+              return {}
+            end
+
+            function v26:AddToggle(p40)
+              local title7 = p40[1] or p40.Title or ""
+              local content5 = p40[2] or p40.Content or ""
+              local default = p40[3] or p40.Default or false
+              local callback2 = p40[4] or p40.Callback or function() end
+              local v31 = { Value = default }
+
+              local create59 = v7:Create("Frame", {
+                Name = "Toggle",
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.935,
+                BorderSizePixel = 0,
+                LayoutOrder = count4,
+                Size = UDim2.new(1, 0, 0, 35),
+              }, create48)
+
+              v7:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, create59)
+
+              local create60 = v7:Create("TextLabel", {
+                Name = "ToggleTitle",
+                Font = Enum.Font.GothamBold,
+                Text = title7,
+                TextSize = 13,
+                TextColor3 = Color3.fromRGB(231, 231, 231),
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Top,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 10, 0, 10),
+                Size = UDim2.new(1, -100, 0, 13),
+              }, create59)
+
+              local color4 = Color3.fromRGB(255, 255, 255)
+              local color5 = Color3.fromRGB(255, 255, 255)
+              local udim4 = UDim2.new(0, 10, 0, 23)
+              local udim5 = UDim2.new(1, -100, 0, 12)
+
+              local create61 = v7:Create("TextLabel", {
+                Name = "ToggleContent",
+                Font = Enum.Font.GothamBold,
+                Text = content5,
+                TextSize = 12,
+                TextColor3 = color4,
+                TextTransparency = 0.6,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Bottom,
+                BackgroundColor3 = color5,
+                BackgroundTransparency = 0.999,
+                BorderSizePixel = 0,
+                Position = udim4,
+                Size = udim5,
+              }, create59)
+
+              local function f17()
+                create61.TextWrapped = false
+
+                create61.Size = UDim2.new(1, -100, 0, 12
+                  + 12 * math.ceil(create61.TextBounds.X / create61.AbsoluteSize.X))
+
+                create59.Size = UDim2.new(1, 0, 0, create61.AbsoluteSize.Y + 33)
+                create61.TextWrapped = true
+              end
+
+              f17()
+
+              create61:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+                f17()
+                f14()
+              end)
+
+              local create62 = v7:Create("TextButton", {
+                Name = "ToggleButton",
+                Font = Enum.Font.SourceSans,
+                Text = "",
+                TextColor3 = Color3.fromRGB(0, 0, 0),
+                TextSize = 14,
+                BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+                BackgroundTransparency = 0.999,
+                BorderSizePixel = 0,
+                Size = UDim2.new(1, 0, 1, 0),
+              }, create59)
+
+              local create63 = v7:Create("Frame", {
+                Name = "FeatureFrame2",
+                AnchorPoint = Vector2.new(1, 0.5),
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.92,
+                BorderSizePixel = 0,
+                Position = UDim2.new(1, -15, 0.5, 0),
+                Size = UDim2.new(0, 30, 0, 15),
+              }, create59)
+
+              v7:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, create63)
+
+              local create64 = v7:Create("UIStroke", {
+                Color = Color3.fromRGB(255, 255, 255),
+                Thickness = 2,
+                Transparency = 0.9,
+              }, create63)
+
+              local create65 = v7:Create("Frame", {
+                Name = "ToggleCircle",
+                BackgroundColor3 = Color3.fromRGB(230, 230, 230),
+                BorderSizePixel = 0,
+                Size = UDim2.new(0, 14, 0, 14),
+                Position = UDim2.new(0, 0, 0, 0),
+              }, create63)
+
+              v7:Create("UICorner", { CornerRadius = UDim.new(0, 15) }, create65)
+
+              local function f18(p41)
+                local colorRGB = p41 and v7.ColorRGB or Color3.fromRGB(230, 230, 230)
+                local udim6 = p41 and UDim2.new(0, 15, 0, 0) or UDim2.new(0, 0, 0, 0)
+                local colorRGB2 = p41 and v7.ColorRGB or Color3.fromRGB(255, 255, 255)
+                local transparency = p41 and 0 or 0.9
+                local colorRGB3 = p41 and v7.ColorRGB or Color3.fromRGB(255, 255, 255)
+
+                local tweenInfo3 = TweenInfo.new(
+                  0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut
+                )
+
+                tweenService:Create(create60, tweenInfo3, { TextColor3 = colorRGB }):Play()
+                tweenService:Create(create65, tweenInfo3, { Position = udim6 }):Play()
+
+                tweenService:Create(create64, tweenInfo3, {
+                  Color = colorRGB2,
+                  Transparency = transparency,
+                }):Play()
+
+                tweenService:Create(create63, tweenInfo3, {
+                  BackgroundColor3 = colorRGB3,
+                  BackgroundTransparency = p41 and 0 or 0.92,
+                }):Play()
+              end
+
+              create62.Activated:Connect(function()
+                CircleClick(create62, localPlayer2:GetMouse().X, localPlayer2:GetMouse().Y)
+                v31.Value = not v31.Value
+                v31:Set(v31.Value)
+              end)
+
+              function v31:Set(p42)
+                callback2(p42)
+                f18(p42)
+              end
+
+              v31:Set(v31.Value)
+
+              count4 = count4 + 1
+              return v31
+            end
+
+            function v26.AddSlider(p43, p44)
+              local title8 = p44[1] or p44.Title or ""
+              local content6 = p44[2] or p44.Content or ""
+              local increment = p44[3] or p44.Increment or 1
+              local min = p44[4] or p44.Min or 0
+              local max = p44[5] or p44.Max or 100
+              local default2 = p44[6] or p44.Default or 50
+              local callback3 = p44[7] or p44.Callback or function() end
+              local v32 = { Value = default2 }
+
+              local create66 = v7:Create("Frame", {
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.93500000238419,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                LayoutOrder = count4,
+                Size = UDim2.new(1, 0, 0, 35),
+                Name = "Slider",
+              }, create48)
+
+              v7:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, create66)
+
+              v7:Create("TextLabel", {
+                Font = Enum.Font.GothamBold,
+                Text = title8,
+                TextColor3 = Color3.fromRGB(230, 230, 230),
+                TextSize = 13,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Top,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.9990000128746,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 10, 0, 10),
+                Size = UDim2.new(1, -180, 0, 13),
+                Name = "SliderTitle",
+              }, create66)
+
+              local create67 = v7:Create("TextLabel", {
+                Font = Enum.Font.GothamBold,
+                Text = content6,
+                TextColor3 = Color3.fromRGB(255, 255, 255),
+                TextSize = 12,
+                TextTransparency = 0.60000002384186,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Bottom,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.9990000128746,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 10, 0, 23),
+                Size = UDim2.new(1, -180, 0, 12),
+                Name = "SliderContent",
+              }, create66)
+
+              local function f19()
+                create67.TextWrapped = false
+
+                create67.Size = UDim2.new(1, -180, 0, 12
+                  + 12 * math.floor(create67.TextBounds.X / create67.AbsoluteSize.X))
+
+                create66.Size = UDim2.new(1, 0, 0, create67.AbsoluteSize.Y + 33)
+                create67.TextWrapped = true
+              end
+
+              create67:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+                f19()
+                f14()
+              end)
+
+              f19()
+
+              local create68 = v7:Create("Frame", {
+                AnchorPoint = Vector2.new(0, 0.5),
+                BackgroundColor3 = v7.ColorRGB,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(1, -155, 0.5, 0),
+                Size = UDim2.new(0, 28, 0, 20),
+                Name = "SliderInput",
+              }, create66)
+
+              v7:Create("UICorner", { CornerRadius = UDim.new(0, 2) }, create68)
+
+              local create69 = v7:Create("TextBox", {
+                Font = Enum.Font.GothamBold,
+                Text = "90",
+                TextColor3 = Color3.fromRGB(255, 255, 255),
+                TextSize = 13,
+                TextWrapped = true,
+                BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+                BackgroundTransparency = 0.9990000128746,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, -1, 0, 0),
+                Size = UDim2.new(1, 0, 1, 0),
+              }, create68)
+
+              local create70 = v7:Create("Frame", {
+                AnchorPoint = Vector2.new(1, 0.5),
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.80000001192093,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(1, -20, 0.5, 0),
+                Size = UDim2.new(0, 100, 0, 3),
+                Name = "SliderFrame",
+              }, create66)
+
+              v7:Create("UICorner", {}, create70)
+
+              local create71 = v7:Create("Frame", {
+                AnchorPoint = Vector2.new(0, 0.5),
+                BackgroundColor3 = v7.ColorRGB,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 0, 0.5, 0),
+                Size = UDim2.new(0.899999976, 0, 0, 1),
+                Name = "SliderDraggable",
+              }, create70)
+
+              v7:Create("UICorner", {}, create71)
+
+              local create72 = v7:Create("Frame", {
+                AnchorPoint = Vector2.new(1, 0.5),
+                BackgroundColor3 = v7.ColorRGB,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(1, 4, 0.5, 0),
+                Size = UDim2.new(0, 8, 0, 8),
+                Name = "SliderCircle",
+              }, create71)
+
+              v7:Create("UICorner", {}, create72)
+              v7:Create("UIStroke", { Color = v7.ColorRGB }, create72)
+
+              local v33 = false
+
+              local function f20(p45, p46)
+                local v34 = math.floor(p45 / p46 + math.sign(p45) * 0.5) * p46
+
+                if v34 < 0 then
+                  v34 = v34 + p46
+                end
+
+                return v34
+              end
+
+              function v32:Set(p47)
+                local v35 = math.clamp(f20(p47, increment), min, max)
+                v32.Value = v35
+                create69.Text = tostring(v35)
+
+                tweenService:Create(create71, TweenInfo.new(
+                  0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out
+                ), { Size = UDim2.fromScale((v35 - min) / (max - min), 1) }):Play()
+              end
+
+              create70.InputBegan:Connect(function(input5)
+                if input5.UserInputType == Enum.UserInputType.MouseButton1
+                  or input5.UserInputType == Enum.UserInputType.Touch then
+                  v33 = true
+                end
+              end)
+
+              create70.InputEnded:Connect(function(input6)
+                if input6.UserInputType == Enum.UserInputType.MouseButton1
+                  or input6.UserInputType == Enum.UserInputType.Touch then
+                  v33 = false
+                  callback3(v32.Value)
+                end
+              end)
+
+              local v36
+
+              userInputService.InputChanged:Connect(function(input7)
+                if v33 then
+                  local x = input7.Position.X
+
+                  if x ~= v36 then
+                    v36 = x
+
+                    v32:Set(min + (max - min) * math.clamp(
+                      (x - create70.AbsolutePosition.X) / create70.AbsoluteSize.X, 0, 1
+                    ))
+                  end
+                end
+              end)
+
+              create69:GetPropertyChangedSignal("Text"):Connect(function()
+                local gsub = create69.Text:gsub("[^%d]", "")
+
+                if gsub ~= "" then
+                  local v37 = tonumber(gsub)
+                  create69.Text = tostring((math.min(v37, max)))
+                else
+                  create69.Text = "0"
+                end
+              end)
+
+              create69.FocusLost:Connect(function()
+                if create69.Text ~= "" then
+                  v32:Set(tonumber(create69.Text))
+                  callback3(v32.Value)
+                else
+                  v32:Set(0)
+                  callback3(v32.Value)
+                end
+              end)
+
+              v32:Set(tonumber(default2))
+              callback3(v32.Value)
+              count4 = count4 + 1
+              return v32
+            end
+
+            function v26.AddInput(p48, p49)
+              local title9 = p49[1] or p49.Title or ""
+              local content7 = p49[2] or p49.Content or ""
+              local default3 = p49[3] or p49.Default or ""
+              local callback4 = p49[4] or p49.Callback or function() end
+              local v38 = { Value = default3 }
+
+              local create73 = v7:Create("Frame", {
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.935,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                LayoutOrder = count4,
+                Size = UDim2.new(1, 0, 0, 35),
+                Name = "Input",
+              }, create48)
+
+              v7:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, create73)
+
+              v7:Create("TextLabel", {
+                Font = Enum.Font.GothamBold,
+                Text = title9,
+                TextColor3 = Color3.fromRGB(230, 230, 230),
+                TextSize = 13,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Top,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 10, 0, 10),
+                Size = UDim2.new(1, -180, 0, 13),
+                Name = "InputTitle",
+              }, create73)
+
+              local color6 = Color3.fromRGB(255, 255, 255)
+              local color7 = Color3.fromRGB(255, 255, 255)
+              local color8 = Color3.fromRGB(0, 0, 0)
+              local udim7 = UDim2.new(0, 10, 0, 23)
+              local udim8 = UDim2.new(1, -180, 0, 12)
+
+              local create74 = v7:Create("TextLabel", {
+                Font = Enum.Font.GothamBold,
+                Text = content7,
+                TextColor3 = color6,
+                TextSize = 12,
+                TextTransparency = 0.6,
+                TextWrapped = true,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Bottom,
+                BackgroundColor3 = color7,
+                BackgroundTransparency = 0.999,
+                BorderColor3 = color8,
+                BorderSizePixel = 0,
+                Position = udim7,
+                Size = udim8,
+                Name = "InputContent",
+                Parent = create73,
+              })
+
+              local function f21()
+                local v39 = math.floor(create74.TextBounds.X / create74.AbsoluteSize.X)
+                create74.Size = UDim2.new(1, -180, 0, 12 + 12 * v39)
+                create73.Size = UDim2.new(1, 0, 0, create74.AbsoluteSize.Y + 33)
+              end
+
+              f21()
+
+              create74:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+                create74.TextWrapped = false
+                f21()
+                create74.TextWrapped = true
+                f14()
+              end)
+
+              local create75 = v7:Create("Frame", {
+                AnchorPoint = Vector2.new(1, 0.5),
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.95,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                ClipsDescendants = true,
+                Position = UDim2.new(1, -7, 0.5, 0),
+                Size = UDim2.new(0, 148, 0, 30),
+                Name = "InputFrame",
+              }, create73)
+
+              v7:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, create75)
+
+              local create76 = v7:Create("TextBox", {
+                CursorPosition = -1,
+                Font = Enum.Font.GothamBold,
+                PlaceholderColor3 = Color3.fromRGB(120, 120, 120),
+                PlaceholderText = "Write your input there",
+                Text = "",
+                TextColor3 = Color3.fromRGB(255, 255, 255),
+                TextSize = 12,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                AnchorPoint = Vector2.new(0, 0.5),
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 5, 0.5, 0),
+                Size = UDim2.new(1, -10, 1, -8),
+                Name = "InputTextBox",
+              }, create75)
+
+              function v38:Set(p50)
+                create76.Text = p50
+                v38.Value = p50
+                callback4(p50)
+              end
+
+              create76.FocusLost:Connect(function() v38:Set(create76.Text) end)
+              v38:Set(default3)
+              count4 = count4 + 1
+              return v38
+            end
+
+            function v26.AddDropdown(p51, p52)
+              local title10 = p52[1] or p52.Title or ""
+              local content8 = p52[2] or p52.Content or ""
+              local multi = p52[3] or p52.Multi or false
+              local options = p52[4] or p52.Options or {}
+              local default4 = p52[5] or p52.Default or {}
+              local callback5 = p52[6] or p52.Callback or function() end
+              local v40 = { Value = default4, Options = options }
+
+              local create77 = v7:Create("Frame", {
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.935,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                LayoutOrder = count4,
+                Size = UDim2.new(1, 0, 0, 35),
+                Name = "Dropdown",
+              }, create48)
+
+              local create78 = v7:Create("TextButton", {
+                Font = Enum.Font.SourceSans,
+                Text = "",
+                TextColor3 = Color3.fromRGB(0, 0, 0),
+                TextSize = 14,
+                BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+                BackgroundTransparency = 0.999,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Size = UDim2.new(1, 0, 1, 0),
+                Name = "ToggleButton",
+              }, create77)
+
+              v7:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, create77)
+
+              v7:Create("TextLabel", {
+                Font = Enum.Font.GothamBold,
+                Text = title10,
+                TextColor3 = Color3.fromRGB(230, 230, 230),
+                TextSize = 13,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Top,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 10, 0, 10),
+                Size = UDim2.new(1, -180, 0, 13),
+                Name = "DropdownTitle",
+                Parent = create77,
+              })
+
+              local create79 = v7:Create("TextLabel", {
+                Font = Enum.Font.GothamBold,
+                Text = content8,
+                TextColor3 = Color3.fromRGB(255, 255, 255),
+                TextSize = 12,
+                TextTransparency = 0.6,
+                TextWrapped = true,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Bottom,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 10, 0, 23),
+                Size = UDim2.new(1, -180, 0, 12),
+                Name = "DropdownContent",
+                Parent = create77,
+              })
+
+              create79.Size = UDim2.new(1, -180, 0, 12
+                + 12 * math.floor(create79.TextBounds.X / create79.AbsoluteSize.X))
+
+              create79.TextWrapped = true
+
+              create77.Size = UDim2.new(1, 0, 0, create79.AbsoluteSize.Y + 33)
+
+              create79:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+                create79.TextWrapped = false
+
+                create79.Size = UDim2.new(1, -180, 0, 12
+                  + 12 * math.floor(create79.TextBounds.X / create79.AbsoluteSize.X))
+
+                create77.Size = UDim2.new(1, 0, 0, create79.AbsoluteSize.Y + 33)
+                create79.TextWrapped = true
+                f14()
+              end)
+
+              local create80 = v7:Create("Frame", {
+                AnchorPoint = Vector2.new(1, 0.5),
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.95,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(1, -7, 0.5, 0),
+                Size = UDim2.new(0, 148, 0, 30),
+                Name = "SelectOptionsFrame",
+                LayoutOrder = count3,
+              }, create77)
+
+              v7:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, create80)
+
+              create78.Activated:Connect(function()
+                if not create29.Visible then
+                  create29.Visible = true
+                  local tweenInfo4 = TweenInfo.new(0.1)
+                  create36:JumpToIndex(create80.LayoutOrder)
+
+                  local create81 = tweenService:Create(create29, tweenInfo4, {
+                    BackgroundTransparency = 0.7,
+                  })
+
+                  local create82 = tweenService:Create(create32, tweenInfo4, {
+                    Position = UDim2.new(1, -11, 0.5, 0),
+                  })
+
+                  create81:Play()
+                  create82:Play()
+                end
+              end)
+
+              local create83 = v7:Create("TextLabel", {
+                Font = Enum.Font.GothamBold,
+                Text = "",
+                TextColor3 = Color3.fromRGB(255, 255, 255),
+                TextSize = 12,
+                TextTransparency = 0.6,
+                TextWrapped = true,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                AnchorPoint = Vector2.new(0, 0.5),
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 5, 0.5, 0),
+                Size = UDim2.new(1, -30, 1, -8),
+                Name = "OptionSelecting",
+              }, create80)
+
+              v7:Create("ImageLabel", {
+                Image = "rbxassetid://90200523188815",
+                ImageColor3 = Color3.fromRGB(231, 231, 231),
+                AnchorPoint = Vector2.new(1, 0.5),
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Position = UDim2.new(1, 0, 0.5, 0),
+                Size = UDim2.new(0, 25, 0, 25),
+                Name = "OptionImg",
+              }, create80)
+
+              local create84 = v7:Create("ScrollingFrame", {
+                CanvasSize = UDim2.new(0, 0, 0, 0),
+                ScrollBarImageColor3 = Color3.fromRGB(0, 0, 0),
+                ScrollBarThickness = 0,
+                Active = true,
+                LayoutOrder = count3,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.999,
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Size = UDim2.new(1, 0, 1, 0),
+                Name = "ScrollSelect",
+              }, create35)
+
+              v7:Create(
+                "UIListLayout",
+                { Padding = UDim.new(0, 3), SortOrder = Enum.SortOrder.LayoutOrder }, create84
+              )
+
+              local create85 = v7:Create("TextBox", {
+                Font = Enum.Font.GothamBold,
+                PlaceholderText = "Search",
+                PlaceholderColor3 = Color3.fromRGB(120, 120, 120),
+                Text = "",
+                TextColor3 = Color3.fromRGB(255, 255, 255),
+                TextSize = 12,
+                BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+                BackgroundTransparency = 0.9,
+                BorderColor3 = Color3.fromRGB(255, 0, 0),
+                BorderSizePixel = 1,
+                Size = UDim2.new(1, 0, 0, 20),
+                Name = "SearchBar",
+              }, create84)
+
+              create85:GetPropertyChangedSignal("Text"):Connect(function()
+                local v41 = string.lower(create85.Text)
+
+                for key8, value11 in pairs(create84:GetChildren()) do
+                  if value11:IsA("Frame") and value11.Name == "Option"
+                    and value11.Name ~= "SearchBar" then
+                    local optionText = value11:FindFirstChild("OptionText")
+
+                    if optionText then
+                      value11.Visible = string.find(string.lower(optionText.Text), v41) ~= nil
+                    end
+                  end
+                end
+              end)
+
+              local count5 = 0
+
+              function v40:Clear()
+                for key9, value12 in pairs(create84:GetChildren()) do
+                  if value12.Name == "Option" then
+                    v40.Value = {}
+                    v40.Options = {}
+
+                    create83.Text = "Select Options"
+                    value12:Destroy()
+                  end
+                end
+              end
+
+              function v40:Set(p53)
+                v40.Value = p53 or v40.Value
+
+                for key10, value13 in pairs(create84:GetChildren()) do
+                  if value13.Name ~= "UIListLayout" and value13.Name ~= "SearchBar" then
+                    local v42 = table.find(v40.Value, value13.OptionText.Text)
+
+                    local tweenInfo5 = TweenInfo.new(
+                      0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut
+                    )
+
+                    local udim9 = v42
+                    udim9 = v42 and UDim2.new(0, 1, 0, 12)
+
+                    local udim10 = udim9
+                    udim10 = udim9 or UDim2.new(0, 0, 0, 0)
+
+                    tweenService:Create(value13.ChooseFrame, tweenInfo5, { Size = udim10 }):Play()
+
+                    tweenService:Create(value13.ChooseFrame.UIStroke, tweenInfo5, {
+                      Transparency = v42 and 0 or 0.999,
+                    }):Play()
+
+                    tweenService:Create(value13, tweenInfo5, {
+                      BackgroundTransparency = v42 and 0.935 or 0.999,
+                    }):Play()
+                  end
+                end
+
+                local v43 = table.concat(v40.Value, ", ")
+                create83.Text = v43 ~= "" and v43 or "Select Options"
+                callback5(v40.Value)
+              end
+
+              function v40:AddOption(p54)
+                local v44 = p54
+                v44 = v44 or "Option"
+
+                local create86 = v7:Create("Frame", {
+                  BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                  BackgroundTransparency = 0.999,
+                  BorderColor3 = Color3.fromRGB(0, 0, 0),
+                  BorderSizePixel = 0,
+                  LayoutOrder = count5,
+                  Size = UDim2.new(1, 0, 0, 30),
+                  Name = "Option",
+                }, create84)
+
+                v7:Create("UICorner", { CornerRadius = UDim.new(0, 3) }, create86)
+
+                local create87 = v7:Create("TextButton", {
+                  Font = Enum.Font.GothamBold,
+                  Text = "",
+                  TextColor3 = Color3.fromRGB(255, 255, 255),
+                  TextSize = 13,
+                  TextXAlignment = Enum.TextXAlignment.Left,
+                  BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                  BackgroundTransparency = 0.999,
+                  BorderColor3 = Color3.fromRGB(0, 0, 0),
+                  BorderSizePixel = 0,
+                  Size = UDim2.new(1, 0, 1, 0),
+                  Name = "OptionButton",
+                }, create86)
+
+                v7:Create("TextLabel", {
+                  Font = Enum.Font.GothamBold,
+                  Text = v44,
+                  TextSize = 13,
+                  TextColor3 = Color3.fromRGB(230, 230, 230),
+                  TextXAlignment = Enum.TextXAlignment.Left,
+                  TextYAlignment = Enum.TextYAlignment.Top,
+                  BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                  BackgroundTransparency = 0.999,
+                  BorderColor3 = Color3.fromRGB(0, 0, 0),
+                  BorderSizePixel = 0,
+                  Position = UDim2.new(0, 8, 0, 8),
+                  Size = UDim2.new(1, -100, 0, 13),
+                  Name = "OptionText",
+                }, create86)
+
+                local create88 = v7:Create("Frame", {
+                  AnchorPoint = Vector2.new(0, 0.5),
+                  BackgroundColor3 = v7.ColorRGB,
+                  BorderColor3 = Color3.fromRGB(0, 0, 0),
+                  BorderSizePixel = 0,
+                  Position = UDim2.new(0, 2, 0.5, 0),
+                  Size = UDim2.new(0, 0, 0, 0),
+                  Name = "ChooseFrame",
+                }, create86)
+
+                v7:Create(
+                  "UIStroke", { Color = v7.ColorRGB, Thickness = 1.6, Transparency = 0.999 },
+                  create88
+                )
+
+                v7:Create("UICorner", {}, create88)
+
+                create87.Activated:Connect(function()
+                  CircleClick(create87, localPlayer2:GetMouse().X, localPlayer2:GetMouse().Y)
+                  local v45 = create86.BackgroundTransparency > 0.95
+
+                  if multi then
+                    if v45 then
+                      if not table.find(v40.Value, v44) then
+                        table.insert(v40.Value, v44)
+                      end
+                    else
+                      for index4, value14 in ipairs(v40.Value) do
+                        if value14 == v44 then
+                          table.remove(v40.Value, index4)
+                          break
+                        end
+                      end
+                    end
+                  else
+                    v40.Value = { v44 }
+                  end
+
+                  v40:Set(v40.Value)
+                end)
+
+                local function f22()
+                  local v46 = 0
+
+                  for index5, value15 in ipairs(create84:GetChildren()) do
+                    if value15.Name ~= "UIListLayout" and value15.Name ~= "SearchBar" then
+                      v46 = v46 + 5 + value15.Size.Y.Offset
+                    end
+                  end
+
+                  create84.CanvasSize = UDim2.new(0, 0, 0, v46)
+                end
+
+                f22()
+
+                count5 = count5 + 1
+              end
+
+              function v40:Refresh(p55, p56)
+                local v47 = p55 or {}
+                local v48 = p56 or {}
+                v40:Clear()
+
+                for index6, value16 in ipairs(v47) do
+                  v40:AddOption(value16)
+                end
+
+                v40.Options = v47
+                v40:Set(v48)
+              end
+
+              v40:Refresh(v40.Options, v40.Value)
+
+              count4 = count4 + 1
+              count3 = count3 + 1
+              return v40
+            end
+
+            count4 = count4 + 1
+            return v26
+          end
+
+          count2 = count2 + 1
+          return v22
+        end
+
+        return v20
+      end
+
+      return v14
+    end
+
+    local window = f7():CreateWindow({ "MUSCLE LEGENDS", "LiftHub" })
+    local tab = window:CreateTab({ "Main" })
+    local addSection = tab:AddSection("Farm", true)
+    local addSection2 = tab:AddSection("Utility", false)
+    local addSection3 = window:CreateTab({ "Player" }):AddSection("Movement", true)
+    local tab2 = window:CreateTab({ "Settings" })
+    local addSection4 = tab2:AddSection("Config", true)
+
+    tab2:AddSection("CR", false):AddParagraph({
+      "Credits",
+      [[
+Owner: Monkey.d.luffy.ezz
+Owner: Rectslayer]],
+    })
+
+    tab2:AddSection("Inspiration", false):AddParagraph({ "Inspiration", "Speed Hub [Menu]" })
+
+    local v49 = false
+    local v50 = false
+    local v51 = true
+
+    f5(addSection, "Auto Train", "Enable while holding tool (10x rep)", "Auto Train", function(p57)
+      v49 = p57
+      local f23, f24
+
+      if p57 then
+        task.spawn(function()
+          while v49 and f2() do
+            local v52 = v51
+
+            if not v52 then
+              pcall(function()
+                local character = localPlayer.Character
+                v52 = character and character:FindFirstChildOfClass("Tool") ~= nil
+              end)
+            end
+
+            if v52 then
+              pcall(function() players.LocalPlayer.muscleEvent:FireServer("rep") end)
+            end
+
+            task.wait(0.1)
+          end
+        end)
+
+        task.spawn(function()
+          while v49 and f2() do
+            local v53 = v51
+
+            if not v53 then
+              pcall(function()
+                local character2 = localPlayer.Character
+                v53 = character2 and character2:FindFirstChildOfClass("Tool") ~= nil
+              end)
+            end
+
+            if v53 then
+              pcall(function()
+                players.LocalPlayer.bodyMovementEvent:FireServer(-0.85904848575592)
+              end)
+            end
+
+            task.wait(1)
+          end
+        end)
+
+        function f23()
+          local v54 = {}
+
+          pcall(function()
+            for index7, value17 in ipairs(localPlayer.Backpack:GetChildren()) do
+              if value17:IsA("Tool") then
+                table.insert(v54, value17)
+              end
+            end
+          end)
+
+          return v54
+        end
+
+        function f24()
+          local character3 = localPlayer.Character
+          local tool = character3 and character3:FindFirstChildOfClass("Tool")
+
+          if tool then
+            return tool.Name
+          else
+            local v55 = f23()
+            return v55[2] and v55[2].Name or nil
+          end
+        end
+
+        if v51 then
+          v1.__SLOT2_NAME = f24()
+
+          if v1.__SLOT2_NAME then
+            f1("Muscle", "Locked: " .. v1.__SLOT2_NAME, 2)
+          end
+        else
+          v1.__SLOT2_NAME = nil
+        end
+
+        task.spawn(function()
+          while v49 and f2() do
+            pcall(function()
+              local slot2NAME = v51 and v1.__SLOT2_NAME or nil
+
+              if slot2NAME then
+                if not (localPlayer.Backpack:FindFirstChild(slot2NAME)
+                  or localPlayer.Character and localPlayer.Character:FindFirstChild(slot2NAME)) then
+                  slot2NAME = f24()
+                  v1.__SLOT2_NAME = slot2NAME
+                end
+              elseif v51 then
+                slot2NAME = f24()
+                v1.__SLOT2_NAME = slot2NAME
+              end
+
+              if slot2NAME then
+                local character4 = localPlayer.Character
+                local humanoid = character4 and character4:FindFirstChildOfClass("Humanoid")
+
+                if humanoid then
+                  local tool2 = character4:FindFirstChildOfClass("Tool")
+
+                  if tool2 and tool2.Name ~= slot2NAME then
+                    humanoid:UnequipTools()
+                    tool2 = nil
+                  end
+
+                  if not tool2 then
+                    local findFirstChild = localPlayer.Backpack:FindFirstChild(slot2NAME)
+
+                    if findFirstChild and findFirstChild:IsA("Tool") then
+                      humanoid:EquipTool(findFirstChild)
+                    end
+                  end
+                end
+              end
+            end)
+
+            task.wait(0.5)
+          end
+        end)
+      end
+    end)
+
+    f5(addSection, "Auto Tool", "ON: equip slot 2, OFF: hand only", "Auto Tool", function(p58)
+      v51 = p58
+
+      if not p58 then
+        v1.__SLOT2_NAME = nil
+      end
+    end, "on")
+
+    f5(addSection, "Auto Rebirth", "Automatic rebirth", "Auto Rebirth", function(p59)
+      v50 = p59
+
+      if p59 then
+        task.spawn(function()
+          while v50 and f2() do
+            pcall(function()
+              replicatedStorage.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+            end)
+
+            task.wait(0.5)
+          end
+        end)
+      end
+    end)
+
+    f5(addSection2, "Anti-AFK", "Prevents AFK kick", "Anti-AFK", function(p60)
+      if p60 then
+        _G.muscleAFK = localPlayer.Idled:Connect(function()
+          if not f2() then
+            pcall(function() _G.muscleAFK:Disconnect() end)
+            return
+          end
+
+          pcall(function()
+            virtualUser:CaptureController()
+            virtualUser:ClickButton2(Vector2.new())
+          end)
+        end)
+      elseif _G.muscleAFK then
+        _G.muscleAFK:Disconnect()
+        _G.muscleAFK = nil
+      end
+    end)
+
+    f6(addSection2, "Teleport - Gym", "Go to spawn area", function()
+      pcall(function() localPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(0, 10, 0) end)
+    end)
+
+    f6(addSection2, "Rejoin", "Rejoin same server", function()
+      pcall(function()
+        teleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, localPlayer)
+      end)
+    end)
+
+    local v56 = false
+    local v57 = false
+    local v58 = false
+    local v59 = false
+    local walkSpeed = 16
+    local v60 = {}
+    local connect
+
+    f5(addSection3, "Noclip", "Walk through walls", "Noclip", function(p61)
+      v56 = p61
+
+      if p61 then
+        connect = runService.Stepped:Connect(function()
+          if not (v56 and f2()) then
+            return
+          end
+
+          pcall(function()
+            local character5 = localPlayer.Character
+
+            if character5 then
+              for index8, value18 in ipairs(character5:GetDescendants()) do
+                if value18:IsA("BasePart") then
+                  value18.CanCollide = false
+                end
+              end
+            end
+          end)
+        end)
+      elseif connect then
+        pcall(function() connect:Disconnect() end)
+        connect = nil
+      end
+    end)
+
+    f5(addSection3, "Speed", "Speed 60 (16 when off)", "Speed", function(p62)
+      if p62 then
+        pcall(function()
+          local humanoid2 = localPlayer.Character
+            and localPlayer.Character:FindFirstChildOfClass("Humanoid")
+
+          if humanoid2 then
+            walkSpeed = humanoid2.WalkSpeed
+          end
+        end)
+      end
+
+      v57 = p62
+
+      if p62 then
+        task.spawn(function()
+          while v57 and f2() do
+            pcall(function()
+              local humanoid3 = localPlayer.Character
+                and localPlayer.Character:FindFirstChildOfClass("Humanoid")
+
+              if humanoid3 and humanoid3.WalkSpeed ~= 60 then
+                humanoid3.WalkSpeed = 60
+              end
+            end)
+
+            task.wait(0.5)
+          end
+        end)
+      else
+        pcall(function()
+          local humanoid4 = localPlayer.Character
+            and localPlayer.Character:FindFirstChildOfClass("Humanoid")
+
+          if humanoid4 then
+            humanoid4.WalkSpeed = walkSpeed
+          end
+        end)
+      end
+    end)
+
+    f5(addSection3, "Jump", "Jump 120 (50 when off)", "Jump", function(p63)
+      v58 = p63
+
+      if p63 then
+        task.spawn(function()
+          while v58 and f2() do
+            pcall(function()
+              local humanoid5 = localPlayer.Character
+                and localPlayer.Character:FindFirstChildOfClass("Humanoid")
+
+              if humanoid5 then
+                humanoid5.UseJumpPower = true
+
+                if humanoid5.JumpPower ~= 120 then
+                  humanoid5.JumpPower = 120
+                end
+              end
+            end)
+
+            task.wait(0.5)
+          end
+        end)
+      else
+        pcall(function()
+          local humanoid6 = localPlayer.Character
+            and localPlayer.Character:FindFirstChildOfClass("Humanoid")
+
+          if humanoid6 then
+            humanoid6.JumpPower = 50
+          end
+        end)
+      end
+    end)
+
+    local connect2, bodyGyro, bodyVelocity
+
+    f5(addSection3, "Fly", "WASD + E/Q to rise, speed 50", "Fly", function(p64)
+      v59 = p64
+      local character6 = localPlayer.Character
+      local humanoidRootPart = character6 and character6:FindFirstChild("HumanoidRootPart")
+      local humanoid7 = character6 and character6:FindFirstChildOfClass("Humanoid")
+
+      if p64 then
+        if not (humanoidRootPart and humanoid7) then
+          return
+        end
+
+        humanoid7.PlatformStand = true
+
+        bodyGyro = Instance.new("BodyGyro")
+        bodyGyro.P = 9000
+        bodyGyro.MaxTorque = Vector3.new(9000000000, 9000000000, 9000000000)
+        bodyGyro.CFrame = humanoidRootPart.CFrame
+        bodyGyro.Parent = humanoidRootPart
+
+        bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.MaxForce = Vector3.new(9000000000, 9000000000, 9000000000)
+        bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+        bodyVelocity.Parent = humanoidRootPart
+
+        connect2 = runService.RenderStepped:Connect(function()
+          if not (v59 and f2()) then
+            return
+          end
+
+          pcall(function()
+            local character7 = localPlayer.Character
+
+            local humanoidRootPart2 = character7
+              and character7:FindFirstChild("HumanoidRootPart")
+
+            local currentCamera = workspace.CurrentCamera
+
+            if not (humanoidRootPart2 and currentCamera and bodyVelocity and bodyGyro) then
+              return
+            else
+              local cframe = currentCamera.CFrame
+              local vector2 = Vector3.new(0, 0, 0)
+
+              if v60[Enum.KeyCode.W] then
+                vector2 = vector2 + cframe.LookVector
+              end
+
+              if v60[Enum.KeyCode.S] then
+                vector2 = vector2 - cframe.LookVector
+              end
+
+              if v60[Enum.KeyCode.A] then
+                vector2 = vector2 - cframe.RightVector
+              end
+
+              if v60[Enum.KeyCode.D] then
+                vector2 = vector2 + cframe.RightVector
+              end
+
+              if v60[Enum.KeyCode.E] or v60[Enum.KeyCode.Space] then
+                vector2 = vector2 + Vector3.new(0, 1, 0)
+              end
+
+              if v60[Enum.KeyCode.Q] then
+                vector2 = vector2 - Vector3.new(0, 1, 0)
+              end
+
+              if vector2.Magnitude > 0.1 then
+                vector2 = vector2.Unit * 50
+              end
+
+              bodyVelocity.Velocity = vector2
+              bodyGyro.CFrame = cframe
+              return
+            end
+          end)
+        end)
+
+        return
+      end
+
+      if connect2 then
+        pcall(function() connect2:Disconnect() end)
+        connect2 = nil
+      end
+
+      if bodyGyro then
+        pcall(function() bodyGyro:Destroy() end)
+        bodyGyro = nil
+      end
+
+      if bodyVelocity then
+        pcall(function() bodyVelocity:Destroy() end)
+        bodyVelocity = nil
+      end
+
+      pcall(function()
+        local humanoid8 = localPlayer.Character
+          and localPlayer.Character:FindFirstChildOfClass("Humanoid")
+
+        if humanoid8 then
+          humanoid8.PlatformStand = false
+        end
+      end)
+    end)
+
+    f6(addSection4, "Save Config", "Save now", function() end)
+    f6(addSection4, "Load Config", "Reload file", function() f4() end)
+
+    f6(addSection4, "Reset Config", "Delete file", function()
+      pcall(function()
+        if delfile and isfile and isfile("HubCfg_Muscle.json") then
+          delfile("HubCfg_Muscle.json")
+        end
+      end)
+    end)
+  end)
+
+  if not v2 then
+    warn("[Muscle Hub] Error: " .. tostring(v3))
+    f1("Error", tostring(v3):sub(1, 50), 4)
+  end
+end
+
+pcall(function()
+  if isfile and isfile("LiftHub_Key.txt") then
+    readfile("LiftHub_Key.txt")
+  elseif readfile then
+    readfile("LiftHub_Key.txt")
+  end
+end)
+
+local function f25(p65)
+  return type(p65) == "string"
+    and (p65:gsub("%s+", "") == "1017-5555-0011-9942"
+      or p65:gsub("%s+", "") == "owner_test_key_4343_4342_7837_9172")
+end
+
+local function f26()
+  local liftHubKey = Instance.new("ScreenGui")
+  liftHubKey.Name = "LiftHub_Key"
+  liftHubKey.ResetOnSpawn = false
+  liftHubKey.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+  liftHubKey.IgnoreGuiInset = true
+
+  local localPlayer3 = players.LocalPlayer
+
+  local playerGui = localPlayer3:FindFirstChild("PlayerGui")
+    or localPlayer3:WaitForChild("PlayerGui")
+
+  local v61
+
+  pcall(function()
+    if gethui then
+      v61 = gethui()
+    end
+  end)
+
+  if not v61 then
+    v61 = playerGui
+  end
+
+  liftHubKey.Parent = v61
+
+  local frame = Instance.new("Frame")
+  frame.Size = UDim2.new(0, 360, 0, 252)
+  frame.Position = UDim2.new(0.5, -180, 0.5, -126)
+  frame.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
+  frame.BorderSizePixel = 0
+  frame.Parent = liftHubKey
+
+  local uiCorner = Instance.new("UICorner")
+  uiCorner.CornerRadius = UDim.new(0, 12)
+  uiCorner.Parent = frame
+
+  local uiStroke = Instance.new("UIStroke")
+  uiStroke.Color = Color3.fromRGB(0, 122, 255)
+  uiStroke.Thickness = 1.5
+  uiStroke.Parent = frame
+
+  local uiGradient = Instance.new("UIGradient")
+  uiGradient.Rotation = 90
+
+  uiGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 30, 40)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(14, 14, 20)),
+  })
+
+  uiGradient.Parent = frame
+
+  local uiScale = Instance.new("UIScale")
+  uiScale.Scale = 0.7
+  uiScale.Parent = frame
+
+  tweenService:Create(
+    uiScale, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }
+  ):Play()
+
+  local textLabel = Instance.new("TextLabel")
+  textLabel.Size = UDim2.new(1, 0, 0, 44)
+  textLabel.BackgroundTransparency = 1
+  textLabel.Text = "KEY SYSTEM"
+  textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+  textLabel.TextSize = 16
+  textLabel.Font = Enum.Font.GothamBold
+  textLabel.Parent = frame
+
+  local textLabel2 = Instance.new("TextLabel")
+  textLabel2.Size = UDim2.new(1, 0, 0, 16)
+  textLabel2.Position = UDim2.new(0, 0, 0, 40)
+  textLabel2.BackgroundTransparency = 1
+  textLabel2.Text = "Enter key once - it will be saved"
+  textLabel2.TextColor3 = Color3.fromRGB(140, 140, 150)
+  textLabel2.TextSize = 11
+  textLabel2.Font = Enum.Font.Gotham
+  textLabel2.Parent = frame
+
+  local textBox = Instance.new("TextBox")
+  textBox.Size = UDim2.new(1, -24, 0, 34)
+  textBox.Position = UDim2.new(0, 12, 0, 64)
+  textBox.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
+  textBox.Text = ""
+  textBox.PlaceholderText = "Enter key..."
+  textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+  textBox.PlaceholderColor3 = Color3.fromRGB(120, 120, 130)
+  textBox.TextSize = 12
+  textBox.Font = Enum.Font.Gotham
+  textBox.ClearTextOnFocus = false
+  textBox.Parent = frame
+
+  local uiCorner2 = Instance.new("UICorner")
+  uiCorner2.CornerRadius = UDim.new(0, 8)
+  uiCorner2.Parent = textBox
+
+  local textButton = Instance.new("TextButton")
+  textButton.Size = UDim2.new(1, -24, 0, 34)
+  textButton.Position = UDim2.new(0, 12, 0, 106)
+  textButton.BackgroundColor3 = Color3.fromRGB(0, 170, 90)
+  textButton.Text = "CHECK KEY"
+  textButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+  textButton.Font = Enum.Font.GothamBold
+  textButton.TextSize = 13
+  textButton.AutoButtonColor = false
+  textButton.Parent = frame
+
+  local uiCorner3 = Instance.new("UICorner")
+  uiCorner3.CornerRadius = UDim.new(0, 8)
+  uiCorner3.Parent = textButton
+
+  local textButton2 = Instance.new("TextButton")
+  textButton2.Size = UDim2.new(1, -24, 0, 30)
+  textButton2.Position = UDim2.new(0, 12, 0, 148)
+  textButton2.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+  textButton2.Text = "GET KEY (COPY LINK)"
+  textButton2.TextColor3 = Color3.fromRGB(255, 255, 255)
+  textButton2.Font = Enum.Font.GothamBold
+  textButton2.TextSize = 12
+  textButton2.AutoButtonColor = false
+  textButton2.Parent = frame
+
+  local uiCorner4 = Instance.new("UICorner")
+  uiCorner4.CornerRadius = UDim.new(0, 8)
+  uiCorner4.Parent = textButton2
+
+  local textBox2 = Instance.new("TextBox")
+  textBox2.Size = UDim2.new(1, -24, 0, 28)
+  textBox2.Position = UDim2.new(0, 12, 0, 186)
+  textBox2.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
+  textBox2.Text = "https://work.ink/2Yds/lift-hub-key-system-21"
+  textBox2.TextColor3 = Color3.fromRGB(150, 180, 255)
+  textBox2.TextSize = 11
+  textBox2.Font = Enum.Font.Gotham
+  textBox2.TextEditable = false
+  textBox2.ClearTextOnFocus = false
+  textBox2.Parent = frame
+
+  local uiCorner5 = Instance.new("UICorner")
+  uiCorner5.CornerRadius = UDim.new(0, 8)
+  uiCorner5.Parent = textBox2
+
+  local function f27()
+    pcall(function()
+      if delfile and isfile and isfile("LiftHub_Key.txt") then
+        delfile("LiftHub_Key.txt")
+      end
+    end)
+
+    liftHubKey:Destroy()
+    f3()
+  end
+
+  textButton.MouseButton1Click:Connect(function()
+    if f25(textBox.Text) then
+      f27()
+    end
+  end)
+
+  textBox.FocusLost:Connect(function(p66)
+    if p66 then
+      if f25(textBox.Text) then
+        f27()
+      end
+    end
+  end)
+
+  textButton2.MouseButton1Click:Connect(function()
+    pcall(function()
+      if setclipboard then
+        setclipboard("https://work.ink/2Yds/lift-hub-key-system-21")
+      end
+    end)
+  end)
+end
+
+f26()
