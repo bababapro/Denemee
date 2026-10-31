@@ -1,0 +1,646 @@
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local teleportService = game:GetService("TeleportService")
+local virtualUser = game:GetService("VirtualUser")
+local userInputService = game:GetService("UserInputService")
+local workspaceService = game:GetService("Workspace")
+local httpService = game:GetService("HttpService")
+local marketplaceService = game:GetService("MarketplaceService")
+local players = game:GetService("Players")
+
+local function f1()
+  for index, value in ipairs({
+    "https://raw.githubusercontent.com/MontaserV8/VELOIX--HUB/refs/heads/main/Wind%20Ui.lua",
+    "https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua",
+  }) do
+    local v1 = value
+    local v2, v3 = pcall(function() return loadstring(game:HttpGet(v1))() end)
+
+    if v2 and v3 and v3.CreateWindow then
+      return v3
+    end
+  end
+
+  return nil
+end
+
+local v4 = f1()
+
+if not v4 then
+  warn("[SL HUB] WindUI fail")
+  return
+end
+
+local slHUBWindow = nil
+
+pcall(function()
+  slHUBWindow = v4:CreateWindow({
+    Title = "SL HUB",
+    Author = "Legends Of Speed",
+    Folder = "SLHub_LOS",
+    Icon = "rbxassetid://119025343914379",
+    Size = UDim2.fromOffset(480, 320),
+    Transparent = false,
+    Theme = "Dark",
+    SideBarWidth = 180,
+  })
+end)
+
+local f2, callback, localPlayer, f3, f4, orbEvent, rebirthEvent, raceEvent, areaTravelRemote,
+  freeGiftClaimRemote, f5, v5, v6, v7, v8, v9, v10, values, v11, v12, v13
+
+if not slHUBWindow then
+  warn("[SL HUB] Window fail")
+  return
+else
+  pcall(function()
+    slHUBWindow:EditOpenButton({
+      Icon = "rbxassetid://119025343914379",
+      CornerRadius = UDim.new(0, 10),
+      Position = UDim2.new(0, 75, 0, 100),
+      OnlyMobile = false,
+      Enabled = true,
+      Draggable = true,
+    })
+  end)
+
+  local function f6(title, p1)
+    local v14, v15 = pcall(function()
+      return slHUBWindow:Tab({ Title = title, Icon = p1 or "box", ShowTabTitle = false })
+    end)
+
+    return v14 and v15 or nil
+  end
+
+  local v16 = f6("Info", "rbxassetid://119025343914379")
+  local v17 = f6("Main", "zap")
+  local v18 = f6("Farm", "coins")
+  local v19 = f6("Race", "flag")
+  local v20 = f6("Player", "user")
+  local v21 = f6("Webhook", "link")
+  local v22 = f6("Teleport", "map-pin")
+  local v23 = f6("Misc", "settings")
+  local v24 = f6("Server", "server")
+  pcall(function() slHUBWindow:SelectTab(1) end)
+
+  local function f7(p2, title2)
+    if not p2 then
+      return nil
+    else
+      local v25, v26 = pcall(function()
+        return p2:Section({ Title = title2, TextXAlignment = "Left" })
+      end)
+
+      return v25 and v26 or p2
+    end
+  end
+
+  localPlayer = players.LocalPlayer
+
+  local g = _G
+  g.WebhookURL = _G.WebhookURL or ""
+
+  local g2 = _G
+  _G.WebhookOnLoad = true
+  g2.WebhookAutoStats = false
+  local g3 = _G
+  local g4 = _G
+  local g5 = _G
+  _G.OrbRed = true
+  g3.OrbYellow = true
+  g4.OrbBlue = false
+  g5.OrbOrange = false
+  _G.FarmMultiplier = 40
+  local g6 = _G
+  local g7 = _G
+  local g8 = _G
+  local g9 = _G
+  _G.AutoFarm = false
+  g6.AutoHoops = false
+  g7.AutoRebirth = false
+  g8.AutoRace = false
+  g9.AutoGifts = false
+  local g10 = _G
+  local g11 = _G
+  local g12 = _G
+  _G.AntiAfk = true
+  g10.SetSpeed = false
+  g11.InfJump = false
+  g12.WalkSpeed = 300
+  local g13 = _G
+  _G.SelectedPlace = nil
+  g13.JobId = ""
+
+  function f3()
+    local character = localPlayer.Character
+    return character and character:FindFirstChild("HumanoidRootPart")
+  end
+
+  function f4()
+    local character2 = localPlayer.Character
+    return character2 and character2:FindFirstChildOfClass("Humanoid")
+  end
+
+  local rEvents = replicatedStorage:FindFirstChild("rEvents")
+  orbEvent = rEvents and rEvents:FindFirstChild("orbEvent")
+  rebirthEvent = rEvents and rEvents:FindFirstChild("rebirthEvent")
+  raceEvent = rEvents and rEvents:FindFirstChild("raceEvent")
+  areaTravelRemote = rEvents and rEvents:FindFirstChild("areaTravelRemote")
+  freeGiftClaimRemote = rEvents and rEvents:FindFirstChild("freeGiftClaimRemote")
+
+  function f2(p3, p4, p5)
+    local webhookURL = _G.WebhookURL
+
+    if type(webhookURL) ~= "string" or webhookURL == "" then
+      return false, "No webhook URL"
+    end
+
+    local v27 = f5()
+    local name
+
+    if not v27 then
+      return false, "No request()"
+    else
+      name = "Legends of Speed"
+      pcall(function() name = marketplaceService:GetProductInfo(game.PlaceId).Name end)
+
+      local v28, v29 = pcall(function()
+        v27({
+          Url = webhookURL,
+          Method = "POST",
+          Headers = { ["Content-Type"] = "application/json" },
+          Body = httpService:JSONEncode({
+            embeds = {
+              {
+                title = tostring(p3 or "SL HUB"),
+                color = p5 or 15158332,
+                fields = p4 or {
+                  { name = "User", value = localPlayer.Name, inline = true },
+                  { name = "Hub", value = "SL HUB | LOS", inline = false },
+                  { name = "Game", value = name, inline = false },
+                  { name = "Time", value = os.date("%c"), inline = false },
+                },
+                footer = { text = "SL HUB" },
+              },
+            },
+          }),
+        })
+      end)
+
+      return v28, v29 and tostring(v29) or nil
+    end
+  end
+
+  function f5()
+    return syn and syn.request or http and http.request or http_request or request
+  end
+
+  task.spawn(function() task.wait(1.5) end)
+
+  function callback()
+    if rebirthEvent then
+      pcall(function() rebirthEvent:FireServer("rebirthRequest") end)
+    end
+  end
+
+  task.spawn(function()
+    while task.wait() do
+      pcall(function()
+        if not _G.AutoFarm then
+          return
+        end
+
+        v912 = tonumber(_G.FarmMultiplier) or 20
+      end)
+    end
+  end)
+
+  task.spawn(function()
+    while task.wait(0.05) do
+      pcall(function()
+        if not _G.AutoHoops then
+          return
+        end
+
+        local v30 = f3()
+
+        if not v30 or not firetouchinterest then
+          return
+        else
+          local hoops = workspaceService:FindFirstChild("Hoops")
+
+          if not hoops then
+            return
+          end
+
+          for key, value2 in pairs(hoops:GetChildren()) do
+            local v31 = value2
+
+            pcall(function()
+              firetouchinterest(v30, v31, 0)
+              firetouchinterest(v30, v31, 1)
+            end)
+          end
+
+          return
+        end
+      end)
+    end
+  end)
+
+  task.spawn(function()
+    while task.wait(0.4) do
+      pcall(function()
+        if _G.AutoGifts and freeGiftClaimRemote then
+          pcall(function() freeGiftClaimRemote:InvokeServer("claimGift", 1) end)
+        end
+
+        local v32 = f4()
+
+        if _G.SetSpeed and v32 then
+          v32.WalkSpeed = tonumber(_G.WalkSpeed) or 300
+        end
+      end)
+    end
+  end)
+
+  task.spawn(function()
+    while true do
+      task.wait(300)
+
+      if _G.WebhookAutoStats and _G.WebhookURL ~= "" then
+        f2(
+          "Stats Ping", { { name = "User", value = localPlayer.Name, inline = true } }, 3447003
+        )
+      end
+    end
+  end)
+
+  pcall(function()
+    local raceInProgress = replicatedStorage:FindFirstChild("raceInProgress")
+    local raceStarted = replicatedStorage:FindFirstChild("raceStarted")
+
+    if raceInProgress then
+      raceInProgress.Changed:Connect(function(p6)
+        if _G.AutoRace and p6 and raceEvent then
+          pcall(function() raceEvent:FireServer("joinRace") end)
+        end
+      end)
+    end
+
+    if raceStarted then
+      raceStarted.Changed:Connect(function(p7)
+        if not _G.AutoRace or not p7 then
+          return
+        end
+
+        local v33 = f3()
+
+        if not v33 then
+          return
+        end
+
+        local raceMaps = workspaceService:FindFirstChild("raceMaps")
+
+        if not raceMaps then
+          return
+        end
+
+        pcall(function()
+          for key2, value3 in pairs(raceMaps:GetChildren()) do
+            local finishPart = value3:FindFirstChild("finishPart")
+
+            if finishPart then
+              local cframe = finishPart.CFrame
+              finishPart.CFrame = v33.CFrame
+              task.wait()
+              finishPart.CFrame = cframe
+            end
+          end
+        end)
+      end)
+    end
+  end)
+
+
+
+  localPlayer.Idled:Connect(function()
+    if not _G.AntiAfk then
+      return
+    end
+
+    pcall(function()
+      virtualUser:CaptureController()
+      virtualUser:ClickButton2(Vector2.new())
+    end)
+  end)
+
+  userInputService.JumpRequest:Connect(function()
+    if not _G.InfJump then
+      return
+    end
+
+    local v34 = f4()
+
+    if v34 then
+      pcall(function() v34:ChangeState(Enum.HumanoidStateType.Jumping) end)
+    end
+  end)
+
+  v5 = f7(v16, "Info")
+
+  if v5 then
+    pcall(function()
+      v5:Button({
+        Title = "Copy Discord",
+        Callback = function()
+          pcall(function() setclipboard("https://discord.gg/rEUBGr8eny") end)
+        end,
+      })
+
+      v5:Paragraph({ Title = "SL HUB | Legends Of Speed", Desc = "Fixed build" })
+
+      v5:Toggle({
+        Title = "Anti AFK",
+        Value = true,
+        Callback = function(value4) _G.AntiAfk = value4 end,
+      })
+    end)
+  end
+
+  v6 = f7(v21, "Webhook")
+
+  if v6 then
+    pcall(function()
+      v6:Input({
+        Title = "Webhook URL",
+        Placeholder = "https://discord.com/api/webhooks/...",
+        Callback = function(value5)
+          local g14 = _G
+          g14.WebhookURL = tostring(value5 or "")
+        end,
+      })
+
+      v6:Toggle({
+        Title = "Send On Load",
+        Value = true,
+        Callback = function(value6) _G.WebhookOnLoad = value6 end,
+      })
+
+      v6:Toggle({
+        Title = "Auto Stats 5min",
+        Value = false,
+        Callback = function(value7) _G.WebhookAutoStats = value7 end,
+      })
+
+      v6:Button({
+        Title = "Test Webhook",
+        Callback = function()
+          local v35, v36 = f2(
+            "Test", { { name = "Status", value = "OK", inline = true } }, 5763719
+          )
+
+          pcall(function()
+            v4:Notify({
+              Title = "SL HUB",
+              Content = v35 and "Sent!" or tostring(v36),
+              Duration = 3,
+            })
+          end)
+        end,
+      })
+    end)
+  end
+
+  v7 = f7(v17, "Quick")
+
+  if v7 then
+    pcall(function()
+      v7:Button({ Title = "Rebirth Once", Callback = callback })
+
+      v7:Button({
+        Title = "Reset Character",
+        Callback = function()
+          local v37 = f4()
+
+          if v37 then
+            v37.Health = 0
+          end
+        end,
+      })
+    end)
+  end
+
+  v8 = f7(v18, "Orbs")
+
+  if v8 then
+    pcall(function()
+      v8:Toggle({
+        Title = "Red Orb",
+        Value = true,
+        Callback = function(value8) _G.OrbRed = value8 end,
+      })
+
+      v8:Toggle({
+        Title = "Yellow Orb",
+        Value = true,
+        Callback = function(value9) _G.OrbYellow = value9 end,
+      })
+
+      v8:Toggle({
+        Title = "Blue Orb",
+        Value = false,
+        Callback = function(value10) _G.OrbBlue = value10 end,
+      })
+
+      v8:Toggle({
+        Title = "Orange Orb",
+        Value = false,
+        Callback = function(value11) _G.OrbOrange = value11 end,
+      })
+
+      v8:Slider({
+        Title = "Multiplier",
+        Value = { Min = 1, Max = 100, Default = 40 },
+        Callback = function(value12) _G.FarmMultiplier = tonumber(value12) or 40 end,
+      })
+
+      v8:Toggle({
+        Title = "Auto Farm Orbs",
+        Value = false,
+        Callback = function(value13) _G.AutoFarm = value13 end,
+      })
+
+      v8:Toggle({
+        Title = "Auto Hoops",
+        Value = false,
+        Callback = function(value14) _G.AutoHoops = value14 end,
+      })
+
+      v8:Toggle({
+        Title = "Auto Rebirth",
+        Value = false,
+        Callback = function(value15) _G.AutoRebirth = value15 end,
+      })
+
+      v8:Toggle({
+        Title = "Auto Gifts",
+        Value = false,
+        Callback = function(value16) _G.AutoGifts = value16 end,
+      })
+    end)
+  end
+
+  v9 = f7(v19, "Race")
+
+  if v9 then
+    pcall(function()
+      v9:Toggle({
+        Title = "Auto Race",
+        Value = false,
+        Callback = function(value17) _G.AutoRace = value17 end,
+      })
+
+      v9:Button({
+        Title = "Join Race Now",
+        Callback = function()
+          if raceEvent then
+            pcall(function() raceEvent:FireServer("joinRace") end)
+          end
+        end,
+      })
+    end)
+  end
+
+  v10 = f7(v20, "Move")
+
+  if v10 then
+    pcall(function()
+      v10:Slider({
+        Title = "Speed",
+        Value = { Min = 16, Max = 5000, Default = 300 },
+        Callback = function(value18) _G.WalkSpeed = tonumber(value18) or 300 end,
+      })
+
+      v10:Toggle({
+        Title = "Set Speed",
+        Value = false,
+        Callback = function(value19) _G.SetSpeed = value19 end,
+      })
+
+      v10:Toggle({
+        Title = "Inf Jump",
+        Value = false,
+        Callback = function(value20) _G.InfJump = value20 end,
+      })
+    end)
+  end
+
+  values = { "City", "Snow City", "Magma City", "Legends Highway" }
+  v11 = f7(v22, "Travel")
+
+  if v11 then
+    pcall(function()
+      v11:Dropdown({
+        Title = "Place",
+        Values = values,
+        Callback = function(value21) _G.SelectedPlace = value21 end,
+      })
+
+      v11:Button({
+        Title = "Travel",
+        Callback = function()
+          if not areaTravelRemote or not _G.SelectedPlace then
+            return
+          end
+
+          pcall(function()
+            local areaCircles = workspaceService:FindFirstChild("areaCircles")
+            local v38
+
+            if areaCircles then
+              for key3, value22 in pairs(areaCircles:GetChildren()) do
+                if value22:FindFirstChild("areaName")
+                  and value22.areaName.Value == _G.SelectedPlace then
+                  v38 = value22
+                  break
+                end
+              end
+            end
+
+            areaTravelRemote:InvokeServer("travelToArea", v38)
+          end)
+        end,
+      })
+
+      v11:Button({
+        Title = "World City",
+        Callback = function()
+          pcall(function() teleportService:Teleport(3101667897, localPlayer) end)
+        end,
+      })
+
+      v11:Button({
+        Title = "World Space",
+        Callback = function()
+          pcall(function() teleportService:Teleport(3232996272, localPlayer) end)
+        end,
+      })
+
+      v11:Button({
+        Title = "World Desert",
+        Callback = function()
+          pcall(function() teleportService:Teleport(3276265788, localPlayer) end)
+        end,
+      })
+    end)
+  end
+
+  v12 = f7(v23, "Debug")
+
+  if v12 then
+    pcall(function()
+      v12:Button({
+        Title = "Print Remotes F9",
+        Callback = function()
+          print("orbEvent:", orbEvent and "OK" or "MISSING")
+          print("rebirthEvent:", rebirthEvent and "OK" or "MISSING")
+          print("raceEvent:", raceEvent and "OK" or "MISSING")
+        end,
+      })
+    end)
+  end
+
+  v13 = f7(v24, "Server")
+
+  if v13 then
+    pcall(function()
+      v13:Button({
+        Title = "Rejoin",
+        Callback = function()
+          pcall(function()
+            teleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, localPlayer)
+          end)
+        end,
+      })
+
+      v13:Button({
+        Title = "Hop",
+        Callback = function()
+          pcall(function() teleportService:Teleport(game.PlaceId, localPlayer) end)
+        end,
+      })
+
+      v13:Button({
+        Title = "Copy Job ID",
+        Callback = function() pcall(function() setclipboard(game.JobId) end) end,
+      })
+    end)
+  end
+
+  pcall(function()
+    v4:Notify({ Title = "SL HUB", Content = "Legends Of Speed fixed!", Duration = 4 })
+  end)
+
+  print("[SL HUB] Legends Of Speed FIXED")
+  return
+end
