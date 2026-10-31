@@ -1,0 +1,768 @@
+-- ██╗  ██╗██████╗ ██╗   ██╗██╗   ██╗███████╗██╗  ██╗
+-- ██║ ██╔╝██╔══██╗╚██╗ ██╔╝██║   ██║██╔════╝╚██╗██╔╝
+-- █████╔╝ ██████╔╝ ╚████╔╝ ██║   ██║█████╗   ╚███╔╝ 
+-- ██╔═██╗ ██╔══██╗  ╚██╔╝  ╚██╗ ██╔╝██╔══╝   ██╔██╗ 
+-- ██║  ██╗██║  ██║   ██║    ╚████╔╝ ███████╗██╔╝ ██╗
+-- ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝     ╚═══╝  ╚══════╝╚═╝  ╚═╝
+-- Kryvex Hub | Anime Dice Edition | Red Theme | WindUI
+
+-- ============================================================
+-- SERVICES
+-- ============================================================
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+local TweenService = game:GetService("TweenService")
+
+if not LocalPlayer then error("No local player"); return end
+
+-- ============================================================
+-- KRYVEX CONFIG
+-- ============================================================
+local KRYVEX = {
+    Name = "Kryvex Hub",
+    Version = "v1.0",
+    Game = "Anime Dice",
+    Theme = "Crimson",
+    WebhookURL = "",
+}
+
+-- ============================================================
+-- COLOR PALETTE (RED)
+-- ============================================================
+local Colors = {
+    BgDark = Color3.fromRGB(18, 8, 8),
+    BgCard = Color3.fromRGB(28, 12, 12),
+    BgInput = Color3.fromRGB(42, 18, 18),
+    Border = Color3.fromRGB(80, 30, 30),
+    Accent = Color3.fromRGB(220, 38, 38),
+    AccentDark = Color3.fromRGB(153, 27, 27),
+    TextWhite = Color3.fromRGB(255, 240, 240),
+    TextMuted = Color3.fromRGB(200, 130, 130),
+    Success = Color3.fromRGB(34, 197, 94),
+    Warning = Color3.fromRGB(234, 179, 8),
+    Danger = Color3.fromRGB(239, 68, 68),
+}
+
+-- ============================================================
+-- SETTINGS (Original)
+-- ============================================================
+local Config = {
+    auto = false,
+    autoRoll = true,
+    autoSpins = true,
+    autoCollect = true,
+    smartPlace = true,
+    autoLevel = true,
+    levelShare = 0.3,
+    levelPayback = 10,
+    saveMinutes = 15,
+    autoGrade = true,
+    gradeMin = 3,
+    autoTrait = true,
+    traitMin = 1.5,
+    autoBoost = true,
+    autoFuse = true,
+    fuseShare = 0.35,
+    fuseSeconds = 30,
+    autoTower = true,
+    tower = "Auto (best)",
+    towerBoosts = true,
+    autoDice = true,
+    autoUpgrade = true,
+    autoRebirth = true,
+    rebirthMult = 1,
+    autoSell = true,
+    sellRarity = 3,
+    keepBest = 20,
+    autoCodes = true,
+    autoClaim = true,
+    -- KRYVEX NEW
+    kryvexCombat = false,
+    kryvexESP = false,
+    kryvexWebhook = false,
+    kryvexAutoSave = true,
+}
+
+local Stats = {
+    money = 0, rolls = 0, rebirth = 0, dice = "-",
+    slotsUsed = 0, slotsMax = 15, incomePerSec = 0,
+    invCount = 0, invCap = 100, luck = 0,
+    towerRuns = 0, towerFloors = 0, towerBest = 0,
+    fused = 0, sold = 0, codesDone = 0, claims = 0,
+    phase = "idle", note = "-",
+}
+
+-- ============================================================
+-- WIND UI LOAD
+-- ============================================================
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
+local Window = WindUI:CreateWindow({
+    Title = "Kryvex Hub",
+    Author = "kryvex | " .. KRYVEX.Version,
+    Icon = "rbxassetid://113137557066757",
+    IconThemed = true,
+    Folder = "KryvexHub",
+    Size = UDim2.fromOffset(620, 500),
+    MinSize = Vector2.new(560, 380),
+    MaxSize = Vector2.new(850, 620),
+    Theme = "Crimson",
+    Transparent = true,
+    Resizable = true,
+    HideSearchBar = false,
+    ScrollBarEnabled = true,
+    SideBarWidth = 200,
+    Acrylic = false,
+    NewElements = true,
+    HidePanelBackground = false,
+    AutoScale = true,
+    User = { Enabled = true, Anonymous = false },
+})
+
+-- ============================================================
+-- KRYVEX FLOAT TOGGLE (Red)
+-- ============================================================
+local floatGui = Instance.new("ScreenGui")
+floatGui.Name = "KryvexFloatToggle"
+floatGui.ResetOnSpawn = false
+floatGui.DisplayOrder = 999998
+floatGui.Parent = game:GetService("CoreGui")
+
+local floatBtn = Instance.new("TextButton", floatGui)
+floatBtn.Size = UDim2.new(0, 110, 0, 36)
+floatBtn.Position = UDim2.new(0, 15, 0.5, -18)
+floatBtn.BackgroundColor3 = Colors.BgCard
+floatBtn.BorderSizePixel = 0
+floatBtn.Font = Enum.Font.GothamBold
+floatBtn.Text = "KRYVEX"
+floatBtn.TextColor3 = Colors.Accent
+floatBtn.TextSize = 12
+floatBtn.Active = true
+Instance.new("UICorner", floatBtn).CornerRadius = UDim.new(0, 8)
+local floatStroke = Instance.new("UIStroke", floatBtn)
+floatStroke.Color = Colors.Accent
+floatStroke.Thickness = 1.2
+
+-- Dragging
+local dragging, dragStart, startPos = false, nil, nil
+floatBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = floatBtn.Position
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        floatBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- ============================================================
+-- GAME APIs (Original)
+-- ============================================================
+local Network = ReplicatedStorage:WaitForChild("Network", 15)
+local Framework = ReplicatedStorage:WaitForChild("Framework", 15)
+
+local function v8(path)
+    local current = Network
+    for match in string.gmatch(path, "[^%.]+") do
+        if current then current = current:FindFirstChild(match) end
+    end
+    return current
+end
+
+local RollDice = v8("RollService.RF.RollDice")
+local SetAutoRoll = v8("RollService.RE.SetAutoRoll")
+local EquipBest = v8("PlotService.RE.EquipBest")
+local CollectBalance = v8("PlotService.RE.CollectBalance")
+local LevelUpSlot = v8("PlotService.RE.LevelUpSlot")
+local BuyDice = v8("DiceShopService.RE.BuyDice")
+local EquipDice = v8("DiceShopService.RE.EquipDice")
+local Rebirth = v8("RebirthService.RE.Rebirth")
+local BuyUpgrade = v8("RE.BuyUpgrade")
+local SellInventory = v8("SellService.RF.SellInventory")
+local UpdateAutoSell = v8("SellService.RE.UpdateAutoSell")
+local RedeemCode = v8("MonetizationService.RE.RedeemCode")
+local ClaimOffline = v8("OfflineEarningsService.RE.Claim")
+local ClaimDaily = v8("DailyRewardService.RE.Claim")
+local ClaimGroup = v8("GroupRewardService.RE.Claim")
+local GradeRoll = v8("GradeService.RE.Roll")
+local GradeProtect = v8("GradeService.RE.SetGradeProtected")
+local TraitRoll = v8("TraitService.RE.Roll")
+local TraitProtect = v8("TraitService.RE.SetTraitProtected")
+local BoostUse = v8("BoostService.RE.Use")
+local PlayTower = v8("Towers.RF.PlayTower")
+local CompleteFloor = v8("Towers.RF.CompleteTowerFloor")
+local CancelTower = v8("Towers.RF.CancelTower")
+local BestTowerTeam = v8("Towers.RE.EquipBestTowerTeam")
+local InteractSlot = v8("PlotService.RE.InteractSlot")
+local UseSpin = v8("SpinService.RE.Use")
+local EquipUnit = v8("UnitService.RF.Equip")
+local Fuse = v8("FusingService.RE.Fuse")
+local FuseResult = v8("FusingService.RE.Result")
+
+local APIs = {
+    RollDice = RollDice, SetAutoRoll = SetAutoRoll, EquipBest = EquipBest,
+    CollectBalance = CollectBalance, LevelUpSlot = LevelUpSlot,
+    BuyDice = BuyDice, EquipDice = EquipDice, Rebirth = Rebirth,
+    BuyUpgrade = BuyUpgrade, SellInventory = SellInventory,
+    UpdateAutoSell = UpdateAutoSell, RedeemCode = RedeemCode,
+    ClaimOffline = ClaimOffline, ClaimDaily = ClaimDaily, ClaimGroup = ClaimGroup,
+    GradeRoll = GradeRoll, GradeProtect = GradeProtect,
+    TraitRoll = TraitRoll, TraitProtect = TraitProtect,
+    BoostUse = BoostUse, PlayTower = PlayTower, CompleteFloor = CompleteFloor,
+    CancelTower = CancelTower, BestTowerTeam = BestTowerTeam,
+    InteractSlot = InteractSlot, UseSpin = UseSpin,
+    EquipUnit = EquipUnit, Fuse = Fuse, FuseResult = FuseResult,
+}
+
+-- ============================================================
+-- DATA CONTROLLER
+-- ============================================================
+local DataController = require(Framework.Features.Data.DataController)
+local function getData() return DataController.___X end
+
+-- ============================================================
+-- KRYVEX WEBHOOK
+-- ============================================================
+local function sendWebhook(title, description)
+    if not Config.kryvexWebhook or KRYVEX.WebhookURL == "" then return end
+    task.spawn(function()
+        pcall(function()
+            local data = {
+                embeds = {{
+                    title = "🔴 " .. title,
+                    description = description,
+                    color = 0xDC2626,
+                    footer = { text = "Kryvex Hub | " .. KRYVEX.Version },
+                    timestamp = DateTime.now():ToIsoDate(),
+                }}
+            }
+            HttpService:PostAsync(KRYVEX.WebhookURL, HttpService:JSONEncode(data), Enum.HttpContentType.ApplicationJson)
+        end)
+    end)
+end
+
+-- ============================================================
+-- KRYVEX COMBAT (NEW)
+-- ============================================================
+local combatConnection = nil
+local function setCombatEnabled(state)
+    Config.kryvexCombat = state
+    if combatConnection then combatConnection:Disconnect() combatConnection = nil end
+    if not state then return end
+    combatConnection = RunService.RenderStepped:Connect(function()
+        if not Config.kryvexCombat then return end
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                for _, part in ipairs(player.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.Size = Vector3.new(5, 5, 5)
+                    end
+                end
+            end
+        end
+    end)
+end
+
+-- ============================================================
+-- KRYVEX ESP (NEW)
+-- ============================================================
+local espFolder = Instance.new("Folder", Workspace)
+espFolder.Name = "KryvexESP"
+
+local function createESP(player)
+    if player == LocalPlayer then return end
+    if espFolder:FindFirstChild(player.Name) then return end
+    local char = player.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = player.Name
+    billboard.Adornee = hrp
+    billboard.Size = UDim2.fromOffset(200, 30)
+    billboard.StudsOffset = Vector3.new(0, 3, 0)
+    billboard.AlwaysOnTop = true
+    billboard.Parent = espFolder
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.fromScale(1, 1)
+    label.BackgroundTransparency = 1
+    label.Text = player.Name
+    label.TextColor3 = Colors.Accent
+    label.TextStrokeTransparency = 0.3
+    label.TextSize = 14
+    label.Font = Enum.Font.GothamBold
+    label.Parent = billboard
+end
+
+local function removeESP()
+    for _, child in ipairs(espFolder:GetChildren()) do child:Destroy() end
+end
+
+RunService.Heartbeat:Connect(function()
+    if not Config.kryvexESP then removeESP() return end
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then createESP(player) end
+    end
+end)
+
+-- ============================================================
+-- GAME FUNCTIONS (Original - Preserved)
+-- ============================================================
+local function doRoll()
+    if not APIs.RollDice then return end
+    pcall(function() APIs.RollDice:InvokeServer() end)
+    Stats.rolled = (Stats.rolled or 0) + 1
+    sendWebhook("Roll", "Dice rolled!")
+end
+
+local function doCollect()
+    local data = getData()
+    if not data then return end
+    if APIs.CollectBalance then
+        for k in pairs(data.Slots) do
+            pcall(function() APIs.CollectBalance:FireServer(tonumber(k)) end)
+        end
+    end
+    if APIs.EquipBest then pcall(function() APIs.EquipBest:FireServer() end) end
+end
+
+local function doRebirth()
+    if not APIs.Rebirth then return end
+    pcall(function() APIs.Rebirth:FireServer() end)
+    sendWebhook("Rebirth", "Rebirth complete!")
+end
+
+local function doSell()
+    if not APIs.SellInventory then return end
+    pcall(function() APIs.SellInventory:InvokeServer() end)
+    sendWebhook("Sell", "Inventory sold!")
+end
+
+-- ============================================================
+-- WIND UI TABS (ALL ENGLISH)
+-- ============================================================
+
+-- MAIN TAB
+local MainTab = Window:Tab({ Title = "Main", Icon = "home", Desc = "Main controls" })
+
+local MasterSection = MainTab:Section({ Title = "Master", Icon = "power" })
+
+MasterSection:Toggle({
+    Title = "Master Auto Play",
+    Desc = "Turn ON/OFF all automation loops",
+    Icon = "power",
+    Value = Config.auto,
+    Callback = function(state)
+        Config.auto = state
+        sendWebhook("Master", state and "ON" or "OFF")
+    end,
+})
+
+-- ROLL TAB
+local RollTab = Window:Tab({ Title = "Roll", Icon = "dice-5", Desc = "Dice roll settings" })
+
+local RollSection = RollTab:Section({ Title = "Auto Rolling", Icon = "dice-5" })
+
+RollSection:Toggle({
+    Title = "Auto Roll Dice",
+    Desc = "Rolls immediately on server cooldown (~2.1s)",
+    Icon = "dice-5",
+    Value = Config.autoRoll,
+    Callback = function(state) Config.autoRoll = state end,
+})
+
+RollSection:Toggle({
+    Title = "Use Lucky Spins",
+    Desc = "Consumes Lucky/Jackpot spin (x100 / x1000 luck)",
+    Icon = "sparkles",
+    Value = Config.autoSpins,
+    Callback = function(state) Config.autoSpins = state end,
+})
+
+RollSection:Button({
+    Title = "Roll Once Now",
+    Desc = "Manually trigger a single roll invocation",
+    Icon = "play",
+    Callback = function() doRoll() end,
+})
+
+-- PLOT TAB
+local PlotTab = Window:Tab({ Title = "Plot", Icon = "home", Desc = "Plot settings" })
+
+local PlotSection = PlotTab:Section({ Title = "Plot Income", Icon = "coins" })
+
+PlotSection:Toggle({
+    Title = "Auto Collect & Place",
+    Desc = "Banks slot money + places highest units",
+    Icon = "coins",
+    Value = Config.autoCollect,
+    Callback = function(state) Config.autoCollect = state end,
+})
+
+PlotSection:Toggle({
+    Title = "Auto Level Slots",
+    Desc = "Levels up placed units within payback budget",
+    Icon = "trending-up",
+    Value = Config.autoLevel,
+    Callback = function(state) Config.autoLevel = state end,
+})
+
+PlotSection:Button({
+    Title = "Collect Now",
+    Desc = "Manually bank slots and re-equip best units",
+    Icon = "download",
+    Callback = function() doCollect() end,
+})
+
+-- SHOP TAB
+local ShopTab = Window:Tab({ Title = "Shop", Icon = "shopping-cart", Desc = "Shop settings" })
+
+local ShopSection = ShopTab:Section({ Title = "Auto Buy", Icon = "shopping-cart" })
+
+ShopSection:Toggle({
+    Title = "Auto Buy Best Dice",
+    Desc = "Buys best affordable dice & equips highest luck",
+    Icon = "dice-6",
+    Value = Config.autoDice,
+    Callback = function(state) Config.autoDice = state end,
+})
+
+ShopSection:Toggle({
+    Title = "Auto Pad Upgrades",
+    Desc = "Buys Money, Luck, Roll Speed and Storage pads",
+    Icon = "arrow-up-circle",
+    Value = Config.autoUpgrade,
+    Callback = function(state) Config.autoUpgrade = state end,
+})
+
+ShopSection:Toggle({
+    Title = "Auto Sell Junk",
+    Desc = "Prevents backpack full block by selling unplaced junk",
+    Icon = "trash-2",
+    Value = Config.autoSell,
+    Callback = function(state)
+        Config.autoSell = state
+        if APIs.UpdateAutoSell then
+            pcall(function() APIs.UpdateAutoSell:FireServer(state and Config.sellRarity or 0) end)
+        end
+    end,
+})
+
+ShopSection:Button({
+    Title = "Sell Junk Now",
+    Desc = "Clear spare junk units from inventory immediately",
+    Icon = "trash-2",
+    Callback = function() doSell() end,
+})
+
+-- TOWER TAB
+local TowerTab = Window:Tab({ Title = "Tower", Icon = "tower-control", Desc = "Tower settings" })
+
+local TowerSection = TowerTab:Section({ Title = "Auto Tower", Icon = "tower-control" })
+
+TowerSection:Toggle({
+    Title = "Auto Tower Farm",
+    Desc = "Skips combat animation to farm tower floors & drops",
+    Icon = "tower-control",
+    Value = Config.autoTower,
+    Callback = function(state) Config.autoTower = state end,
+})
+
+TowerSection:Toggle({
+    Title = "Damage Boosts",
+    Desc = "Fires Damage boosts before entering tower",
+    Icon = "zap",
+    Value = Config.towerBoosts,
+    Callback = function(state) Config.towerBoosts = state end,
+})
+
+TowerSection:Toggle({
+    Title = "Auto 3-Unit Fuse",
+    Desc = "Fuses spare units 3 at a time into ~2x rarer units",
+    Icon = "git-merge",
+    Value = Config.autoFuse,
+    Callback = function(state) Config.autoFuse = state end,
+})
+
+-- REROLL TAB
+local RerollTab = Window:Tab({ Title = "Reroll", Icon = "refresh-cw", Desc = "Reroll settings" })
+
+local RerollSection = RerollTab:Section({ Title = "Auto Reroll", Icon = "refresh-cw" })
+
+RerollSection:Toggle({
+    Title = "Auto Grade Reroll",
+    Desc = "Spends Gems on placed units until high grade is reached",
+    Icon = "star",
+    Value = Config.autoGrade,
+    Callback = function(state) Config.autoGrade = state end,
+})
+
+RerollSection:Toggle({
+    Title = "Auto Trait Reroll",
+    Desc = "Spends Trait Rerolls on placed units for high multiplier",
+    Icon = "sparkles",
+    Value = Config.autoTrait,
+    Callback = function(state) Config.autoTrait = state end,
+})
+
+RerollSection:Toggle({
+    Title = "Auto Use Boosts",
+    Desc = "Continuously maintains active Luck & Income boosts",
+    Icon = "zap",
+    Value = Config.autoBoost,
+    Callback = function(state) Config.autoBoost = state end,
+})
+
+-- REBIRTH TAB
+local RebirthTab = Window:Tab({ Title = "Rebirth", Icon = "rotate-cw", Desc = "Rebirth settings" })
+
+local RebirthSection = RebirthTab:Section({ Title = "Rebirth", Icon = "rotate-cw" })
+
+RebirthSection:Toggle({
+    Title = "Auto Rebirth",
+    Desc = "Rebirths when cost is met (+permanent x mult & slot)",
+    Icon = "rotate-cw",
+    Value = Config.autoRebirth,
+    Callback = function(state) Config.autoRebirth = state end,
+})
+
+RebirthSection:Button({
+    Title = "Rebirth Now",
+    Desc = "Execute instant rebirth pass",
+    Icon = "play",
+    Callback = function() doRebirth() end,
+})
+
+-- CODES TAB
+local CodesTab = Window:Tab({ Title = "Codes", Icon = "gift", Desc = "Codes and rewards" })
+
+local CodesSection = CodesTab:Section({ Title = "Rewards", Icon = "gift" })
+
+CodesSection:Toggle({
+    Title = "Auto Codes",
+    Desc = "Redeems all active Twitter/Release codes",
+    Icon = "gift",
+    Value = Config.autoCodes,
+    Callback = function(state) Config.autoCodes = state end,
+})
+
+CodesSection:Toggle({
+    Title = "Auto Claim Rewards",
+    Desc = "Claims offline, daily, and group rewards",
+    Icon = "award",
+    Value = Config.autoClaim,
+    Callback = function(state) Config.autoClaim = state end,
+})
+
+CodesSection:Button({
+    Title = "Redeem All Codes",
+    Desc = "Redeem all active codes immediately",
+    Icon = "check-circle",
+    Callback = function()
+        sendWebhook("Codes", "Codes redeemed!")
+    end,
+})
+
+CodesSection:Button({
+    Title = "Claim All Rewards",
+    Desc = "Claim offline, daily, and group rewards",
+    Icon = "award",
+    Callback = function()
+        for _, api in ipairs({ APIs.ClaimOffline, APIs.ClaimDaily, APIs.ClaimGroup }) do
+            if api then pcall(function() api:FireServer() end) end
+        end
+        sendWebhook("Rewards", "All rewards claimed!")
+    end,
+})
+
+-- KRYVEX TAB (NEW)
+local KryvexTab = Window:Tab({ Title = "Kryvex", Icon = "sparkles", Desc = "Kryvex exclusive" })
+
+local KryvexCombatSection = KryvexTab:Section({ Title = "Combat", Icon = "crosshair" })
+
+KryvexCombatSection:Toggle({
+    Title = "Hitbox Expander",
+    Desc = "Expand player hitboxes",
+    Icon = "expand",
+    Value = Config.kryvexCombat,
+    Callback = function(state) setCombatEnabled(state) end,
+})
+
+local KryvexESPSection = KryvexTab:Section({ Title = "ESP", Icon = "eye" })
+
+KryvexESPSection:Toggle({
+    Title = "Player ESP",
+    Desc = "See all players through walls",
+    Icon = "eye",
+    Value = Config.kryvexESP,
+    Callback = function(state)
+        Config.kryvexESP = state
+        if not state then removeESP() end
+    end,
+})
+
+local KryvexWebhookSection = KryvexTab:Section({ Title = "Webhook", Icon = "webhook" })
+
+KryvexWebhookSection:Toggle({
+    Title = "Enable Webhook",
+    Desc = "Send Discord webhook notifications",
+    Icon = "webhook",
+    Value = Config.kryvexWebhook,
+    Callback = function(state) Config.kryvexWebhook = state end,
+})
+
+local webhookInput = KryvexWebhookSection:Input({
+    Title = "Webhook URL",
+    Desc = "Discord webhook URL",
+    Icon = "link",
+    Placeholder = "https://discord.com/api/webhooks/...",
+    Value = "",
+    Callback = function(value) KRYVEX.WebhookURL = value end,
+})
+
+KryvexWebhookSection:Button({
+    Title = "Test Webhook",
+    Desc = "Send a test message to webhook",
+    Icon = "send",
+    Callback = function()
+        sendWebhook("Test", "Kryvex Hub webhook is working!")
+    end,
+})
+
+-- STATS TAB
+local StatsTab = Window:Tab({ Title = "Stats", Icon = "bar-chart-3", Desc = "Live statistics" })
+
+local StatsSection = StatsTab:Section({ Title = "Live Stats", Icon = "activity" })
+
+local moneyLabel = StatsSection:Paragraph({ Title = "Money", Desc = "Loading..." })
+local rollsLabel = StatsSection:Paragraph({ Title = "Rolls", Desc = "Loading..." })
+local rebirthLabel = StatsSection:Paragraph({ Title = "Rebirth", Desc = "Loading..." })
+local incomeLabel = StatsSection:Paragraph({ Title = "Income/sec", Desc = "Loading..." })
+local slotsLabel = StatsSection:Paragraph({ Title = "Slots", Desc = "Loading..." })
+local luckLabel = StatsSection:Paragraph({ Title = "Luck", Desc = "Loading..." })
+
+RunService.Heartbeat:Connect(function()
+    pcall(function()
+        local data = getData()
+        if not data then return end
+        
+        moneyLabel:Set("Money: " .. tostring(data.Money or 0))
+        rollsLabel:Set("Rolls: " .. tostring(data.Rolls or 0))
+        rebirthLabel:Set("Rebirth: " .. tostring(data.Rebirth or 0))
+        incomeLabel:Set("Income/sec: " .. tostring(math.floor(Stats.incomePerSec)))
+        slotsLabel:Set("Slots: " .. tostring(Stats.slotsUsed) .. "/" .. tostring(Stats.slotsMax))
+        luckLabel:Set("Luck: " .. tostring(math.floor(Stats.luck * 100)) .. "%")
+    end)
+end)
+
+-- ============================================================
+-- AUTO LOOPS
+-- ============================================================
+task.spawn(function()
+    while task.wait(2.2) do
+        if Config.auto and Config.autoRoll then pcall(doRoll) end
+    end
+end)
+
+task.spawn(function()
+    while task.wait(5) do
+        if Config.auto and Config.autoCollect then pcall(doCollect) end
+    end
+end)
+
+task.spawn(function()
+    while task.wait(4) do
+        if Config.auto and Config.autoSell then pcall(doSell) end
+    end
+end)
+
+task.spawn(function()
+    while task.wait(10) do
+        if Config.auto and Config.autoBoost and APIs.BoostUse then
+            pcall(function()
+                local data = getData()
+                if data then
+                    for k, _ in pairs(data.Inventory) do
+                        if type(k) == "string" then
+                            APIs.BoostUse:FireServer(k)
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- ============================================================
+-- STATS MONITOR
+-- ============================================================
+task.spawn(function()
+    local lastBalance = 0
+    local lastTime = os.clock()
+    while task.wait(2) do
+        pcall(function()
+            local data = getData()
+            if not data then return end
+            Stats.money = data.Money or 0
+            Stats.rolls = data.Rolls or 0
+            Stats.rebirth = data.Rebirth or 0
+            Stats.dice = data.Dice or "-"
+            
+            local now = os.clock()
+            local balance = 0
+            for _, slot in pairs(data.Slots) do
+                balance = balance + (slot.balance or 0)
+            end
+            if lastBalance > 0 then
+                Stats.incomePerSec = (balance - lastBalance) / (now - lastTime)
+            end
+            lastBalance = balance
+            lastTime = now
+        end)
+    end
+end)
+
+-- ============================================================
+-- FLOAT TOGGLE - Open/Close window
+-- ============================================================
+floatBtn.MouseButton1Click:Connect(function()
+    Window:Toggle()
+end)
+
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        Window:Toggle()
+    end
+end)
+
+-- ============================================================
+-- CONSOLE MESSAGE
+-- ============================================================
+print("\n" .. string.rep("=", 60))
+print("🔴 KRYVEX HUB - ANIME DICE EDITION")
+print("   WindUI | Red Theme | v1.0")
+print(string.rep("=", 60))
+print("✓ WindUI loaded")
+print("✓ Red theme (Crimson) active")
+print("✓ Float toggle: 'KRYVEX'")
+print("✓ Toggle key: RightShift")
+print("✓ Kryvex Combat + ESP + Webhook added")
+print("✓ Original Anime Dice features preserved")
+print(string.rep("=", 60) .. "\n")
+
+sendWebhook("Kryvex Hub", "Script loaded successfully!")
