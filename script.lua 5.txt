@@ -1,0 +1,228 @@
+--[[ 
+   the model is saved by Dex ReContinued ;) 
+   (absolute best dex project, you should try it)
+]]
+
+--[[ 
+ GitHub Script Link: 
+ https://raw.githubusercontent.com/Ahma174/Misc-Scripts/refs/heads/main/Secret%20Chaos%20Sorcerer.luau
+]]
+
+-- Code
+
+if isfile("Chaos Legend Hydra.rbxm") then
+  print("File Already Exists")
+else
+  local linkvar = "https://github.com/Ahma174/Assets/raw/refs/heads/main/ScriptAseets/Models/Chaos%20Legend%20Hydra.rbxm"
+  local request = request({
+     Url = linkvar,
+     Method = "GET"
+  })
+ writefile("Chaos Legend Hydra.rbxm", request.Body)
+end
+
+local model = getcustomasset("Chaos Legend Hydra.rbxm")
+local GetObjects = game:GetObjects(model)
+
+local model2 = GetObjects[1]
+model2.Parent = game.Players.LocalPlayer.Character
+
+local base = model2.realBase
+base.Anchored = false
+
+local RunService = game:GetService("RunService")
+local humanoid = game.Players.LocalPlayer.Character.Humanoid
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+
+task.wait(0.05)
+
+-- Vibecoded Part --
+
+-- Anim is now universal and works in every game
+-- and this keyframe player is made by Claude ofc and modified some stuff to make it properly work
+local animation = {
+        {
+                Time = 0,
+                Poses = {
+                        realBase = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        Base = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        Base2 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        Base3 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        LegPart1 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        LegPart2 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        LegPart3 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        LegPart4 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        LegPart5 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        LegPart6 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        LegPart7 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        LeftHorn4 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        LeftHorn5 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        RightHorn2 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        RightHorn3 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                }
+        },
+        {
+                Time = 0.65,
+                Poses = {
+                        realBase = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        Base = CFrame.new(-4.98812156e-08,-0.799999356,5.11109829e-06,1,6.33108428e-08,-1.5162982e-11,-6.23516385e-08,0.98480773,-0.173648402,-1.09788942e-08,0.173648402,0.98480773),
+                        Base2 = CFrame.new(0,0,0,0.682369113,-0.72311604,-0.107124329,0.247065052,0.366056234,-0.897196591,0.687990725,0.585752547,0.42844218),
+                        Base3 = CFrame.new(0,0,0,0.619554162,0.784312069,0.0317371152,-0.581402957,0.485683024,-0.652750015,-0.52737391,0.38596195,0.756908298),
+                        LegPart2 = CFrame.new(-0.071300894,0.121334687,-0.142100036,0.613420308,0.768090606,0.183718115,-0.702449143,0.636956394,-0.31757161,-0.360944211,0.065752238,0.930266619),
+                        LegPart4 = CFrame.new(0,0,0,0.980251372,-0.141988188,-0.137646809,0.151647195,0.9864645,0.0623774603,0.126926824,-0.082019344,0.988515258),
+                        LegPart5 = CFrame.new(0.0382393822,-0.171178535,-0.0960925221,0.698135972,-0.702039301,-0.140523985,0.644416273,0.530620635,0.550608218,-0.311983675,-0.47495535,0.822850883),
+                        LegPart6 = CFrame.new(0,0,0,0.982754946,0.123737514,-0.137410924,-0.13742885,0.985940456,-0.0950510651,0.123717606,0.112296127,0.98594296),
+                }
+        },
+        {
+                Time = 0.7,
+                Poses = {
+                        realBase = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        Base = CFrame.new(-4.98812156e-08,-0.799999356,5.11109829e-06,1,6.33108428e-08,-1.5162982e-11,-6.23516385e-08,0.98480773,-0.173648402,-1.09788942e-08,0.173648402,0.98480773),
+                        Base2 = CFrame.new(0,0,0,0.682369113,-0.72311604,-0.107124329,0.247065052,0.366056234,-0.897196591,0.687990725,0.585752547,0.42844218),
+                        Base3 = CFrame.new(0,0,0,0.619554162,0.784312069,0.0317371152,-0.581402957,0.485683024,-0.652750015,-0.52737391,0.38596195,0.756908298),
+                        LegPart2 = CFrame.new(-0.071300894,0.121334687,-0.142100036,0.613420308,0.768090606,0.183718115,-0.702449143,0.636956394,-0.31757161,-0.360944211,0.065752238,0.930266619),
+                        LegPart4 = CFrame.new(0,0,0,0.980251372,-0.141988188,-0.137646809,0.151647195,0.9864645,0.0623774603,0.126926824,-0.082019344,0.988515258),
+                        LegPart5 = CFrame.new(0.0382393822,-0.171178535,-0.0960925221,0.698135972,-0.702039301,-0.140523985,0.644416273,0.530620635,0.550608218,-0.311983675,-0.47495535,0.822850883),
+                        LegPart6 = CFrame.new(0,0,0,0.982754946,0.123737514,-0.137410924,-0.13742885,0.985940456,-0.0950510651,0.123717606,0.112296127,0.98594296),
+                }
+        },
+        {
+                Time = 1.7,
+                Poses = {
+                        Base2 = CFrame.new(0,0,0,0.972744465,0.0331436098,-0.229498684,-0.145275921,0.858516753,-0.491776139,0.18072921,0.511713207,0.839932442),
+                        Base3 = CFrame.new(0,0,0,0.98480773,0.0301536545,0.171010077,0,0.984807789,-0.17364797,-0.173648179,0.171009868,0.969846308),
+                        LegPart1 = CFrame.new(-0.187938556,0,0.0684039518,0.939692736,0,0.342019737,0,1,0,-0.342019737,0,0.939692736),
+                        LegPart2 = CFrame.new(0,0,0,0.939692438,0,-0.342020571,0,1,0,0.342020571,0,0.939692438),
+                        LegPart3 = CFrame.new(0,0,0,0.98480773,0,0.173648179,0,1,0,-0.173648179,0,0.98480773),
+                        LegPart4 = CFrame.new(0,0,0,0.984807789,0,0.17364797,0,1,0,-0.17364797,0,0.984807789),
+                        LegPart5 = CFrame.new(0,0,0,0.939692616,0,-0.342020124,0,1,0,0.342020124,0,0.939692616),
+                        LegPart6 = CFrame.new(0,0,0,0.984807789,0,0.17364797,0,1,0,-0.17364797,0,0.984807789),
+                        LegPart7 = CFrame.new(0,0,0,0.984807789,0,0.17364797,0,1,0,-0.17364797,0,0.984807789),
+                        LeftHorn4 = CFrame.new(0.196961552,-0.0347296372,0,0.98480773,0.171010062,0.0301536899,-0.173648179,0.969846249,0.171010062,0,-0.173648179,0.98480773),
+                        LeftHorn5 = CFrame.new(0.196961552,-0.0342020169,0.0060307309,0.98480773,0.173648179,0,-0.171010077,0.969846308,0.17364797,0.0301536545,-0.171009868,0.984807789),
+                        RightHorn2 = CFrame.new(0.196961552,-0.0347296372,0,0.98480773,0.171010062,-0.0301536899,-0.173648179,0.969846249,-0.171010062,0,0.173648179,0.98480773),
+                        RightHorn3 = CFrame.new(0.196961552,-0.0347296372,0,0.98480773,0.171010077,-0.0301536545,-0.173648179,0.969846308,-0.171009868,0,0.17364797,0.984807789),
+                }
+        },
+        {
+                Time = 1.8,
+                Poses = {
+                        realBase = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        Base = CFrame.new(0,1.20000005,-1.49011612e-08,1,0,0,0,0.98480773,0.173648179,0,-0.173648179,0.98480773)
+                }
+        },
+        {
+                Time = 1.85,
+                Poses = {
+                        realBase = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        Base = CFrame.new(0,1.20000005,-1.49011612e-08,1,0,0,0,0.98480773,0.173648179,0,-0.173648179,0.98480773)
+                }
+        },
+        {
+                Time = 2.5,
+                Poses = {
+                        realBase = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        Base = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        Base2 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        Base3 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        LegPart1 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        LegPart2 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        LegPart3 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        LegPart4 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        LegPart5 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        LegPart6 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        LegPart7 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        LeftHorn4 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        LeftHorn5 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        RightHorn2 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                        RightHorn3 = CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1),
+                }
+        },
+}
+
+local joints = {}
+for _, obj in ipairs(model2:GetDescendants()) do
+        if obj:IsA("Motor6D") and obj.Part1 then
+                joints[obj.Part1.Name] = obj
+        end
+end
+
+local tracks = {}
+local duration = 0
+for _, kf in ipairs(animation) do
+        duration = math.max(duration, kf.Time)
+        for name, cf in pairs(kf.Poses) do
+                tracks[name] = tracks[name] or {}
+                table.insert(tracks[name], {Time = kf.Time, CFrame = cf})
+        end
+end
+
+local function sample(list, time)
+        if time <= list[1].Time then
+                return list[1].CFrame
+        end
+        for i = 2, #list do
+                local a = list[i - 1]
+                local b = list[i]
+                if time <= b.Time then
+                        local span = b.Time - a.Time
+                        if span <= 0 then
+                                return b.CFrame
+                        end
+                        return a.CFrame:Lerp(b.CFrame, (time - a.Time) / span)
+                end
+        end
+        return list[#list].CFrame
+end
+
+local animationTime = 0
+local animationSpeed = 1
+
+RunService.RenderStepped:Connect(function(dt)
+        animationTime = (animationTime + dt * animationSpeed) % duration
+
+        for name, joint in pairs(joints) do
+                local list = tracks[name]
+                if list then
+                        joint.Transform = sample(list, animationTime)
+                end
+        end
+end)
+
+local bodyPos = Instance.new("BodyPosition")
+bodyPos.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+bodyPos.P = 20000
+bodyPos.Position = rootPart.Position
+bodyPos.Parent = base
+
+local bodyGyro = Instance.new("BodyGyro")
+bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+bodyGyro.CFrame = rootPart.CFrame
+bodyGyro.Parent = base
+
+local flyingOffset = CFrame.new(5, 1.25, -3)
+local bobUp = false
+local bobT = 0
+local bobSpeed = 0.01
+local bobMax = 1
+local tiltAngle = 5
+
+RunService.RenderStepped:Connect(function()
+        if not bobUp then
+                bobT = bobT + bobSpeed
+                if bobT >= bobMax then bobUp = true end
+                if tiltAngle < 5 then tiltAngle = tiltAngle + 0.1 end
+        else
+                bobT = bobT - bobSpeed
+                if bobT <= 0 then bobUp = false end
+                if tiltAngle > -5 then tiltAngle = tiltAngle - 0.1 end
+        end
+        local targetPos = (rootPart.CFrame * flyingOffset).p
+        bodyPos.Position = Vector3.new(targetPos.X, targetPos.Y + bobT, targetPos.Z)
+        if humanoid.MoveDirection == Vector3.new(0, 0, 0) then
+                bodyGyro.CFrame = CFrame.new(base.Position, Vector3.new(rootPart.Position.X, base.Position.Y, rootPart.Position.Z)) * CFrame.Angles(math.rad(tiltAngle), 0, 0)
+        else
+                bodyGyro.CFrame = rootPart.CFrame * CFrame.Angles(math.rad(tiltAngle), 0, 0)
+        end
+end)
