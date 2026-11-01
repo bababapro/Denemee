@@ -32,18 +32,18 @@ local library = loadstring(game:HttpGet("https://github.com/KryvexOnTop/Kryvex-p
 
 local window = library:AddWindow("##############", {
     title_bar = {
-        Color3.fromRGB(130, 65, 210),  -- Açık mor / Lila (Üst bar)
-        Color3.fromRGB(75, 25, 140),   -- Koyu mor (Orta kısım)
-        Color3.fromRGB(30, 10, 60)     -- Çok koyu mor (Alt kısım)
+        Color3.fromRGB(115, 50, 200),  -- Üst barın moru
+        Color3.fromRGB(65, 25, 140),   -- Orta kısım
+        Color3.fromRGB(25, 10, 60)     -- Alt kısım
     },
-    title_bar_transparency = 0.03,
+    title_bar_transparency = 0.1,
     background = {
-        Color3.fromRGB(25, 15, 35),    -- Koyu mor arka plan (Üst)
-        Color3.fromRGB(35, 20, 50),    -- Koyu mor arka plan (Orta)
-        Color3.fromRGB(45, 25, 65)     -- Koyu mor arka plan (Alt)
+        Color3.fromRGB(25, 15, 40),    -- Koyu mor/siyah arka plan
+        Color3.fromRGB(35, 20, 55),    -- Hafif açık orta kısım
+        Color3.fromRGB(20, 10, 30)     -- Alt kısım
     },
-    background_transparency = 0.03,
-    main_color = Color3.fromRGB(130, 65, 210), -- Butonlar ve seçili sekmeler için ana mor renk
+    background_transparency = 0.15, -- Biraz kapalı/şeffaf görünmesi için (fotoğraftaki gibi)
+    main_color = Color3.fromRGB(115, 50, 200), -- Ana mor renk (tick, seçili sekme vs.)
     min_size = Vector2.new(470, 390),
     can_resize = true
 })
