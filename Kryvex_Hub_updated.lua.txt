@@ -32,20 +32,20 @@ local library = loadstring(game:HttpGet("https://github.com/KryvexOnTop/Kryvex-p
 
 local window = library:AddWindow("##############", {
     title_bar = {
-        Color3.fromRGB(115, 50, 200),  -- Üst barın moru
-        Color3.fromRGB(65, 25, 140),   -- Orta kısım
-        Color3.fromRGB(25, 10, 60)     -- Alt kısım
-    },
-    title_bar_transparency = 0.1,
-    background = {
-        Color3.fromRGB(25, 15, 40),    -- Koyu mor/siyah arka plan
-        Color3.fromRGB(35, 20, 55),    -- Hafif açık orta kısım
-        Color3.fromRGB(20, 10, 30)     -- Alt kısım
-    },
-    background_transparency = 0.15, -- Biraz kapalı/şeffaf görünmesi için (fotoğraftaki gibi)
-    main_color = Color3.fromRGB(115, 50, 200), -- Ana mor renk (tick, seçili sekme vs.)
-    min_size = Vector2.new(470, 390),
-    can_resize = true
+    Color3.fromRGB(170, 70, 255),
+    Color3.fromRGB(120, 35, 190),
+    Color3.fromRGB(60, 15, 100)
+},
+title_bar_transparency = 0.03,
+background = {
+    Color3.fromRGB(24, 24, 27),
+    Color3.fromRGB(32, 32, 36),
+    Color3.fromRGB(43, 43, 48)
+},
+background_transparency = 0.03,
+main_color = Color3.fromRGB(175, 60, 255),
+min_size = Vector2.new(470, 390),
+can_resize = true
 })
 
 local tabRebirth = window:AddTab("Fast Rebirth")
