@@ -31,21 +31,21 @@ print("✅ Whitelist onaylandı!")
 local library = loadstring(game:HttpGet("https://github.com/KryvexOnTop/Kryvex-paid/raw/refs/heads/main/KryvexGui%20(3).txt", true))()
 
 local window = library:AddWindow("#########################", {
-       title_bar = {
-        Color3.fromRGB(186, 85, 211), -- Açık mor (MediumOrchid)
-        Color3.fromRGB(147, 112, 219), -- Yumuşak mor
-        Color3.fromRGB(123, 104, 238)  -- Lavanta tonu
-    },
-    title_bar_transparency = 0.03,
-    background = {
-        Color3.fromRGB(24, 24, 27),
-        Color3.fromRGB(32, 32, 36),
-        Color3.fromRGB(43, 43, 48)
-    },
-    background_transparency = 0.03,
-    main_color = Color3.fromRGB(218, 112, 214), -- Parlak ve açık mor ana renk
-    min_size = Vector2.new(470, 390),
-    can_resize = true
+     title_bar = {
+    Color3.fromRGB(180, 90, 255),
+    Color3.fromRGB(125, 45, 210),
+    Color3.fromRGB(65, 20, 125)
+},
+title_bar_transparency = 0.03,
+background = {
+    Color3.fromRGB(28, 22, 38),
+    Color3.fromRGB(38, 29, 52),
+    Color3.fromRGB(52, 39, 70)
+},
+background_transparency = 0.03,
+main_color = Color3.fromRGB(175, 85, 255),
+min_size = Vector2.new(440, 370),
+can_resize = true
 })
 
 
