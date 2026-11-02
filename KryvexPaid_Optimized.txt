@@ -2033,7 +2033,7 @@ tabs.rebirths.unequipAllPets = function()
         end
     end
 
-    task.wait(0.001)
+    task.wait(0.01)
 end
 
 tabs.rebirths.equipFarmingPets = function()
