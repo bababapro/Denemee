@@ -2526,215 +2526,462 @@ Rock:AddSwitch("👊 Start Rock V2 Farm", function(Value)
     end
 end)
 
-local tabFarming = window:AddTab("Pack Farm")
+--// =========================
+--// FAST FARM TAB
+--// =========================
 
-local player = game.Players.LocalPlayer
-local muscleEvent = player:WaitForChild("muscleEvent")
-local rEvents = game:GetService("ReplicatedStorage"):WaitForChild("rEvents")
-local isRunning = false
-local strengthOnly = false
-local autoEatEnabled = false
-local startTime = tick()
-local initialRebirthsCount = player.leaderstats.Rebirths.Value
+local FastFarm = window:AddTab("Fast Farm")
 
-local function unequipAllPets()
-    if player:FindFirstChild("petsFolder") then
-        for _, folder in pairs(player.petsFolder:GetChildren()) do
-            for _, pet in pairs(folder:GetChildren()) do
-                rEvents.equipPetEvent:FireServer("unequipPet", pet)
-            end
-        end
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+local muscleEvent = LocalPlayer:WaitForChild("muscleEvent")
+local rEvents = ReplicatedStorage:WaitForChild("rEvents")
+
+local leaderstats = LocalPlayer:WaitForChild("leaderstats")
+local Strength = leaderstats:WaitForChild("Strength")
+local Durability = LocalPlayer:WaitForChild("Durability")
+local Rebirths = leaderstats:WaitForChild("Rebirths")
+
+--// Runtime state
+local FF = {
+    Running = false,
+    SendRate = 462,
+    MaxSendRate = 462,
+    MinSendRate = 100,
+    MaxBurst = 24,
+    Tokens = 0,
+    LastAt = os.clock(),
+    StartedAt = 0,
+    TotalElapsed = 0,
+    TimerStarted = false,
+    MeasuredCycles = 0,
+    StatSamples = {Strength = Strength.Value, Durability = Durability.Value, Rebirths = Rebirths.Value},
+    StatGains = {Strength = 0, Durability = 0, Rebirths = 0},
+    NextAverageElapsed = 10,
+    PingPaused = false,
+    PingLimit = 350,
+    ResumePing = 300,
+    RecoverySeconds = 2,
+    RecoveryStartedAt = nil,
+    LearnedLimit = false,
+    LastPingSample = nil,
+    LastPingSampleAt = os.clock(),
+    LastPingRise = 0,
+    LastRampAt = os.clock(),
+    StableSince = os.clock(),
+    StableInterval = 60,
+    StableStep = 2,
+    FineRampStep = 2,
+    BackoffStep = 4,
+    RampStep = 25,
+    RampInterval = 2,
+    WorkerActive = false
+}
+
+--// Pet config (Farming.luau'dan)
+local PETS = {
+    ["Omega Overlord"] = {repSpeed = 20, strength = 0, durability = 0, rebirth = 0},
+    ["Swift Samurai"] = {repSpeed = 15, strength = 0, durability = 0, rebirth = 0},
+    ["Powercore Hound"] = {repSpeed = 0, strength = 25, durability = 15, rebirth = 0},
+    ["Titanium Hydra"] = {repSpeed = 0, strength = 0, durability = 0, rebirth = 2},
+    ["Tribal Overlord"] = {repSpeed = 0, strength = 0, durability = 0, rebirth = 2},
+    ["Inferno Unicorn"] = {repSpeed = 0, strength = 25, durability = 25, rebirth = 0},
+    ["Common Boss Pet"] = {repSpeed = 5, strength = 0, durability = 0, rebirth = 0},
+    ["Rare Boss Pet"] = {repSpeed = 7, strength = 0, durability = 0, rebirth = 0},
+    ["Epic Boss Pet"] = {repSpeed = 10, strength = 0, durability = 0, rebirth = 0},
+    ["Rainbow Boss Pet"] = {repSpeed = 10, strength = 7, durability = 0, rebirth = 0},
+    ["Legendary Boss Pet"] = {repSpeed = 10, strength = 10, durability = 0, rebirth = 0},
+    ["Mythic Boss Pet"] = {repSpeed = 10, strength = 20, durability = 0, rebirth = 0},
+    ["Inferno Drake"] = {repSpeed = 40, strength = 0, durability = 0, rebirth = 0},
+}
+
+local MAX_PET_SLOTS = 12
+local TARGET_REP_SPEED = 100
+
+--// Format helpers
+local function formatNumber(num)
+    if num >= 1e18 then return string.format("%.2fQi", num/1e18) end
+    if num >= 1e15 then return string.format("%.2fQa", num/1e15) end
+    if num >= 1e12 then return string.format("%.2fT", num/1e12) end
+    if num >= 1e9 then return string.format("%.2fB", num/1e9) end
+    if num >= 1e6 then return string.format("%.2fM", num/1e6) end
+    if num >= 1e3 then return string.format("%.2fK", num/1e3) end
+    return string.format("%.0f", num)
+end
+
+local function formatRate(rate)
+    return formatNumber(rate) .. "/s | " .. formatNumber(rate*60) .. "/min | "
+        .. formatNumber(rate*3600) .. "/h | " .. formatNumber(rate*86400) .. "/d"
+end
+
+--// UI
+FastFarm:AddLabel("⚡ Fast Rep Farm").TextSize = 22
+FastFarm.Status = FastFarm:AddLabel("Status: Inactive")
+FastFarm.Runtime = FastFarm:AddLabel("Runtime: 0d 0h 0m 0s")
+FastFarm.StrengthStats = FastFarm:AddLabel("Strength: " .. formatNumber(Strength.Value) .. " | Gained: 0")
+FastFarm.DurabilityStats = FastFarm:AddLabel("Durability: " .. formatNumber(Durability.Value) .. " | Gained: 0")
+FastFarm.StrengthAverage = FastFarm:AddLabel("Str Ø: --/s | --/min | --/h | --/d")
+FastFarm.DurabilityAverage = FastFarm:AddLabel("Dura Ø: --/s | --/min | --/h | --/d")
+
+--// Timer helpers
+local function getElapsed()
+    return FF.TotalElapsed + (FF.TimerStarted and os.clock() - FF.StartedAt or 0)
+end
+
+local function setTimerRunning(enabled)
+    FF.TotalElapsed = getElapsed()
+    FF.StartedAt = os.clock()
+    FF.TimerStarted = enabled
+end
+
+local function recordStatGain(key, value)
+    local previous = FF.StatSamples[key]
+    FF.StatSamples[key] = value
+    if FF.Running and FF.TimerStarted and previous then
+        FF.StatGains[key] = FF.StatGains[key] + math.max(0, value - previous)
     end
 end
 
-local function equipUniquePet(name)
-    if player:FindFirstChild("petsFolder") and player.petsFolder:FindFirstChild("Unique") then
-        for _, pet in pairs(player.petsFolder.Unique:GetChildren()) do
-            if pet.Name == name then
-                rEvents.equipPetEvent:FireServer("equipPet", pet)
-                task.wait(0.01) 
-            end
-        end
+local function updateRuntime()
+    local elapsed = getElapsed()
+    FastFarm.Runtime.Text = string.format("Runtime: %dd %dh %dm %ds",
+        math.floor(elapsed/86400), math.floor(elapsed%86400/3600),
+        math.floor(elapsed%3600/60), math.floor(elapsed%60))
+end
+
+local function updateStats()
+    FastFarm.StrengthStats.Text = "Strength: " .. formatNumber(Strength.Value)
+        .. " | Gained: " .. (FF.Running and not FF.TimerStarted and "Preparing" or formatNumber(FF.StatGains.Strength))
+    FastFarm.DurabilityStats.Text = "Durability: " .. formatNumber(Durability.Value)
+        .. " | Gained: " .. (FF.Running and not FF.TimerStarted and "Preparing" or formatNumber(FF.StatGains.Durability))
+end
+
+local function updateAverage()
+    local elapsed = getElapsed()
+    if elapsed <= 0 then return end
+    FastFarm.StrengthAverage.Text = "Str Ø: " .. formatRate(FF.StatGains.Strength / elapsed)
+    FastFarm.DurabilityAverage.Text = "Dura Ø: " .. formatRate(FF.StatGains.Durability / elapsed)
+end
+
+--// Ping oku
+local function readPing()
+    local ok, ping = pcall(function()
+        return game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue()
+    end)
+    if ok and type(ping) == "number" and ping == ping and ping >= 0 and ping < math.huge then
+        return ping
     end
 end
 
-local function findMachine(machineName)
-    local machine = workspace:FindFirstChild("machinesFolder") and workspace.machinesFolder:FindFirstChild(machineName)
-    if not machine then
-        for _, f in pairs(workspace:GetChildren()) do
-            if f:IsA("Folder") and f.Name:find("machines") then
-                machine = f:FindFirstChild(machineName)
-                if machine then break end
+--// Rep gönder (token bucket)
+local function sendReps(rate, maxBurst, canSend)
+    local now = os.clock()
+    local elapsed = math.clamp(now - FF.LastAt, 0, 0.1)
+    FF.LastAt = now
+    FF.Tokens = math.min(maxBurst, FF.Tokens + rate * elapsed)
+    local sent = 0
+    while FF.Tokens >= 1 and canSend() do
+        muscleEvent:FireServer("rep")
+        FF.Tokens = FF.Tokens - 1
+        sent = sent + 1
+    end
+    return sent
+end
+
+--// Adaptive rate (ping bazlı)
+local function updateAdaptiveRate()
+    local now = os.clock()
+    local ping = readPing()
+    FF.SendRate = math.min(FF.SendRate, FF.MaxSendRate)
+
+    if ping and now - FF.LastPingSampleAt >= 1 then
+        FF.LastPingRise = FF.LastPingSample and ping - FF.LastPingSample or 0
+        FF.LastPingSample = ping
+        FF.LastPingSampleAt = now
+    end
+
+    if not ping or ping > FF.PingLimit then
+        if not FF.PingPaused then
+            FF.SendRate = math.max(math.min(FF.MinSendRate, FF.SendRate), FF.SendRate - FF.BackoffStep)
+            FF.LearnedLimit = true
+        end
+        FF.PingPaused = true
+        FF.StableSince = now
+        FF.RecoveryStartedAt = nil
+    elseif FF.PingPaused then
+        if ping < FF.ResumePing then
+            FF.RecoveryStartedAt = FF.RecoveryStartedAt or now
+            if now - FF.RecoveryStartedAt >= FF.RecoverySeconds then
+                FF.PingPaused = false
+                FF.RecoveryStartedAt = nil
+                FF.LastRampAt = now
+                FF.StableSince = now
+                FF.LastPingSample = ping
+                FF.LastPingRise = 0
+            end
+        else
+            FF.RecoveryStartedAt = nil
+        end
+    elseif now - FF.LastRampAt >= FF.RampInterval then
+        local pressure = ping >= FF.ResumePing or (ping >= 150 and FF.LastPingRise >= 20)
+        if pressure then
+            FF.SendRate = math.max(math.min(FF.MinSendRate, FF.SendRate), FF.SendRate - FF.FineRampStep)
+            FF.LearnedLimit = true
+            FF.StableSince = now
+        elseif FF.SendRate < FF.MinSendRate then
+            FF.SendRate = math.min(FF.MinSendRate, FF.SendRate + FF.RampStep)
+            FF.StableSince = now
+        elseif not FF.LearnedLimit then
+            FF.SendRate = math.min(FF.MaxSendRate, FF.SendRate + FF.FineRampStep)
+            FF.StableSince = now
+        elseif now - FF.StableSince >= FF.StableInterval then
+            FF.SendRate = math.min(FF.MaxSendRate, FF.SendRate + FF.StableStep)
+            FF.StableSince = now
+        end
+        FF.LastRampAt = now
+    end
+
+    if FF.PingPaused then
+        FF.Tokens = 0
+        FF.LastAt = now
+    end
+
+    -- Status güncelle
+    local pingText = ping and string.format(" | Ping: %.1f ms", ping) or " | Ping: N/A"
+    if not FF.Running then
+        FastFarm.Status.Text = "Status: Inactive" .. pingText
+        FastFarm.Status.TextColor3 = Color3.fromRGB(255, 80, 80)
+    elseif FF.PingPaused or not ping or ping > FF.PingLimit then
+        FastFarm.Status.Text = "Status: Waiting | " .. formatNumber(FF.SendRate) .. " reps/s" .. pingText
+        FastFarm.Status.TextColor3 = Color3.fromRGB(255, 180, 70)
+    else
+        FastFarm.Status.Text = "Status: Farming | " .. formatNumber(FF.SendRate) .. " reps/s" .. pingText
+        FastFarm.Status.TextColor3 = Color3.fromRGB(80, 255, 120)
+    end
+end
+
+--// Pet equipleme
+local function applyPetLoadout(selected)
+    local remote = rEvents.equipPetEvent
+    for _, folder in ipairs(LocalPlayer.petsFolder:GetChildren()) do
+        if folder:IsA("Folder") then
+            for _, pet in ipairs(folder:GetChildren()) do
+                if not FF.Running then return end
+                remote:FireServer("unequipPet", pet)
             end
         end
     end
-    return machine
+    task.wait(0.1)
+    for _, pet in ipairs(selected) do
+        if not FF.Running then return end
+        remote:FireServer("equipPet", pet)
+    end
+    task.wait(0.1)
 end
 
-local function pressE()
-    local vim = game:GetService("VirtualInputManager")
-    vim:SendKeyEvent(true, "E", false, game)
-    task.wait(0.05)
-    vim:SendKeyEvent(false, "E", false, game)
+local function getOwnedConfiguredPets()
+    local owned = {}
+    for _, folder in ipairs(LocalPlayer.petsFolder:GetChildren()) do
+        if folder:IsA("Folder") then
+            for _, pet in ipairs(folder:GetChildren()) do
+                local config = PETS[pet.Name]
+                if config then
+                    table.insert(owned, {
+                        instance = pet,
+                        name = pet.Name,
+                        repSpeed = config.repSpeed or 0,
+                        strength = config.strength or 0,
+                        durability = config.durability or 0,
+                        rebirth = config.rebirth or 0
+                    })
+                end
+            end
+        end
+    end
+    return owned
 end
 
-tabFarming:AddLabel("Session Stats").TextSize = 23
-local footerTimeLabel = tabFarming:AddLabel("Time: 0d 0h 0m 0s")
-local footerRebirthsLabel = tabFarming:AddLabel("Total Rebirths: " .. initialRebirthsCount)
-local footerRebirthsGainedLabel = tabFarming:AddLabel("Rebirths Gained: 0")
+local function equipBestFarmingPets()
+    local pets = getOwnedConfiguredPets()
+    local selected = {}
+    local equipped = {}
+    local count = 0
+    local repSpeed = 0
 
+    table.sort(pets, function(a,b) return a.repSpeed > b.repSpeed end)
+
+    for _, pet in ipairs(pets) do
+        if count >= MAX_PET_SLOTS or repSpeed >= TARGET_REP_SPEED then break end
+        if pet.repSpeed > 0 then
+            table.insert(selected, pet.instance)
+            equipped[pet.instance] = true
+            count = count + 1
+            repSpeed = repSpeed + pet.repSpeed
+        end
+    end
+
+    local remaining = {}
+    for _, pet in ipairs(pets) do
+        if not equipped[pet.instance] then table.insert(remaining, pet) end
+    end
+
+    table.sort(remaining, function(a,b)
+        return (a.strength + a.durability) > (b.strength + b.durability)
+    end)
+
+    for _, pet in ipairs(remaining) do
+        if count >= MAX_PET_SLOTS then break end
+        if pet.strength > 0 or pet.durability > 0 then
+            table.insert(selected, pet.instance)
+            count = count + 1
+        end
+    end
+
+    applyPetLoadout(selected)
+end
+
+--// Worker
+local function startWorker()
+    if FF.WorkerActive then return end
+    FF.WorkerActive = true
+
+    task.spawn(function()
+        FF.LastAt = os.clock()
+        while FF.Running do
+            updateAdaptiveRate()
+
+            if not FF.PingPaused then
+                sendReps(FF.SendRate, FF.MaxBurst, function() return FF.Running and not FF.PingPaused end)
+            end
+
+            -- Timer başlatma (max hıza ulaşınca)
+            if FF.Running and not FF.TimerStarted and FF.SendRate >= FF.MaxSendRate then
+                FF.StatSamples.Strength = Strength.Value
+                FF.StatSamples.Durability = Durability.Value
+                setTimerRunning(true)
+                FF.NextAverageElapsed = getElapsed() + 10
+                updateStats()
+            end
+
+            task.wait()
+        end
+        FF.WorkerActive = false
+    end)
+end
+
+--// Stat eventleri
+Strength:GetPropertyChangedSignal("Value"):Connect(function()
+    recordStatGain("Strength", Strength.Value)
+    updateStats()
+end)
+
+Durability:GetPropertyChangedSignal("Value"):Connect(function()
+    recordStatGain("Durability", Durability.Value)
+    updateStats()
+end)
+
+--// Ana switch
+FastFarm.FastRepToggle = FastFarm:AddSwitch("⚡ Fast Rep", function(state)
+    recordStatGain("Strength", Strength.Value)
+    recordStatGain("Durability", Durability.Value)
+    setTimerRunning(false)
+    FF.StatSamples.Strength = Strength.Value
+    FF.StatSamples.Durability = Durability.Value
+    FF.Running = state
+    FF.Tokens = 0
+
+    if state then
+        FF.MaxSendRate = 480
+        FF.LearnedLimit = false
+        FF.LastPingSampleAt = os.clock()
+        FF.LastPingSample = nil
+        FF.LastPingRise = 0
+        FF.SendRate = 300
+        FF.PingPaused = false
+        FF.RecoveryStartedAt = nil
+        FF.LastAt = os.clock()
+        FF.LastRampAt = os.clock()
+        FF.StableSince = os.clock()
+        FastFarm.Status.Text = "Status: Preparing | 300 reps/s"
+        FastFarm.Status.TextColor3 = Color3.fromRGB(80, 255, 120)
+        startWorker()
+        -- Otomatik rep petleri equip
+        task.spawn(equipBestFarmingPets)
+    else
+        FastFarm.Status.Text = "Status: Paused"
+        FastFarm.Status.TextColor3 = Color3.fromRGB(255, 180, 70)
+        updateRuntime()
+    end
+    updateStats()
+end)
+
+--// Max speed textbox
+FastFarm:AddTextBox("Max reps/s: 480", function(inputText)
+    local value = tonumber(inputText)
+    if not value or value ~= value or value == math.huge or value == -math.huge then return end
+    value = math.max(1, value)
+    if value ~= FF.MaxSendRate and FF.Running then
+        recordStatGain("Strength", Strength.Value)
+        recordStatGain("Durability", Durability.Value)
+        setTimerRunning(false)
+        updateStats()
+    end
+    FF.MaxSendRate = value
+    FF.SendRate = math.min(FF.SendRate, FF.MaxSendRate)
+end, {clear = false})
+
+FastFarm:AddLabel("Recommended Speed: 462, you can always try more.")
+
+--// Reset butonu
+FastFarm:AddButton("🔄 Reset Calcs", function()
+    FF.TotalElapsed = 0
+    FF.StartedAt = os.clock()
+    FF.TimerStarted = FF.Running and FF.TimerStarted
+    FF.NextAverageElapsed = 10
+    for k in pairs(FF.StatGains) do FF.StatGains[k] = 0 end
+    FF.StatSamples.Strength = Strength.Value
+    FF.StatSamples.Durability = Durability.Value
+    FF.MeasuredCycles = 0
+    FF.TimerStarted = false
+    FastFarm.StrengthAverage.Text = "Str Ø: --/s | --/min | --/h | --/d"
+    FastFarm.DurabilityAverage.Text = "Dura Ø: --/s | --/min | --/h | --/d"
+    updateStats()
+    updateRuntime()
+end)
+
+--// Equip rep pets butonu
+FastFarm:AddButton("🐾 Equip Rep Pets", function()
+    task.spawn(equipBestFarmingPets)
+end)
+
+--// Background loop
 task.spawn(function()
     while true do
-        local elapsed = tick() - startTime
-        local days = math.floor(elapsed / 86400)
-        local hours = math.floor((elapsed % 86400) / 3600)
-        local minutes = math.floor((elapsed % 3600) / 60)
-        local seconds = math.floor(elapsed % 60)
-        footerTimeLabel.Text = string.format("Time: %dd %dh %dm %ds", days, hours, minutes, seconds)
-        local current = player.leaderstats.Rebirths.Value
-        footerRebirthsLabel.Text = "Total Rebirths: " .. current
-        footerRebirthsGainedLabel.Text = "Rebirths Gained: " .. (current - initialRebirthsCount)
-        task.wait(1)
-    end
-end)
-
-tabFarming:AddLabel("👀 Pack Farm Rebirth").TextSize = 21
-
-tabFarming:AddSwitch("🔄 Auto Rebirth Farm", function(bool)
-    isRunning = bool
-    if not bool then return end
-    task.spawn(function()
-        while isRunning do
-            local currentReb = player.leaderstats.Rebirths.Value
-            local rebirthCost = 10000 + (5000 * currentReb)
-            if player.ultimatesFolder:FindFirstChild("Golden Rebirth") then
-                local gReb = player.ultimatesFolder["Golden Rebirth"].Value
-                rebirthCost = math.floor(rebirthCost * (1 - (gReb * 0.1)))
-            end
-            unequipAllPets()
-            task.wait(0.1)
-            equipUniquePet("Swift Samurai")
-            while isRunning and player.leaderstats.Strength.Value < rebirthCost do
-                for i = 1, 12 do 
-                    muscleEvent:FireServer("rep")
-                end
-                task.wait(0.01)
-            end
-            if not isRunning then break end
-            unequipAllPets()
-            task.wait(0.1)
-            equipUniquePet("Tribal Overlord")
-            local machine = findMachine("Jungle Bar Lift")
-            if machine and machine:FindFirstChild("interactSeat") then
-                player.Character.HumanoidRootPart.CFrame = machine.interactSeat.CFrame * CFrame.new(0, 3, 0)
-                local retryCount = 0
-                repeat
-                    task.wait(0.2)
-                    pressE()
-                    retryCount = retryCount + 1
-                until (player.Character and player.Character.Humanoid.Sit) or retryCount > 20 or not isRunning
-            end
-            local initialRebirths = player.leaderstats.Rebirths.Value
-            repeat
-                rEvents.rebirthRemote:InvokeServer("rebirthRequest")
-                task.wait(0.5)
-            until player.leaderstats.Rebirths.Value > initialRebirths or not isRunning
+        updateRuntime()
+        if FF.TimerStarted and getElapsed() >= FF.NextAverageElapsed then
+            updateAverage()
+            FF.NextAverageElapsed = getElapsed() + 10
         end
-    end)
-end)
-
-tabFarming:AddLabel("💪 Fast Strength").TextSize = 21
-
-tabFarming:AddSwitch("💢 Auto Strength Farm", function(bool)
-    strengthOnly = bool
-    if not bool then return end
-    task.spawn(function()
-        unequipAllPets()
         task.wait(0.1)
-        equipUniquePet("Swift Samurai")
-        while strengthOnly do
-            for i = 1, 23 do 
-                muscleEvent:FireServer("rep")
-            end
-            task.wait(0.01)
-        end
-    end)
+    end
 end)
 
-tabFarming:AddButton("⚙️ Industrial Bar Lift", function()
-    local character = player.Character
-    if character and character:FindFirstChild("HumanoidRootPart") then
-        character.HumanoidRootPart.CFrame = CFrame.new(-5492.24, 81.82, 4644.04)
+--// Ping status güncelleme (idle)
+task.spawn(function()
+    while true do
+        if not FF.Running then
+            local ping = readPing()
+            local pingText = ping and string.format(" | Ping: %.1f ms", ping) or " | Ping: N/A"
+            FastFarm.Status.Text = "Status: Inactive" .. pingText
+        end
         task.wait(0.5)
-        local machine = findMachine("Industrial Bar Lift")
-        if machine and machine:FindFirstChild("interactSeat") then
-            local retryCount = 0
-            repeat
-                task.wait(0.2)
-                pressE()
-                retryCount = retryCount + 1
-            until (player.Character and player.Character.Humanoid.Sit) or retryCount > 10
-        end
     end
 end)
 
-tabFarming:AddButton("🦵 Industrial Squat", function()
-    local character = player.Character
-    if character and character:FindFirstChild("HumanoidRootPart") then
-        character.HumanoidRootPart.CFrame = CFrame.new(-5216.36, 90.17, 5420.08)
-        task.wait(0.5)
-        local machine = findMachine("Industrial Squat")
-        if machine and machine:FindFirstChild("interactSeat") then
-            local retryCount = 0
-            repeat
-                task.wait(0.2)
-                pressE()
-                retryCount = retryCount + 1
-            until (player.Character and player.Character.Humanoid.Sit) or retryCount > 10
-        end
-    end
-end)
-
-tabFarming:AddLabel("Useful Features").TextSize = 23
-
-tabFarming:AddSwitch("📌 Lock Position", function(state)
-    if state then
-        local currentPos = player.Character.HumanoidRootPart.CFrame
-        getgenv().posLock = game:GetService("RunService").Heartbeat:Connect(function()
-            if player.Character:FindFirstChild("HumanoidRootPart") then
-                player.Character.HumanoidRootPart.CFrame = currentPos
-            end
-        end)
-    else
-        if getgenv().posLock then
-            getgenv().posLock:Disconnect()
-            getgenv().posLock = nil
-        end
-    end
-end)
-
-tabFarming:AddLabel("👾 Performance").TextSize = 21
-
-tabFarming:AddButton("🏴 Full FPS Boost", function()
-    local lighting = game:GetService("Lighting")
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("ParticleEmitter") or obj:IsA("PointLight") or obj:IsA("SpotLight") then
-            obj:Destroy()
-        end
-    end
-    lighting.Brightness = 0
-    lighting.OutdoorAmbient = Color3.new(0, 0, 0)
-    for _, v in pairs(lighting:GetChildren()) do if v:IsA("Sky") then v:Destroy() end end
-end)
-
-tabFarming:AddSwitch("👁️‍🗨️ Hide All Frames", function(state)
-    for _, obj in pairs(game:GetService("ReplicatedStorage"):GetChildren()) do
-        if obj.Name:match("Frame$") then obj.Visible = not state end
-    end
-end)
-
-tabFarming:AddLabel("❤️ This Tab Made ByRuLing").TextSize = 15
-
+FastFarm:AddLabel("❤️ This Tab Made ByHenne")
 
 local pets = window:AddTab("Pets")
 pets:AddLabel("💰 Auto Buy")
