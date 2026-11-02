@@ -1,4 +1,4 @@
-local library = loadstring(game:HttpGet("https://github.com/WozzyOnTop/Script-denemesi/raw/refs/heads/main/KryvexGui%20(3).txt", true))()
+local library = loadstring(game:HttpGet("https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/Kryvexpublic.txt", true))()
 local displayName = game.Players.LocalPlayer.DisplayName
 
 local window = library:AddWindow("Kryvex Public | Muscle Legends || HI - ".. displayName, {
