@@ -1,5 +1,6 @@
 
-local Library = 
+local Library = loadstring(game:HttpGet("https://github.com/bababapro/Denemee/raw/refs/heads/main/SynioxGui%20(3).txt"))()
+
 
 local Window = Library:AddWindow("Kryvex", {
     main_color = Color3.fromRGB(41, 74, 122),
