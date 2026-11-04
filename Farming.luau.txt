@@ -2,7 +2,7 @@
 -- KRYVEX - ALL IN ONE
 -- ============================================================
 
-local KryvexGui = loadstring(game:HttpGet("https://github.com/bababapro/Denemee/raw/refs/heads/main/SynioxGui%20(3).txt"))()
+local KryvexGui = loadstring(game:HttpGet("https://raw.githubusercontent.com/bababapro/Denemee/main/SynioxGui%20(3).txt"))()
 
 local services = {
     httpservice = game:GetService("HttpService"),
