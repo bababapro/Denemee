@@ -51,7 +51,7 @@ end
 
 -- Load your Syniox GUI library from its RAW link.
 -- Replace the URL below with your own Syniox GUI RAW URL.
-local Library = loadstring(game:HttpGet("YOUR_SYNIOX_GUI_RAW_LINK_HERE"))()
+local Library = loadstring(game:HttpGet("https://github.com/bababapro/Denemee/raw/refs/heads/main/SynioxGui%20(3).txt"))()
 
 
 
