@@ -1,371 +1,371 @@
--- // Syniox Library buraya gelecek
+-- ============================================================
+-- KRYVEX GUI + FULL SCRIPT
+-- ============================================================
 
-local library = loadstring(game:HttpGet("https://github.com/bababapro/Denemee/raw/refs/heads/main/SynioxGui%20(3).txt"))()
+local KryvexGui = loadstring(game:HttpGet("SENIN_KRYVEX_URL"))()
 
 local services = {
-	httpservice = game:GetService("HttpService"),
-	replicatedstorage = game:GetService("ReplicatedStorage"),
-	runservice = game:GetService("RunService"),
-	startergui = game:GetService("StarterGui"),
-	players = game:GetService("Players"),
-	stats = game:GetService("Stats")
+    httpservice = game:GetService("HttpService"),
+    startergui = game:GetService("StarterGui"),
+    replicatedstorage = game:GetService("ReplicatedStorage"),
+    runservice = game:GetService("RunService"),
+    muscleEvent = game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("muscleEvent"),
 }
+local lp = { player = game:GetService("Players").LocalPlayer }
+local tabs = { other = {}, rebirths = {}, strength = {}, strength2 = {} }
 
-local lp = { player = services.players.LocalPlayer }
-local runtime = {
-	Connections = {},
-	Spawn = task.spawn,
-	Connect = function(self, signal, callback)
-		local conn = signal:Connect(callback)
-		self.Connections[conn] = true
-		return conn
-	end,
-	AddCleanup = function() end
-}
+-- ============================================================
+-- KRYVEX CONFIG
+-- ============================================================
+tabs.other.KryvexConfigPath = "Kryvex/KryvexConfig.json"
+tabs.other.KryvexConfig = { RedactName = false, RedactStats = false }
 
-local tabs = {
-	other = {
-		RedactConfigPath = "Kryvex/RedactConfig.json",
-		RedactConfig = {
-			RedactName = false,
-			RedactStats = false
-		}
-	},
-	rebirths = {},
-	strength = {},
-	strength2 = {}
-}
-
--------------------------------------------------
--- WINDOW
--------------------------------------------------
-local window = library:AddWindow("Kryvex | Pack Farm", {
-	main_color = Color3.fromRGB(41, 74, 122),
-	min_size = Vector2.new(480, 380),
-	toggle_key = Enum.KeyCode.RightShift,
-	can_resize = true,
-	title_bar = {Color3.fromRGB(41, 74, 122)},
-	background = {Color3.fromRGB(18, 20, 24)},
-	background_transparency = 0.05
-})
-
-local otherTab     = window:AddTab("Other")
-local rebirthsTab  = window:AddTab("Rebirths")
-local strengthTab  = window:AddTab("Strength")
-local strength2Tab = window:AddTab("Strength 2")
-
-tabs.other     = otherTab
-tabs.rebirths  = rebirthsTab
-tabs.strength  = strengthTab
-tabs.strength2 = strength2Tab
-
--------------------------------------------------
--- OTHER (Redact)
--------------------------------------------------
-tabs.other.loadRedactConfig = function()
-	if type(isfile) ~= "function" or type(readfile) ~= "function" then return end
-	pcall(function()
-		if not isfile(tabs.other.RedactConfigPath) then return end
-		local saved = services.httpservice:JSONDecode(readfile(tabs.other.RedactConfigPath))
-		if typeof(saved) == "table" then
-			tabs.other.RedactConfig.RedactName = saved.RedactName == true
-			tabs.other.RedactConfig.RedactStats = saved.RedactStats == true
-		end
-	end)
+tabs.other.loadKryvexConfig = function()
+    if type(isfile) ~= "function" or type(readfile) ~= "function" then return end
+    pcall(function()
+        if not isfile(tabs.other.KryvexConfigPath) then return end
+        local savedConfig = services.httpservice:JSONDecode(readfile(tabs.other.KryvexConfigPath))
+        if typeof(savedConfig) == "table" then
+            tabs.other.KryvexConfig.RedactName = savedConfig.RedactName == true
+            tabs.other.KryvexConfig.RedactStats = savedConfig.RedactStats == true
+        end
+    end)
 end
 
-tabs.other.saveRedactConfig = function()
-	if type(writefile) ~= "function" then return end
-	pcall(function()
-		if type(makefolder) == "function" and (type(isfolder) ~= "function" or not isfolder("Kryvex")) then
-			pcall(makefolder, "Kryvex")
-		end
-		writefile(tabs.other.RedactConfigPath, services.httpservice:JSONEncode(tabs.other.RedactConfig))
-	end)
+tabs.other.saveKryvexConfig = function()
+    if type(writefile) ~= "function" then return end
+    pcall(function()
+        if type(makefolder) == "function"
+            and (type(isfolder) ~= "function" or not isfolder("Kryvex")) then
+            pcall(makefolder, "Kryvex")
+        end
+        writefile(tabs.other.KryvexConfigPath, services.httpservice:JSONEncode(tabs.other.KryvexConfig))
+    end)
 end
 
-tabs.other.NameVisibility = {Character = nil, Connections = {}, Guis = {}, Watches = {}}
+tabs.other.NameVisibility = { Character = nil, Connections = {}, Guis = {}, Watches = {} }
 
 tabs.other.clearNameVisibility = function()
-	local state = tabs.other.NameVisibility
-	for _, c in ipairs(state.Connections) do
-		c:Disconnect()
-		runtime.Connections[c] = nil
-	end
-	table.clear(state.Connections)
-	for gui, c in pairs(state.Watches) do
-		c:Disconnect()
-		runtime.Connections[c] = nil
-		state.Watches[gui] = nil
-	end
-	for gui, was in pairs(state.Guis) do
-		if gui.Parent then gui.Enabled = was end
-	end
-	table.clear(state.Guis)
-	state.Character = nil
+    local state = tabs.other.NameVisibility
+    for _, connection in ipairs(state.Connections) do connection:Disconnect() end
+    table.clear(state.Connections)
+    for gui, connection in pairs(state.Watches) do
+        connection:Disconnect()
+        state.Watches[gui] = nil
+    end
+    for gui, wasEnabled in pairs(state.Guis) do
+        if gui.Parent then gui.Enabled = wasEnabled end
+    end
+    table.clear(state.Guis)
+    state.Character = nil
 end
 
 tabs.other.applyNameVisibility = function()
-	local state = tabs.other.NameVisibility
-	local char = lp.player.Character
-	if state.Character ~= char then
-		tabs.other.clearNameVisibility()
-		state.Character = char
-		if char then
-			local function watch(gui)
-				if not gui:IsA("BillboardGui") or gui.Name ~= "nameGui" or state.Guis[gui] ~= nil then return end
-				state.Guis[gui] = gui.Enabled
-				state.Watches[gui] = runtime:Connect(gui:GetPropertyChangedSignal("Enabled"), function()
-					if tabs.other.RedactConfig.RedactName and gui.Enabled then
-						gui.Enabled = false
-					end
-				end)
-				if tabs.other.RedactConfig.RedactName then gui.Enabled = false end
-			end
-			table.insert(state.Connections, runtime:Connect(char.DescendantAdded, watch))
-			table.insert(state.Connections, runtime:Connect(char.DescendantRemoving, function(gui)
-				if state.Guis[gui] then
-					local c = state.Watches[gui]
-					if c then c:Disconnect() end
-					state.Watches[gui] = nil
-					gui.Enabled = state.Guis[gui]
-					state.Guis[gui] = nil
-				end
-			end))
-			for _, gui in ipairs(char:GetDescendants()) do watch(gui) end
-		end
-	end
-	for gui, was in pairs(state.Guis) do
-		if gui.Parent then
-			gui.Enabled = not tabs.other.RedactConfig.RedactName and was
-		end
-	end
+    local state = tabs.other.NameVisibility
+    local character = lp.player.Character
+    if state.Character ~= character then
+        tabs.other.clearNameVisibility()
+        state.Character = character
+        if character then
+            local function watchNameGui(gui)
+                if not gui:IsA("BillboardGui") or gui.Name ~= "nameGui" or state.Guis[gui] ~= nil then return end
+                state.Guis[gui] = gui.Enabled
+                state.Watches[gui] = gui:GetPropertyChangedSignal("Enabled"):Connect(function()
+                    if tabs.other.KryvexConfig.RedactName and gui.Enabled then gui.Enabled = false end
+                end)
+                if tabs.other.KryvexConfig.RedactName then gui.Enabled = false end
+            end
+            table.insert(state.Connections, character.DescendantAdded:Connect(watchNameGui))
+            table.insert(state.Connections, character.DescendantRemoving:Connect(function(gui)
+                if state.Guis[gui] ~= nil then
+                    local connection = state.Watches[gui]
+                    if connection then connection:Disconnect() end
+                    state.Watches[gui] = nil
+                    gui.Enabled = state.Guis[gui]
+                    state.Guis[gui] = nil
+                end
+            end))
+            for _, gui in ipairs(character:GetDescendants()) do watchNameGui(gui) end
+        end
+    end
+    for gui, wasEnabled in pairs(state.Guis) do
+        if gui.Parent then gui.Enabled = not tabs.other.KryvexConfig.RedactName and wasEnabled end
+    end
 end
 
 tabs.other.applyStatsVisibility = function()
-	pcall(function()
-		lp.player.PlayerGui.gameGui.hudNewMenu.Top.InfoSlots.Visible = not tabs.other.RedactConfig.RedactStats
-	end)
-	pcall(function()
-		services.startergui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, not tabs.other.RedactConfig.RedactStats)
-	end)
+    pcall(function()
+        lp.player.PlayerGui.gameGui.hudNewMenu.Top.InfoSlots.Visible = not tabs.other.KryvexConfig.RedactStats
+    end)
+    pcall(function()
+        services.startergui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, not tabs.other.KryvexConfig.RedactStats)
+    end)
 end
 
-tabs.other.loadRedactConfig()
+tabs.other.loadKryvexConfig()
 
-tabs.other:AddLabel("Redact Settings")
-
-local redactName = tabs.other:AddSwitch("Redact Name", function(state)
-	tabs.other.RedactConfig.RedactName = state
-	tabs.other.applyNameVisibility()
-	tabs.other.saveRedactConfig()
-end)
-redactName:Set(tabs.other.RedactConfig.RedactName)
-
-local redactStats = tabs.other:AddSwitch("Redact Stats", function(state)
-	tabs.other.RedactConfig.RedactStats = state
-	tabs.other.redactStats = state
-	tabs.other.applyStatsVisibility()
-	tabs.other.saveRedactConfig()
-end)
-redactStats:Set(tabs.other.RedactConfig.RedactStats)
-
--------------------------------------------------
--- SHARED
--------------------------------------------------
+-- ============================================================
+-- FORMAT YARDIMCILARI
+-- ============================================================
 function formatNumber(num)
-	if num >= 1e18 then return string.format("%.2fQi", num/1e18) end
-	if num >= 1e15 then return string.format("%.2fQa", num/1e15) end
-	if num >= 1e12 then return string.format("%.2fT", num/1e12) end
-	if num >= 1e9 then return string.format("%.2fB", num/1e9) end
-	if num >= 1e6 then return string.format("%.2fM", num/1e6) end
-	if num >= 1e3 then return string.format("%.2fK", num/1e3) end
-	return string.format("%.0f", num)
+    if num >= 1e18 then return string.format("%.2fQi", num/1e18) end
+    if num >= 1e15 then return string.format("%.2fQa", num/1e15) end
+    if num >= 1e12 then return string.format("%.2fT", num/1e12) end
+    if num >= 1e9 then return string.format("%.2fB", num/1e9) end
+    if num >= 1e6 then return string.format("%.2fM", num/1e6) end
+    if num >= 1e3 then return string.format("%.2fK", num/1e3) end
+    return string.format("%.0f", num)
 end
 
-tabs.other.redactStats = tabs.other.RedactConfig.RedactStats
+tabs.other.redactStats = tabs.other.KryvexConfig.RedactStats
 
 local function formatCurrentStat(value)
-	return tabs.other.redactStats and "####" or formatNumber(value)
+    return tabs.other.redactStats and "####" or formatNumber(value)
 end
 
-function formatRate(rate)
-	return formatNumber(rate) .. "/s | " .. formatNumber(rate*60) .. "/min | " .. formatNumber(rate*3600) .. "/h | " .. formatNumber(rate*86400) .. "/d"
+function formatRate(ratePerSecond)
+    return formatNumber(ratePerSecond) .. "/s | "
+        .. formatNumber(ratePerSecond * 60) .. "/min | "
+        .. formatNumber(ratePerSecond * 3600) .. "/h | "
+        .. formatNumber(ratePerSecond * 86400) .. "/d"
 end
 
+-- ============================================================
+-- PET DATABASE
+-- ============================================================
 local PETS = {
-	["Omega Overlord"] = {repSpeed = 20, strength = 0, durability = 0, rebirth = 0},
-	["Swift Samurai"] = {repSpeed = 15, strength = 0, durability = 0, rebirth = 0},
-	["Powercore Hound"] = {repSpeed = 0, strength = 25, durability = 15, rebirth = 0},
-	["Titanium Hydra"] = {repSpeed = 0, strength = 0, durability = 0, rebirth = 2},
-	["Tribal Overlord"] = {repSpeed = 0, strength = 0, durability = 0, rebirth = 2},
-	["Inferno Unicorn"] = {repSpeed = 0, strength = 25, durability = 25, rebirth = 0},
-	["Common Boss Pet"] = {repSpeed = 5, strength = 0, durability = 0, rebirth = 0},
-	["Rare Boss Pet"] = {repSpeed = 7, strength = 0, durability = 0, rebirth = 0},
-	["Epic Boss Pet"] = {repSpeed = 10, strength = 0, durability = 0, rebirth = 0},
-	["Rainbow Boss Pet"] = {repSpeed = 10, strength = 7, durability = 0, rebirth = 0},
-	["Legendary Boss Pet"] = {repSpeed = 10, strength = 10, durability = 0, rebirth = 0},
-	["Mythic Boss Pet"] = {repSpeed = 10, strength = 20, durability = 0, rebirth = 0},
-	["Inferno Drake"] = {repSpeed = 40, strength = 0, durability = 0, rebirth = 0},
+    ["Omega Overlord"] = { repSpeed = 20, strength = 0, durability = 0, rebirth = 0 },
+    ["Swift Samurai"] = { repSpeed = 15, strength = 0, durability = 0, rebirth = 0 },
+    ["Powercore Hound"] = { repSpeed = 0, strength = 25, durability = 15, rebirth = 0 },
+    ["Titanium Hydra"] = { repSpeed = 0, strength = 0, durability = 0, rebirth = 2 },
+    ["Tribal Overlord"] = { repSpeed = 0, strength = 0, durability = 0, rebirth = 2 },
+    ["Inferno Unicorn"] = { repSpeed = 0, strength = 25, durability = 25, rebirth = 0 },
+    ["Common Boss Pet"] = { repSpeed = 5, strength = 0, durability = 0, rebirth = 0 },
+    ["Rare Boss Pet"] = { repSpeed = 7, strength = 0, durability = 0, rebirth = 0 },
+    ["Epic Boss Pet"] = { repSpeed = 10, strength = 0, durability = 0, rebirth = 0 },
+    ["Rainbow Boss Pet"] = { repSpeed = 10, strength = 7, durability = 0, rebirth = 0 },
+    ["Legendary Boss Pet"] = { repSpeed = 10, strength = 10, durability = 0, rebirth = 0 },
+    ["Mythic Boss Pet"] = { repSpeed = 10, strength = 20, durability = 0, rebirth = 0 },
+    ["Inferno Drake"] = { repSpeed = 40, strength = 0, durability = 0, rebirth = 0 },
 }
 
 local MAX_PET_SLOTS = 12
 local TARGET_REP_SPEED = 100
 
 local function applyPetLoadout(selected, isCurrent)
-	local remote = services.replicatedstorage.rEvents.equipPetEvent
-	for _, folder in ipairs(lp.player.petsFolder:GetChildren()) do
-		if folder:IsA("Folder") then
-			for _, pet in ipairs(folder:GetChildren()) do
-				if isCurrent and not isCurrent() then return false end
-				remote:FireServer("unequipPet", pet)
-			end
-		end
-	end
-	task.wait(0.05)
-	for _, pet in ipairs(selected) do
-		if isCurrent and not isCurrent() then return false end
-		remote:FireServer("equipPet", pet)
-	end
-	task.wait(0.05)
-	return not isCurrent or isCurrent()
+    local remote = services.replicatedstorage.rEvents.equipPetEvent
+    for _, folder in ipairs(lp.player.petsFolder:GetChildren()) do
+        if folder:IsA("Folder") then
+            for _, pet in ipairs(folder:GetChildren()) do
+                if isCurrent and not isCurrent() then return false end
+                remote:FireServer("unequipPet", pet)
+            end
+        end
+    end
+    task.wait(0.1)
+    for _, pet in ipairs(selected) do
+        if isCurrent and not isCurrent() then return false end
+        remote:FireServer("equipPet", pet)
+    end
+    task.wait(0.1)
+    return not isCurrent or isCurrent()
 end
 
 local function sendTrainingReps(state, rate, maxBurst, canSend)
-	local now = os.clock()
-	local elapsed = math.clamp(now - (state.LastAt or now), 0, 0.08)
-	state.LastAt = now
-	state.Tokens = math.min(maxBurst, (state.Tokens or 0) + rate * elapsed)
-	local sent = 0
-	while state.Tokens >= 1 and canSend() do
-		services.replicatedstorage.rEvents.muscleEvent:FireServer("rep")
-		state.Tokens = state.Tokens - 1
-		sent = sent + 1
-	end
-	return sent
+    local now = os.clock()
+    local elapsed = math.clamp(now - (state.LastAt or now), 0, 0.1)
+    state.LastAt = now
+    state.Tokens = math.min(maxBurst, (state.Tokens or 0) + rate * elapsed)
+    local sent = 0
+    while state.Tokens >= 1 and canSend() do
+        services.muscleEvent:FireServer("rep")
+        state.Tokens = state.Tokens - 1
+        sent = sent + 1
+    end
+    return sent
 end
 
 local function getElapsed(tab)
-	return tab.totalElapsed + (tab.timerStarted and os.clock() - tab.startedAt or 0)
+    return tab.totalElapsed + (tab.timerStarted and os.clock() - tab.startedAt or 0)
 end
 
 local function setTimerRunning(tab, enabled)
-	tab.totalElapsed = getElapsed(tab)
-	tab.startedAt = os.clock()
-	tab.timerStarted = enabled
+    tab.totalElapsed = getElapsed(tab)
+    tab.startedAt = os.clock()
+    tab.timerStarted = enabled
 end
 
 local function recordStatGain(tab, key, value)
-	local prev = tab.statSamples[key]
-	tab.statSamples[key] = value
-	if tab.running and tab.timerStarted and prev then
-		tab.statGains[key] = tab.statGains[key] + math.max(0, value - prev)
-	end
+    local previous = tab.statSamples[key]
+    tab.statSamples[key] = value
+    if tab.running and tab.timerStarted and previous then
+        tab.statGains[key] = tab.statGains[key] + math.max(0, value - previous)
+    end
 end
 
 local function updateRuntimeLabel(tab)
-	local e = getElapsed(tab)
-	tab.Runtime.Text = string.format("Runtime: %dd %dh %dm %ds",
-		math.floor(e / 86400), math.floor(e % 86400 / 3600),
-		math.floor(e % 3600 / 60), math.floor(e % 60))
+    local elapsed = getElapsed(tab)
+    tab.Runtime.Text = string.format("Runtime: %dd %dh %dm %ds",
+        math.floor(elapsed / 86400), math.floor(elapsed % 86400 / 3600),
+        math.floor(elapsed % 3600 / 60), math.floor(elapsed % 60))
 end
 
 local function resetCalculations(tab)
-	tab.totalElapsed = 0
-	tab.startedAt = os.clock()
-	tab.timerStarted = tab.running and tab.timerStarted
-	tab.nextAverageElapsed = 10
-	for k in pairs(tab.statGains) do tab.statGains[k] = 0 end
-	if tab.AverageRate then
-		tab.baselineReady = false
-		tab.timerStarted = false
-		tab.measuredCycles = 0
-		tab.AverageRate.Text = "Average: -- / Hour | -- / Day | -- / Week"
-	else
-		tab.StrengthAverage.Text = "Str Ø: --/s | --/min | --/h | --/d"
-		tab.DurabilityAverage.Text = "Dura Ø: --/s | --/min | --/h | --/d"
-	end
-	tab.updateStats()
-	tab.updateRuntime()
+    tab.totalElapsed = 0
+    tab.startedAt = os.clock()
+    tab.timerStarted = tab.running and tab.timerStarted
+    tab.nextAverageElapsed = 10
+    for key in pairs(tab.statGains) do tab.statGains[key] = 0 end
+    for key, stat in pairs({Rebirths = tab.rebirths, Strength = tab.strength, Durability = tab.durability}) do
+        if tab.statSamples[key] ~= nil then tab.statSamples[key] = stat.Value end
+    end
+    if tab.AverageRate then
+        tab.baselineReady = false
+        tab.timerStarted = false
+        tab.measuredCycles = 0
+        tab.AverageRate.Text = "Average: -- / Hour | -- / Day | -- / Week"
+    else
+        tab.StrengthAverage.Text = "Str Ø: --/s | --/min | --/h | --/d"
+        tab.DurabilityAverage.Text = "Dura Ø: --/s | --/min | --/h | --/d"
+    end
+    tab.updateStats()
+    tab.updateRuntime()
 end
 
 local function getOwnedConfiguredPets()
-	local list = {}
-	for _, folder in ipairs(lp.player.petsFolder:GetChildren()) do
-		if folder:IsA("Folder") then
-			for _, pet in ipairs(folder:GetChildren()) do
-				local cfg = PETS[pet.Name]
-				if cfg then
-					table.insert(list, {
-						instance = pet,
-						name = pet.Name,
-						repSpeed = cfg.repSpeed or 0,
-						strength = cfg.strength or 0,
-						durability = cfg.durability or 0,
-						rebirth = cfg.rebirth or 0,
-					})
-				end
-			end
-		end
-	end
-	return list
+    local ownedPets = {}
+    for _, folder in ipairs(lp.player.petsFolder:GetChildren()) do
+        if folder:IsA("Folder") then
+            for _, pet in ipairs(folder:GetChildren()) do
+                local config = PETS[pet.Name]
+                if config then
+                    table.insert(ownedPets, {
+                        instance = pet, name = pet.Name,
+                        repSpeed = config.repSpeed or 0,
+                        strength = config.strength or 0,
+                        durability = config.durability or 0,
+                        rebirth = config.rebirth or 0,
+                    })
+                end
+            end
+        end
+    end
+    return ownedPets
 end
 
 local function equipBestFarmingPets(isCurrent)
-	if isCurrent and not isCurrent() then return end
-	local pets = getOwnedConfiguredPets()
-	local selected, equipped, count, speed = {}, {}, 0, 0
-
-	table.sort(pets, function(a,b) return a.repSpeed > b.repSpeed end)
-
-	for _, pet in ipairs(pets) do
-		if count >= MAX_PET_SLOTS or speed >= TARGET_REP_SPEED then break end
-		if pet.repSpeed > 0 then
-			table.insert(selected, pet.instance)
-			equipped[pet.instance] = true
-			count += 1
-			speed += pet.repSpeed
-		end
-	end
-
-	local remaining = {}
-	for _, pet in ipairs(pets) do
-		if not equipped[pet.instance] then table.insert(remaining, pet) end
-	end
-	table.sort(remaining, function(a,b) return (a.strength + a.durability) > (b.strength + b.durability) end)
-
-	for _, pet in ipairs(remaining) do
-		if count >= MAX_PET_SLOTS then break end
-		if pet.strength > 0 or pet.durability > 0 then
-			table.insert(selected, pet.instance)
-			count += 1
-		end
-	end
-
-	applyPetLoadout(selected, isCurrent)
-	return speed, count
+    if isCurrent and not isCurrent() then return end
+    local pets = getOwnedConfiguredPets()
+    local selected, equipped = {}, {}
+    local equippedCount, currentRepSpeed = 0, 0
+    table.sort(pets, function(a, b) return a.repSpeed > b.repSpeed end)
+    for _, pet in ipairs(pets) do
+        if equippedCount >= MAX_PET_SLOTS or currentRepSpeed >= TARGET_REP_SPEED then break end
+        if pet.repSpeed > 0 then
+            table.insert(selected, pet.instance)
+            equipped[pet.instance] = true
+            equippedCount = equippedCount + 1
+            currentRepSpeed = currentRepSpeed + pet.repSpeed
+        end
+    end
+    local remainingPets = {}
+    for _, pet in ipairs(pets) do
+        if not equipped[pet.instance] then table.insert(remainingPets, pet) end
+    end
+    table.sort(remainingPets, function(a, b)
+        return (a.strength + a.durability) > (b.strength + b.durability)
+    end)
+    for _, pet in ipairs(remainingPets) do
+        if equippedCount >= MAX_PET_SLOTS then break end
+        if pet.strength > 0 or pet.durability > 0 then
+            table.insert(selected, pet.instance)
+            equipped[pet.instance] = true
+            equippedCount = equippedCount + 1
+        end
+    end
+    applyPetLoadout(selected, isCurrent)
+    return currentRepSpeed, equippedCount
 end
 
 local function equipBestRebirthPets(isCurrent)
-	if isCurrent and not isCurrent() then return end
-	local pets = getOwnedConfiguredPets()
-	table.sort(pets, function(a,b) return a.rebirth > b.rebirth end)
-	local selected, count, multi = {}, 0, 0
-	for _, pet in ipairs(pets) do
-		if count >= MAX_PET_SLOTS then break end
-		if pet.rebirth > 0 then
-			table.insert(selected, pet.instance)
-			count += 1
-			multi += pet.rebirth
-		end
-	end
-	applyPetLoadout(selected, isCurrent)
-	return multi, count
+    if isCurrent and not isCurrent() then return end
+    local pets = getOwnedConfiguredPets()
+    local selected = {}
+    table.sort(pets, function(a, b) return a.rebirth > b.rebirth end)
+    local equippedCount, totalRebirthMultiplier = 0, 0
+    for _, pet in ipairs(pets) do
+        if equippedCount >= MAX_PET_SLOTS then break end
+        if pet.rebirth > 0 then
+            table.insert(selected, pet.instance)
+            equippedCount = equippedCount + 1
+            totalRebirthMultiplier = totalRebirthMultiplier + pet.rebirth
+        end
+    end
+    applyPetLoadout(selected, isCurrent)
+    return totalRebirthMultiplier, equippedCount
 end
 
--------------------------------------------------
--- REBIRTHS (Max Speed)
--------------------------------------------------
+local function readDataPing()
+    local success, ping = pcall(function()
+        return game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue()
+    end)
+    if success and type(ping) == "number" and ping == ping and ping >= 0 and ping < math.huge then
+        return ping
+    end
+end
+
+-- ============================================================
+-- KRYVEX PENCERE
+-- ============================================================
+local Kryvex = KryvexGui:AddWindow("Kryvex", {
+    main_color = Color3.fromRGB(41, 74, 122),
+    min_size = Vector2.new(420, 320),
+    toggle_key = Enum.KeyCode.RightShift,
+    can_resize = true,
+})
+
+local otherTab = Kryvex:AddTab("Other")
+local rebirthTab = Kryvex:AddTab("Rebirths")
+local strengthTab = Kryvex:AddTab("Strength")
+local strength2Tab = Kryvex:AddTab("Strength 2")
+
+-- ============================================================
+-- OTHER TAB
+-- ============================================================
+local nameStatus = otherTab:AddLabel("Name Redact: " .. (tabs.other.KryvexConfig.RedactName and "ON" or "OFF"))
+local statsStatus = otherTab:AddLabel("Stats Redact: " .. (tabs.other.KryvexConfig.RedactStats and "ON" or "OFF"))
+
+local nameSwitch = otherTab:AddSwitch("Redact Name", function(state)
+    tabs.other.KryvexConfig.RedactName = state
+    nameStatus.Text = "Name Redact: " .. (state and "ON" or "OFF")
+    tabs.other.saveKryvexConfig()
+    tabs.other.applyNameVisibility()
+end)
+
+local statsSwitch = otherTab:AddSwitch("Redact Stats", function(state)
+    tabs.other.KryvexConfig.RedactStats = state
+    tabs.other.redactStats = state
+    statsStatus.Text = "Stats Redact: " .. (state and "ON" or "OFF")
+    tabs.other.saveKryvexConfig()
+    tabs.other.applyStatsVisibility()
+end)
+
+if tabs.other.KryvexConfig.RedactName then nameSwitch:Set(true) end
+if tabs.other.KryvexConfig.RedactStats then statsSwitch:Set(true) end
+
+lp.player.CharacterAdded:Connect(function()
+    task.defer(function()
+        tabs.other.applyNameVisibility()
+        tabs.other.applyStatsVisibility()
+    end)
+end)
+
+tabs.other.applyNameVisibility()
+tabs.other.applyStatsVisibility()
+
+-- ============================================================
+-- REBIRTHS TAB
+-- ============================================================
 tabs.rebirths.leaderstats = lp.player:WaitForChild("leaderstats")
 tabs.rebirths.rebirths = tabs.rebirths.leaderstats:WaitForChild("Rebirths")
 tabs.rebirths.strength = tabs.rebirths.leaderstats:WaitForChild("Strength")
@@ -376,85 +376,222 @@ tabs.rebirths.timerStarted = false
 tabs.rebirths.hasStarted = false
 tabs.rebirths.baselineReady = false
 tabs.rebirths.measuredCycles = 0
+tabs.rebirths.lastConfirmedAt = nil
 tabs.rebirths.nextRequestAt = 0
-tabs.rebirths.cooldown = 4.2 -- more aggressive
+tabs.rebirths.cooldown = 6
 tabs.rebirths.totalElapsed = 0
 tabs.rebirths.statSamples = {Rebirths = tabs.rebirths.rebirths.Value}
 tabs.rebirths.statGains = {Rebirths = 0}
 tabs.rebirths.generation = 0
 tabs.rebirths.adaptive = {
-	TargetSeconds = 2.4,
-	MinRate = 8,
-	MaxRate = 85,
-	SendRate = 25,
-	ProbeRate = 25,
-	ProbeReps = 18,
-	FeedbackTimeout = 0.7,
-	StrengthPerRep = nil
+    TargetSeconds = 3, MinRate = 3, MaxRate = 50, SendRate = 10,
+    ProbeRate = 10, ProbeReps = 10, FeedbackTimeout = 1,
+    StrengthPerRep = nil, LastTrainingSeconds = nil
 }
 
-tabs.rebirths.Status = tabs.rebirths:AddLabel("Status: Inactive")
-tabs.rebirths.Runtime = tabs.rebirths:AddLabel("Runtime: 0d 0h 0m 0s")
-tabs.rebirths.RebirthStats = tabs.rebirths:AddLabel("Rebirths: " .. formatCurrentStat(tabs.rebirths.rebirths.Value) .. " | Gained: 0")
-tabs.rebirths.AverageRate = tabs.rebirths:AddLabel("Average: -- / Hour | -- / Day | -- / Week")
+tabs.rebirths.Status = rebirthTab:AddLabel("Status: Inactive")
+tabs.rebirths.Runtime = rebirthTab:AddLabel("Runtime: 0d 0h 0m 0s")
+tabs.rebirths.RebirthStats = rebirthTab:AddLabel("Rebirths: " .. formatCurrentStat(tabs.rebirths.rebirths.Value) .. " | Gained: 0")
+tabs.rebirths.RebirthStats:SetAttribute("EleriumUpdateInterval", 0.05)
+tabs.rebirths.AverageRate = rebirthTab:AddLabel("Average: -- / Hour | -- / Day | -- / Week")
 tabs.rebirths.Status.TextColor3 = Color3.fromRGB(255, 80, 80)
 
 tabs.rebirths.updateStats = function()
-	tabs.rebirths.RebirthStats.Text = "Rebirths: " .. formatCurrentStat(tabs.rebirths.rebirths.Value) .. " | Gained: " .. formatNumber(tabs.rebirths.statGains.Rebirths)
+    tabs.rebirths.RebirthStats.Text = "Rebirths: " .. formatCurrentStat(tabs.rebirths.rebirths.Value)
+        .. " | Gained: " .. formatNumber(tabs.rebirths.statGains.Rebirths)
 end
 
-tabs.rebirths.updateRuntime = function()
-	updateRuntimeLabel(tabs.rebirths)
-end
+tabs.rebirths.updateRuntime = function() updateRuntimeLabel(tabs.rebirths) end
 
 tabs.rebirths.updateAverage = function()
-	local e = getElapsed(tabs.rebirths)
-	if e <= 0 then return end
-	local h = tabs.rebirths.statGains.Rebirths / e * 3600
-	tabs.rebirths.AverageRate.Text = string.format("Average: %s / Hour | %s / Day | %s / Week", formatNumber(h), formatNumber(h*24), formatNumber(h*168))
+    local elapsed = getElapsed(tabs.rebirths)
+    if elapsed <= 0 then return end
+    local hourly = tabs.rebirths.statGains.Rebirths / elapsed * 3600
+    tabs.rebirths.AverageRate.Text = string.format("Average: %s / Hour | %s / Day | %s / Week",
+        formatNumber(hourly), formatNumber(hourly * 24), formatNumber(hourly * 168))
 end
 
-tabs.rebirths:AddButton("Reset Calcs", function() resetCalculations(tabs.rebirths) end)
+rebirthTab:AddButton("Reset Calcs", function() resetCalculations(tabs.rebirths) end)
 
-tabs.rebirths.isCurrent = function(gen)
-	return tabs.rebirths.running and tabs.rebirths.generation == gen
+tabs.rebirths.isCurrent = function(generation)
+    return tabs.rebirths.running and tabs.rebirths.generation == generation
 end
 
-tabs.rebirths.equipFarmingPets = function(gen)
-	equipBestFarmingPets(function() return tabs.rebirths.isCurrent(gen) end)
+tabs.rebirths.equipFarmingPets = function(generation)
+    equipBestFarmingPets(function() return tabs.rebirths.isCurrent(generation) end)
 end
 
-tabs.rebirths.equipRebirthPets = function(gen)
-	equipBestRebirthPets(function() return tabs.rebirths.isCurrent(gen) end)
+tabs.rebirths.equipRebirthPets = function(generation)
+    equipBestRebirthPets(function() return tabs.rebirths.isCurrent(generation) end)
 end
 
--- performRebirth + startWorker + recordRebirth aynı kalabilir (sadece adaptive daha agresif)
+tabs.rebirths.updateAdaptiveSpeed = function(cycle, finalSample)
+    local adaptive = tabs.rebirths.adaptive
+    local now = os.clock()
+    if not finalSample and now - cycle.SampleAt < 0.25 then return end
+    local strength = tabs.rebirths.strength.Value
+    local gain = strength - cycle.StartStrength
+    if gain > 0 and cycle.Sent > 0 and (finalSample or strength > cycle.SampleStrength) then
+        adaptive.StrengthPerRep = gain / cycle.Sent
+        cycle.SampleStrength = strength
+    end
+    if adaptive.StrengthPerRep and adaptive.StrengthPerRep > 0 then
+        local reps = math.max(1, math.ceil(math.max(0, cycle.Target - cycle.StartStrength) / adaptive.StrengthPerRep))
+        adaptive.SendRate = math.clamp(reps / adaptive.TargetSeconds, adaptive.MinRate, adaptive.MaxRate)
+    else
+        adaptive.SendRate = adaptive.ProbeRate
+    end
+    cycle.SampleAt = now
+end
 
-tabs.rebirths.Switch = tabs.rebirths:AddSwitch("Pack Rebirth (Kryvex)", function(state)
-	tabs.rebirths.recordRebirth()
-	setTimerRunning(tabs.rebirths, state and tabs.rebirths.baselineReady)
-	tabs.rebirths.statSamples.Rebirths = tabs.rebirths.rebirths.Value
-	tabs.rebirths.generation += 1
-	tabs.rebirths.running = state
-	if state then
-		if tabs.strength.running then tabs.strength.FastRepToggle:Set(false) end
-		if tabs.strength2.running then tabs.strength2.FastRepToggle:Set(false) end
-		tabs.rebirths.hasStarted = true
-		tabs.rebirths.Status.Text = "Status: Rebirthing"
-		tabs.rebirths.Status.TextColor3 = Color3.fromRGB(80, 255, 120)
-		tabs.rebirths.updateStats()
-		tabs.rebirths.startWorker()
-	else
-		tabs.rebirths.Status.Text = tabs.rebirths.hasStarted and "Status: Paused" or "Status: Inactive"
-		tabs.rebirths.Status.TextColor3 = tabs.rebirths.hasStarted and Color3.fromRGB(255, 180, 70) or Color3.fromRGB(255, 80, 80)
-	end
-	tabs.rebirths.updateRuntime()
+tabs.rebirths.performRebirth = function(generation)
+    local adaptive = tabs.rebirths.adaptive
+    local cycle = {
+        Target = 5000 + tabs.rebirths.rebirths.Value * 2550,
+        Rebirths = tabs.rebirths.rebirths.Value,
+        SampleAt = os.clock(),
+        StartStrength = tabs.rebirths.strength.Value,
+        SampleStrength = tabs.rebirths.strength.Value,
+        LastSentAt = os.clock(),
+        Sent = 0, Tokens = 0, LastAt = os.clock(),
+        StatusAt = -math.huge, TrainingSeconds = 0
+    }
+    adaptive.SendRate = adaptive.StrengthPerRep and math.clamp(
+        math.max(0, cycle.Target - cycle.StartStrength) / adaptive.StrengthPerRep / adaptive.TargetSeconds,
+        adaptive.MinRate, adaptive.MaxRate) or adaptive.ProbeRate
+    cycle.RepBudget = adaptive.StrengthPerRep and math.max(adaptive.ProbeReps, math.ceil(
+        math.max(0, cycle.Target - cycle.StartStrength) / adaptive.StrengthPerRep)) or adaptive.ProbeReps
+    local lastTrainingAt = os.clock()
+    local function needsTraining()
+        return tabs.rebirths.isCurrent(generation)
+            and tabs.rebirths.rebirths.Value == cycle.Rebirths
+            and tabs.rebirths.strength.Value < cycle.Target
+    end
+    while needsTraining() do
+        local now = os.clock()
+        local character = lp.player.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        if humanoid and humanoid.Health > 0 then
+            cycle.TrainingSeconds = cycle.TrainingSeconds + math.max(0, now - lastTrainingAt)
+            tabs.rebirths.updateAdaptiveSpeed(cycle)
+            if cycle.Sent >= cycle.RepBudget then
+                cycle.Tokens = 0
+                cycle.LastAt = now
+                if now - cycle.LastSentAt >= adaptive.FeedbackTimeout then
+                    local missing = math.max(0, cycle.Target - tabs.rebirths.strength.Value)
+                    local extra = adaptive.StrengthPerRep and math.ceil(missing / adaptive.StrengthPerRep) or adaptive.ProbeReps
+                    cycle.RepBudget = cycle.Sent + math.clamp(extra, math.ceil(adaptive.ProbeReps / 2), adaptive.ProbeReps)
+                end
+            else
+                local budget = cycle.RepBudget - cycle.Sent
+                local sent = sendTrainingReps(cycle, adaptive.SendRate, 5, function()
+                    if budget <= 0 or not needsTraining() then return false end
+                    budget = budget - 1
+                    return true
+                end)
+                cycle.Sent = cycle.Sent + sent
+                if sent > 0 then cycle.LastSentAt = now end
+            end
+            if now - cycle.StatusAt >= 0.25 then
+                tabs.rebirths.Status.Text = (cycle.Sent >= cycle.RepBudget and "Status: Waiting for Strength Update | " or "Status: Strength Training | ")
+                    .. string.format("%.1fs", cycle.TrainingSeconds) .. " | " .. formatNumber(adaptive.SendRate) .. " reps/s"
+                cycle.StatusAt = now
+            end
+        else
+            cycle.Tokens = 0
+            cycle.LastAt = now
+            tabs.rebirths.Status.Text = "Status: Waiting for Respawn"
+        end
+        lastTrainingAt = now
+        services.runservice.Heartbeat:Wait()
+    end
+    if not tabs.rebirths.isCurrent(generation) or tabs.rebirths.rebirths.Value ~= cycle.Rebirths then return end
+    tabs.rebirths.updateAdaptiveSpeed(cycle, true)
+    adaptive.LastTrainingSeconds = cycle.TrainingSeconds
+    tabs.rebirths.Status.Text = "Status: Switching to Rebirth Pets"
+    tabs.rebirths.equipRebirthPets(generation)
+    task.wait(0.25)
+    while tabs.rebirths.isCurrent(generation) and tabs.rebirths.rebirths.Value == cycle.Rebirths do
+        local remaining = tabs.rebirths.nextRequestAt - os.clock()
+        if remaining > 0 then
+            tabs.rebirths.Status.Text = "Status: Rebirth Cooldown | " .. string.format("%.1fs", remaining)
+            task.wait(math.min(remaining, 0.1))
+        else
+            tabs.rebirths.nextRequestAt = os.clock() + tabs.rebirths.cooldown
+            services.replicatedstorage.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+            tabs.rebirths.recordRebirth()
+        end
+    end
+end
+
+tabs.rebirths.startWorker = function()
+    if tabs.rebirths.workerActive then return end
+    tabs.rebirths.workerActive = true
+    task.spawn(function()
+        local generation = tabs.rebirths.generation
+        local success = pcall(function()
+            while tabs.rebirths.isCurrent(generation) do
+                tabs.rebirths.equipFarmingPets(generation)
+                if not tabs.rebirths.isCurrent(generation) then break end
+                tabs.rebirths.performRebirth(generation)
+                task.wait()
+            end
+        end)
+        tabs.rebirths.workerActive = false
+        if not success then task.wait(0.5) end
+        if tabs.rebirths.running then tabs.rebirths.startWorker() end
+    end)
+end
+
+tabs.rebirths.recordRebirth = function()
+    local current = tabs.rebirths.rebirths.Value
+    local previous = tabs.rebirths.statSamples.Rebirths
+    if current > previous then
+        tabs.rebirths.lastConfirmedAt = os.clock()
+        tabs.rebirths.nextRequestAt = tabs.rebirths.lastConfirmedAt + tabs.rebirths.cooldown
+        if tabs.rebirths.running then
+            if not tabs.rebirths.baselineReady then
+                tabs.rebirths.baselineReady = true
+                tabs.rebirths.statSamples.Rebirths = current
+                setTimerRunning(tabs.rebirths, true)
+            else
+                recordStatGain(tabs.rebirths, "Rebirths", current)
+                tabs.rebirths.measuredCycles = tabs.rebirths.measuredCycles + 1
+                if tabs.rebirths.measuredCycles >= 2 then tabs.rebirths.updateAverage() end
+            end
+        end
+    end
+    tabs.rebirths.statSamples.Rebirths = current
+    tabs.rebirths.updateStats()
+end
+
+tabs.rebirths.rebirths:GetPropertyChangedSignal("Value"):Connect(tabs.rebirths.recordRebirth)
+
+tabs.rebirths.Switch = rebirthTab:AddSwitch("Pack Rebirth (Yes, Robux Packs)", function(state)
+    tabs.rebirths.recordRebirth()
+    setTimerRunning(tabs.rebirths, state and tabs.rebirths.baselineReady)
+    tabs.rebirths.statSamples.Rebirths = tabs.rebirths.rebirths.Value
+    tabs.rebirths.generation = tabs.rebirths.generation + 1
+    tabs.rebirths.running = state
+    if state then
+        if tabs.strength.running then tabs.strength.FastRepToggle:Set(false) end
+        if tabs.strength2.running then tabs.strength2.FastRepToggle:Set(false) end
+        tabs.rebirths.hasStarted = true
+        tabs.rebirths.Status.Text = "Status: Rebirthing"
+        tabs.rebirths.Status.TextColor3 = Color3.fromRGB(80, 255, 120)
+        tabs.rebirths.updateStats()
+        tabs.rebirths.startWorker()
+    else
+        tabs.rebirths.Status.Text = tabs.rebirths.hasStarted and "Status: Paused" or "Status: Inactive"
+        tabs.rebirths.Status.TextColor3 = tabs.rebirths.hasStarted and Color3.fromRGB(255, 180, 70) or Color3.fromRGB(255, 80, 80)
+    end
+    tabs.rebirths.updateRuntime()
 end)
 tabs.rebirths.Switch:Set(false)
 
--------------------------------------------------
--- STRENGTH (Max Speed)
--------------------------------------------------
+-- ============================================================
+-- STRENGTH TAB
+-- ============================================================
 tabs.strength.leaderstats = lp.player:WaitForChild("leaderstats")
 tabs.strength.strength = tabs.strength.leaderstats:WaitForChild("Strength")
 tabs.strength.durability = lp.player:WaitForChild("Durability")
@@ -466,83 +603,172 @@ tabs.strength.timerStarted = false
 tabs.strength.gainedBaselineSet = false
 tabs.strength.statSamples = {Strength = tabs.strength.strength.Value, Durability = tabs.strength.durability.Value}
 tabs.strength.statGains = {Strength = 0, Durability = 0}
-tabs.strength.initialSendRate = 420
-tabs.strength.maxSendRate = 850          -- çok daha yüksek
-tabs.strength.sendRate = 420
-tabs.strength.maxBurst = 48
+tabs.strength.initialSendRate = 200
+tabs.strength.maxSendRate = 462
+tabs.strength.sendRate = math.min(tabs.strength.initialSendRate, tabs.strength.maxSendRate)
+tabs.strength.maxBurst = 24
 tabs.strength.Tokens = 0
-tabs.strength.controlInterval = 0.35
+tabs.strength.controlInterval = 0.5
 tabs.strength.lastControlAt = tick()
 tabs.strength.lastControlStrength = tabs.strength.strength.Value
 tabs.strength.lastControlDurability = tabs.strength.durability.Value
 tabs.strength.stalledIntervals = 0
 tabs.strength.LastAt = os.clock()
-
-tabs.strength.Status = tabs.strength:AddLabel("Status: Inactive")
-tabs.strength.Runtime = tabs.strength:AddLabel("Runtime: 0d 0h 0m 0s")
-tabs.strength.StrengthStats = tabs.strength:AddLabel("Strength: " .. formatCurrentStat(tabs.strength.strength.Value) .. " | Gained: 0")
-tabs.strength.DurabilityStats = tabs.strength:AddLabel("Durability: " .. formatCurrentStat(tabs.strength.durability.Value) .. " | Gained: 0")
-tabs.strength.StrengthAverage = tabs.strength:AddLabel("Str Ø: --/s | --/min | --/h | --/d")
-tabs.strength.DurabilityAverage = tabs.strength:AddLabel("Dura Ø: --/s | --/min | --/h | --/d")
+tabs.strength.Status = strengthTab:AddLabel("Status: Inactive")
+tabs.strength.Runtime = strengthTab:AddLabel("Runtime: 0d 0h 0m 0s")
+tabs.strength.StrengthStats = strengthTab:AddLabel("Strength: " .. formatCurrentStat(tabs.strength.strength.Value) .. " | Gained: 0")
+tabs.strength.StrengthStats:SetAttribute("EleriumUpdateInterval", 0.02)
+tabs.strength.DurabilityStats = strengthTab:AddLabel("Durability: " .. formatCurrentStat(tabs.strength.durability.Value) .. " | Gained: 0")
+tabs.strength.DurabilityStats:SetAttribute("EleriumUpdateInterval", 0.02)
+tabs.strength.StrengthAverage = strengthTab:AddLabel("Str Ø: --/s | --/min | --/h | --/d")
+tabs.strength.DurabilityAverage = strengthTab:AddLabel("Dura Ø: --/s | --/min | --/h | --/d")
 tabs.strength.Status.TextColor3 = Color3.fromRGB(255, 80, 80)
 
 tabs.strength.updateRuntime = function() updateRuntimeLabel(tabs.strength) end
 
 tabs.strength.updateStats = function()
-	tabs.strength.StrengthStats.Text = "Strength: " .. formatCurrentStat(tabs.strength.strength.Value) .. " | Gained: " .. (tabs.strength.running and not tabs.strength.timerStarted and "Preparing" or formatNumber(tabs.strength.statGains.Strength))
-	tabs.strength.DurabilityStats.Text = "Durability: " .. formatCurrentStat(tabs.strength.durability.Value) .. " | Gained: " .. (tabs.strength.running and not tabs.strength.timerStarted and "Preparing" or formatNumber(tabs.strength.statGains.Durability))
+    tabs.strength.StrengthStats.Text = "Strength: " .. formatCurrentStat(tabs.strength.strength.Value)
+        .. " | Gained: " .. (tabs.strength.running and not tabs.strength.timerStarted
+            and "Preparing" or formatNumber(tabs.strength.statGains.Strength))
+    tabs.strength.DurabilityStats.Text = "Durability: " .. formatCurrentStat(tabs.strength.durability.Value)
+        .. " | Gained: " .. (tabs.strength.running and not tabs.strength.timerStarted
+            and "Preparing" or formatNumber(tabs.strength.statGains.Durability))
 end
 
 tabs.strength.updateAverage = function()
-	local e = getElapsed(tabs.strength)
-	if e <= 0 then return end
-	tabs.strength.StrengthAverage.Text = "Str Ø: " .. formatRate(tabs.strength.statGains.Strength / e)
-	tabs.strength.DurabilityAverage.Text = "Dura Ø: " .. formatRate(tabs.strength.statGains.Durability / e)
+    local elapsed = getElapsed(tabs.strength)
+    if elapsed <= 0 then return end
+    tabs.strength.StrengthAverage.Text = "Str Ø: " .. formatRate(tabs.strength.statGains.Strength / elapsed)
+    tabs.strength.DurabilityAverage.Text = "Dura Ø: " .. formatRate(tabs.strength.statGains.Durability / elapsed)
 end
 
-tabs.strength:AddButton("Reset Calcs", function() resetCalculations(tabs.strength) end)
+strengthTab:AddButton("Reset Calcs", function() resetCalculations(tabs.strength) end)
 
-tabs.strength:AddTextBox("Max reps/s: 850", function(txt)
-	local v = tonumber(txt)
-	if not v or v ~= v or v == math.huge then return end
-	v = math.clamp(v, 50, 2000)
-	tabs.strength.maxSendRate = v
-	tabs.strength.sendRate = math.min(tabs.strength.sendRate, v)
+tabs.strength.startMeasurement = function()
+    if not tabs.strength.running or tabs.strength.timerStarted
+        or tabs.strength.sendRate < tabs.strength.maxSendRate then return end
+    tabs.strength.statSamples.Strength = tabs.strength.strength.Value
+    tabs.strength.statSamples.Durability = tabs.strength.durability.Value
+    setTimerRunning(tabs.strength, true)
+    tabs.strength.nextAverageElapsed = getElapsed(tabs.strength) + 10
+    tabs.strength.updateStats()
+end
+
+tabs.strength.updateAdaptiveRate = function()
+    tabs.strength.controlNow = tick()
+    tabs.strength.controlElapsed = tabs.strength.controlNow - tabs.strength.lastControlAt
+    if tabs.strength.controlElapsed < tabs.strength.controlInterval then return end
+    tabs.strength.serverProgress = tabs.strength.strength.Value > tabs.strength.lastControlStrength
+        or tabs.strength.durability.Value > tabs.strength.lastControlDurability
+    if tabs.strength.serverProgress then
+        tabs.strength.stalledIntervals = 0
+        tabs.strength.sendRate = math.min(tabs.strength.maxSendRate, tabs.strength.sendRate * 1.12)
+        tabs.strength.Status.Text = (tabs.strength.sendRate >= tabs.strength.maxSendRate
+            and "Status: Farming | " or "Status: Preparing | ") .. formatNumber(tabs.strength.sendRate) .. " reps/s"
+        tabs.strength.Status.TextColor3 = Color3.fromRGB(80, 255, 120)
+    else
+        tabs.strength.stalledIntervals = tabs.strength.stalledIntervals + 1
+    end
+    if tabs.strength.stalledIntervals >= 2 then
+        tabs.strength.sendRate = math.max(math.min(tabs.strength.initialSendRate, tabs.strength.maxSendRate), tabs.strength.sendRate * 0.65)
+        tabs.strength.Tokens = 0
+        tabs.strength.Status.Text = "Status: Slowing for server | " .. formatNumber(tabs.strength.sendRate) .. " reps/s"
+        tabs.strength.Status.TextColor3 = Color3.fromRGB(255, 180, 70)
+    end
+    tabs.strength.lastControlAt = tabs.strength.controlNow
+    tabs.strength.lastControlStrength = tabs.strength.strength.Value
+    tabs.strength.lastControlDurability = tabs.strength.durability.Value
+end
+
+tabs.strength.workerLoop = function()
+    tabs.strength.LastAt = os.clock()
+    local function isRunning() return tabs.strength.running end
+    while tabs.strength.running do
+        tabs.strength.updateAdaptiveRate()
+        tabs.strength.startMeasurement()
+        sendTrainingReps(tabs.strength, tabs.strength.sendRate, tabs.strength.maxBurst, isRunning)
+        services.runservice.Heartbeat:Wait()
+    end
+    tabs.strength.workerActive = false
+    if tabs.strength.running then tabs.strength.startWorker() end
+end
+
+tabs.strength.startWorker = function()
+    if tabs.strength.workerActive then return end
+    tabs.strength.workerActive = true
+    task.spawn(tabs.strength.workerLoop)
+end
+
+tabs.strength.strength:GetPropertyChangedSignal("Value"):Connect(function()
+    recordStatGain(tabs.strength, "Strength", tabs.strength.strength.Value)
+    tabs.strength.updateStats()
+end)
+
+tabs.strength.durability:GetPropertyChangedSignal("Value"):Connect(function()
+    recordStatGain(tabs.strength, "Durability", tabs.strength.durability.Value)
+    tabs.strength.updateStats()
+end)
+
+strengthTab:AddTextBox("Max reps/s: " .. tabs.strength.maxSendRate, function(inputText)
+    local value = tonumber(inputText)
+    if not value or value ~= value or value == math.huge or value == -math.huge then return end
+    value = math.max(1, value)
+    if value ~= tabs.strength.maxSendRate and tabs.strength.running then
+        recordStatGain(tabs.strength, "Strength", tabs.strength.strength.Value)
+        recordStatGain(tabs.strength, "Durability", tabs.strength.durability.Value)
+        setTimerRunning(tabs.strength, false)
+        tabs.strength.updateStats()
+    end
+    tabs.strength.maxSendRate = value
+    tabs.strength.sendRate = math.min(tabs.strength.sendRate, tabs.strength.maxSendRate)
 end, {clear = false})
 
-tabs.strength:AddLabel("Recommended: 700-900 (riskli ama hızlı)")
+strengthTab:AddLabel("Recommended Speed: 462, you can always try more.")
 
-tabs.strength.FastRepToggle = tabs.strength:AddSwitch("Fast Rep (Kryvex)", function(state)
-	recordStatGain(tabs.strength, "Strength", tabs.strength.strength.Value)
-	recordStatGain(tabs.strength, "Durability", tabs.strength.durability.Value)
-	setTimerRunning(tabs.strength, false)
-	tabs.strength.statSamples.Strength = tabs.strength.strength.Value
-	tabs.strength.statSamples.Durability = tabs.strength.durability.Value
-	tabs.strength.running = state
-	tabs.strength.Tokens = 0
-	if state then
-		if tabs.rebirths.running then tabs.rebirths.Switch:Set(false) end
-		if tabs.strength2.running then tabs.strength2.FastRepToggle:Set(false) end
-		tabs.strength.gainedBaselineSet = true
-		tabs.strength.sendRate = math.min(tabs.strength.initialSendRate, tabs.strength.maxSendRate)
-		tabs.strength.LastAt = os.clock()
-		tabs.strength.lastControlAt = tick()
-		tabs.strength.stalledIntervals = 0
-		tabs.strength.Status.Text = "Status: Preparing | " .. formatNumber(tabs.strength.sendRate) .. " reps/s"
-		tabs.strength.Status.TextColor3 = Color3.fromRGB(80, 255, 120)
-		tabs.strength.startWorker()
-	else
-		tabs.strength.Status.Text = tabs.strength.gainedBaselineSet and "Status: Paused" or "Status: Inactive"
-		tabs.strength.Status.TextColor3 = tabs.strength.gainedBaselineSet and Color3.fromRGB(255, 180, 70) or Color3.fromRGB(255, 80, 80)
-		tabs.strength.updateRuntime()
-	end
-	tabs.strength.updateStats()
+tabs.strength.FastRepToggle = strengthTab:AddSwitch("Fast Rep", function(state)
+    recordStatGain(tabs.strength, "Strength", tabs.strength.strength.Value)
+    recordStatGain(tabs.strength, "Durability", tabs.strength.durability.Value)
+    setTimerRunning(tabs.strength, false)
+    tabs.strength.statSamples.Strength = tabs.strength.strength.Value
+    tabs.strength.statSamples.Durability = tabs.strength.durability.Value
+    tabs.strength.running = state
+    tabs.strength.Tokens = 0
+    if state then
+        if tabs.rebirths.running then tabs.rebirths.Switch:Set(false) end
+        tabs.strength.gainedBaselineSet = true
+        tabs.strength.sendRate = math.min(tabs.strength.initialSendRate, tabs.strength.maxSendRate)
+        tabs.strength.LastAt = os.clock()
+        tabs.strength.lastControlAt = tick()
+        tabs.strength.lastControlStrength = tabs.strength.strength.Value
+        tabs.strength.lastControlDurability = tabs.strength.durability.Value
+        tabs.strength.stalledIntervals = 0
+        tabs.strength.Status.Text = "Status: Preparing | " .. formatNumber(tabs.strength.sendRate) .. " reps/s"
+        tabs.strength.Status.TextColor3 = Color3.fromRGB(80, 255, 120)
+        tabs.strength.startWorker()
+    else
+        tabs.strength.Status.Text = tabs.strength.gainedBaselineSet and "Status: Paused" or "Status: Inactive"
+        tabs.strength.Status.TextColor3 = tabs.strength.gainedBaselineSet and Color3.fromRGB(255, 180, 70) or Color3.fromRGB(255, 80, 80)
+        tabs.strength.updateRuntime()
+    end
+    tabs.strength.updateStats()
 end)
 tabs.strength.FastRepToggle:Set(false)
 
--------------------------------------------------
--- STRENGTH 2 (Max Speed + Ping Adaptive)
--------------------------------------------------
+task.spawn(function()
+    while true do
+        tabs.rebirths.updateRuntime()
+        tabs.strength.updateRuntime()
+        if tabs.strength.timerStarted and getElapsed(tabs.strength) >= tabs.strength.nextAverageElapsed then
+            tabs.strength.updateAverage()
+            tabs.strength.nextAverageElapsed = getElapsed(tabs.strength) + 10
+        end
+        task.wait(0.1)
+    end
+end)
+
+-- ============================================================
+-- STRENGTH 2 TAB
+-- ============================================================
 tabs.strength2.leaderstats = lp.player:WaitForChild("leaderstats")
 tabs.strength2.strength = tabs.strength2.leaderstats:WaitForChild("Strength")
 tabs.strength2.durability = lp.player:WaitForChild("Durability")
@@ -554,89 +780,230 @@ tabs.strength2.timerStarted = false
 tabs.strength2.gainedBaselineSet = false
 tabs.strength2.statSamples = {Strength = tabs.strength2.strength.Value, Durability = tabs.strength2.durability.Value}
 tabs.strength2.statGains = {Strength = 0, Durability = 0}
-tabs.strength2.initialSendRate = 550
-tabs.strength2.maxSendRate = 950
-tabs.strength2.sendRate = 550
-tabs.strength2.maxBurst = 52
+tabs.strength2.initialSendRate = 300
+tabs.strength2.maxSendRate = 480
+tabs.strength2.sendRate = tabs.strength2.initialSendRate
+tabs.strength2.maxBurst = 24
 tabs.strength2.Tokens = 0
-tabs.strength2.pingLimit = 380
-tabs.strength2.resumePing = 290
-tabs.strength2.recoverySeconds = 1.4
-tabs.strength2.rampInterval = 1.4
-tabs.strength2.rampStep = 35
-tabs.strength2.minAdaptiveRate = 520
-tabs.strength2.fineRampStep = 4
-tabs.strength2.backoffStep = 6
+tabs.strength2.pingLimit = 350
+tabs.strength2.resumePing = 300
+tabs.strength2.recoverySeconds = 2
+tabs.strength2.rampInterval = 2
+tabs.strength2.rampStep = 25
+tabs.strength2.minAdaptiveRate = 450
+tabs.strength2.fineRampStep = 2
+tabs.strength2.backoffStep = 4
 tabs.strength2.learnedLimit = false
 tabs.strength2.lastPingSampleAt = os.clock()
 tabs.strength2.lastPingSample = nil
 tabs.strength2.lastPingRise = 0
-tabs.strength2.stableInterval = 45
-tabs.strength2.stableStep = 3
+tabs.strength2.stableInterval = 60
+tabs.strength2.stableStep = 2
 tabs.strength2.stableSince = os.clock()
 tabs.strength2.pingPaused = false
 tabs.strength2.lastRampAt = os.clock()
 tabs.strength2.LastAt = os.clock()
-
-tabs.strength2.Status = tabs.strength2:AddLabel("Status: Inactive")
-tabs.strength2.Runtime = tabs.strength2:AddLabel("Runtime: 0d 0h 0m 0s")
-tabs.strength2.StrengthStats = tabs.strength2:AddLabel("Strength: " .. formatCurrentStat(tabs.strength2.strength.Value) .. " | Gained: 0")
-tabs.strength2.DurabilityStats = tabs.strength2:AddLabel("Durability: " .. formatCurrentStat(tabs.strength2.durability.Value) .. " | Gained: 0")
-tabs.strength2.StrengthAverage = tabs.strength2:AddLabel("Str Ø: --/s | --/min | --/h | --/d")
-tabs.strength2.DurabilityAverage = tabs.strength2:AddLabel("Dura Ø: --/s | --/min | --/h | --/d")
+tabs.strength2.Status = strength2Tab:AddLabel("Status: Inactive")
+tabs.strength2.Runtime = strength2Tab:AddLabel("Runtime: 0d 0h 0m 0s")
+tabs.strength2.StrengthStats = strength2Tab:AddLabel("Strength: " .. formatCurrentStat(tabs.strength2.strength.Value) .. " | Gained: 0")
+tabs.strength2.StrengthStats:SetAttribute("EleriumUpdateInterval", 0.02)
+tabs.strength2.DurabilityStats = strength2Tab:AddLabel("Durability: " .. formatCurrentStat(tabs.strength2.durability.Value) .. " | Gained: 0")
+tabs.strength2.DurabilityStats:SetAttribute("EleriumUpdateInterval", 0.02)
+tabs.strength2.StrengthAverage = strength2Tab:AddLabel("Str Ø: --/s | --/min | --/h | --/d")
+tabs.strength2.DurabilityAverage = strength2Tab:AddLabel("Dura Ø: --/s | --/min | --/h | --/d")
 tabs.strength2.Status.TextColor3 = Color3.fromRGB(255, 80, 80)
 
 tabs.strength2.updateRuntime = function() updateRuntimeLabel(tabs.strength2) end
 
 tabs.strength2.updateStats = function()
-	tabs.strength2.StrengthStats.Text = "Strength: " .. formatCurrentStat(tabs.strength2.strength.Value) .. " | Gained: " .. (tabs.strength2.running and not tabs.strength2.timerStarted and "Preparing" or formatNumber(tabs.strength2.statGains.Strength))
-	tabs.strength2.DurabilityStats.Text = "Durability: " .. formatCurrentStat(tabs.strength2.durability.Value) .. " | Gained: " .. (tabs.strength2.running and not tabs.strength2.timerStarted and "Preparing" or formatNumber(tabs.strength2.statGains.Durability))
+    tabs.strength2.StrengthStats.Text = "Strength: " .. formatCurrentStat(tabs.strength2.strength.Value)
+        .. " | Gained: " .. (tabs.strength2.running and not tabs.strength2.timerStarted
+            and "Preparing" or formatNumber(tabs.strength2.statGains.Strength))
+    tabs.strength2.DurabilityStats.Text = "Durability: " .. formatCurrentStat(tabs.strength2.durability.Value)
+        .. " | Gained: " .. (tabs.strength2.running and not tabs.strength2.timerStarted
+            and "Preparing" or formatNumber(tabs.strength2.statGains.Durability))
 end
 
 tabs.strength2.updateAverage = function()
-	local e = getElapsed(tabs.strength2)
-	if e <= 0 then return end
-	tabs.strength2.StrengthAverage.Text = "Str Ø: " .. formatRate(tabs.strength2.statGains.Strength / e)
-	tabs.strength2.DurabilityAverage.Text = "Dura Ø: " .. formatRate(tabs.strength2.statGains.Durability / e)
+    local elapsed = getElapsed(tabs.strength2)
+    if elapsed <= 0 then return end
+    tabs.strength2.StrengthAverage.Text = "Str Ø: " .. formatRate(tabs.strength2.statGains.Strength / elapsed)
+    tabs.strength2.DurabilityAverage.Text = "Dura Ø: " .. formatRate(tabs.strength2.statGains.Durability / elapsed)
 end
 
-tabs.strength2:AddButton("Reset Calcs", function() resetCalculations(tabs.strength2) end)
+strength2Tab:AddButton("Reset Calcs", function() resetCalculations(tabs.strength2) end)
 
-tabs.strength2.FastRepToggle = tabs.strength2:AddSwitch("Fast Rep 2 (Kryvex)", function(state)
-	recordStatGain(tabs.strength2, "Strength", tabs.strength2.strength.Value)
-	recordStatGain(tabs.strength2, "Durability", tabs.strength2.durability.Value)
-	setTimerRunning(tabs.strength2, false)
-	tabs.strength2.statSamples.Strength = tabs.strength2.strength.Value
-	tabs.strength2.statSamples.Durability = tabs.strength2.durability.Value
-	tabs.strength2.running = state
-	tabs.strength2.Tokens = 0
-	if state then
-		if tabs.strength.running then tabs.strength.FastRepToggle:Set(false) end
-		if tabs.rebirths.running then tabs.rebirths.Switch:Set(false) end
-		tabs.strength2.gainedBaselineSet = true
-		tabs.strength2.sendRate = tabs.strength2.initialSendRate
-		tabs.strength2.pingPaused = false
-		tabs.strength2.LastAt = os.clock()
-		tabs.strength2.lastRampAt = os.clock()
-		tabs.strength2.stableSince = os.clock()
-		tabs.strength2.Status.Text = "Status: Preparing | " .. formatNumber(tabs.strength2.sendRate) .. " reps/s"
-		tabs.strength2.Status.TextColor3 = Color3.fromRGB(80, 255, 120)
-		tabs.strength2.startWorker()
-	else
-		tabs.strength2.Status.Text = tabs.strength2.gainedBaselineSet and "Status: Paused" or "Status: Inactive"
-		tabs.strength2.Status.TextColor3 = tabs.strength2.gainedBaselineSet and Color3.fromRGB(255, 180, 70) or Color3.fromRGB(255, 80, 80)
-		tabs.strength2.updateRuntime()
-	end
-	tabs.strength2.updateStats()
+tabs.strength2.startMeasurement = function()
+    if not tabs.strength2.running or tabs.strength2.timerStarted then return end
+    tabs.strength2.statSamples.Strength = tabs.strength2.strength.Value
+    tabs.strength2.statSamples.Durability = tabs.strength2.durability.Value
+    setTimerRunning(tabs.strength2, true)
+    tabs.strength2.nextAverageElapsed = getElapsed(tabs.strength2) + 10
+    tabs.strength2.updateStats()
+end
+
+tabs.strength2.readPing = readDataPing
+
+tabs.strength2.updateStatus = function(ping)
+    local tab = tabs.strength2
+    local pingText = ping and string.format(" | Ping: %.1f ms", ping) or " | Ping: unavailable"
+    if not tab.running then
+        tab.Status.Text = (tab.gainedBaselineSet and "Status: Paused" or "Status: Inactive") .. pingText
+        tab.Status.TextColor3 = tab.gainedBaselineSet and Color3.fromRGB(255, 180, 70) or Color3.fromRGB(255, 80, 80)
+    elseif tab.pingPaused or not ping or ping > tab.pingLimit then
+        tab.Status.Text = "Status: Waiting | " .. formatNumber(tab.sendRate) .. " reps/s" .. pingText
+        tab.Status.TextColor3 = Color3.fromRGB(255, 180, 70)
+    else
+        tab.Status.Text = "Status: Farming | " .. formatNumber(tab.sendRate) .. " reps/s" .. pingText
+        tab.Status.TextColor3 = Color3.fromRGB(80, 255, 120)
+    end
+end
+
+tabs.strength2.updateAdaptiveRate = function()
+    local tab = tabs.strength2
+    local now = os.clock()
+    local ping = tab.readPing()
+    tab.sendRate = math.min(tab.sendRate, tab.maxSendRate)
+    if ping and now - tab.lastPingSampleAt >= 1 then
+        tab.lastPingRise = tab.lastPingSample and ping - tab.lastPingSample or 0
+        tab.lastPingSample = ping
+        tab.lastPingSampleAt = now
+    end
+    if not ping or ping > tab.pingLimit then
+        if not tab.pingPaused then
+            tab.sendRate = math.max(math.min(tab.minAdaptiveRate, tab.sendRate), tab.sendRate - tab.backoffStep)
+            tab.learnedLimit = true
+        end
+        tab.pingPaused = true
+        tab.stableSince = now
+        tab.recoveryStartedAt = nil
+    elseif tab.pingPaused then
+        if ping < tab.resumePing then
+            tab.recoveryStartedAt = tab.recoveryStartedAt or now
+            if now - tab.recoveryStartedAt >= tab.recoverySeconds then
+                tab.pingPaused = false
+                tab.recoveryStartedAt = nil
+                tab.lastRampAt = now
+                tab.stableSince = now
+                tab.lastPingSample = ping
+                tab.lastPingRise = 0
+            end
+        else
+            tab.recoveryStartedAt = nil
+        end
+    elseif now - tab.lastRampAt >= tab.rampInterval then
+        local pressure = ping >= tab.resumePing or (ping >= 150 and tab.lastPingRise >= 20)
+        if pressure then
+            tab.sendRate = math.max(math.min(tab.minAdaptiveRate, tab.sendRate), tab.sendRate - tab.fineRampStep)
+            tab.learnedLimit = true
+            tab.stableSince = now
+        elseif tab.sendRate < tab.minAdaptiveRate then
+            tab.sendRate = math.min(tab.minAdaptiveRate, tab.sendRate + tab.rampStep)
+            tab.stableSince = now
+        elseif not tab.learnedLimit then
+            tab.sendRate = math.min(tab.maxSendRate, tab.sendRate + tab.fineRampStep)
+            tab.stableSince = now
+        elseif now - tab.stableSince >= tab.stableInterval then
+            tab.sendRate = math.min(tab.maxSendRate, tab.sendRate + tab.stableStep)
+            tab.stableSince = now
+        end
+        tab.lastRampAt = now
+    end
+    if tab.pingPaused then
+        tab.Tokens = 0
+        tab.LastAt = now
+    end
+    tab.updateStatus(ping)
+end
+
+tabs.strength2.workerLoop = function()
+    tabs.strength2.LastAt = os.clock()
+    local function isRunning() return tabs.strength2.running and not tabs.strength2.pingPaused end
+    while tabs.strength2.running do
+        if tabs.strength.running or tabs.rebirths.running then
+            tabs.strength2.FastRepToggle:Set(false)
+            break
+        end
+        tabs.strength2.updateAdaptiveRate()
+        tabs.strength2.startMeasurement()
+        if not tabs.strength2.pingPaused then
+            sendTrainingReps(tabs.strength2, tabs.strength2.sendRate, tabs.strength2.maxBurst, isRunning)
+        end
+        services.runservice.Heartbeat:Wait()
+    end
+    tabs.strength2.workerActive = false
+    if tabs.strength2.running then tabs.strength2.startWorker() end
+end
+
+tabs.strength2.startWorker = function()
+    if tabs.strength2.workerActive then return end
+    tabs.strength2.workerActive = true
+    task.spawn(tabs.strength2.workerLoop)
+end
+
+tabs.strength2.strength:GetPropertyChangedSignal("Value"):Connect(function()
+    recordStatGain(tabs.strength2, "Strength", tabs.strength2.strength.Value)
+    tabs.strength2.updateStats()
+end)
+
+tabs.strength2.durability:GetPropertyChangedSignal("Value"):Connect(function()
+    recordStatGain(tabs.strength2, "Durability", tabs.strength2.durability.Value)
+    tabs.strength2.updateStats()
+end)
+
+tabs.strength2.FastRepToggle = strength2Tab:AddSwitch("Fast Rep", function(state)
+    recordStatGain(tabs.strength2, "Strength", tabs.strength2.strength.Value)
+    recordStatGain(tabs.strength2, "Durability", tabs.strength2.durability.Value)
+    setTimerRunning(tabs.strength2, false)
+    tabs.strength2.statSamples.Strength = tabs.strength2.strength.Value
+    tabs.strength2.statSamples.Durability = tabs.strength2.durability.Value
+    tabs.strength2.running = state
+    tabs.strength2.Tokens = 0
+    if state then
+        if tabs.strength.running then tabs.strength.FastRepToggle:Set(false) end
+        if tabs.rebirths.running then tabs.rebirths.Switch:Set(false) end
+        tabs.strength2.gainedBaselineSet = true
+        tabs.strength2.maxSendRate = 480
+        tabs.strength2.learnedLimit = false
+        tabs.strength2.lastPingSampleAt = os.clock()
+        tabs.strength2.lastPingSample = nil
+        tabs.strength2.lastPingRise = 0
+        tabs.strength2.sendRate = tabs.strength2.initialSendRate
+        tabs.strength2.pingPaused = false
+        tabs.strength2.recoveryStartedAt = nil
+        tabs.strength2.LastAt = os.clock()
+        tabs.strength2.lastRampAt = os.clock()
+        tabs.strength2.stableSince = os.clock()
+        tabs.strength2.Status.Text = "Status: Preparing | " .. formatNumber(tabs.strength2.sendRate) .. " reps/s"
+        tabs.strength2.Status.TextColor3 = Color3.fromRGB(80, 255, 120)
+        tabs.strength2.startWorker()
+    else
+        tabs.strength2.Status.Text = tabs.strength2.gainedBaselineSet and "Status: Paused" or "Status: Inactive"
+        tabs.strength2.Status.TextColor3 = tabs.strength2.gainedBaselineSet and Color3.fromRGB(255, 180, 70) or Color3.fromRGB(255, 80, 80)
+        tabs.strength2.updateRuntime()
+    end
+    tabs.strength2.updateStats()
+    tabs.strength2.updateStatus(tabs.strength2.readPing())
 end)
 tabs.strength2.FastRepToggle:Set(false)
 
--- Runtime updater
-runtime:Spawn(function()
-	while true do
-		tabs.rebirths.updateRuntime()
-		tabs.strength.updateRuntime()
-		tabs.strength2.updateRuntime()
-		task.wait(0.12)
-	end
+task.spawn(function()
+    while true do
+        local ping = readDataPing()
+        if not tabs.strength2.running then tabs.strength2.updateStatus(ping) end
+        task.wait(0.5)
+    end
 end)
+
+task.spawn(function()
+    while true do
+        tabs.strength2.updateRuntime()
+        if tabs.strength2.timerStarted and getElapsed(tabs.strength2) >= tabs.strength2.nextAverageElapsed then
+            tabs.strength2.updateAverage()
+            tabs.strength2.nextAverageElapsed = getElapsed(tabs.strength2) + 10
+        end
+        task.wait(0.1)
+    end
+end)
+
+return Kryvex
