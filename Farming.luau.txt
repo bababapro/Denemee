@@ -1,6 +1,6 @@
 -- // Syniox Library buraya gelecek
 
-local library = loadstring(game:HttpGet("YOUR_SYNIOX_LINK"))() -- veya direkt paste
+local library = loadstring(game:HttpGet("https://github.com/bababapro/Denemee/raw/refs/heads/main/SynioxGui%20(3).txt"))()
 
 local services = {
 	httpservice = game:GetService("HttpService"),
