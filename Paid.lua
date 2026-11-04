@@ -27,9 +27,9 @@ end
 
 print("✅ Whitelist onaylandı!")
 
-local library = loadstring(game:HttpGet("https://github.com/KryvexOnTop/Kryvex-paid/raw/refs/heads/main/KryvexGui%20(3).txt", true))()
+local library = loadstring(game:HttpGet("https://github.com/bababapro/Denemee/raw/refs/heads/main/KryvexGui%20(3).txt", true))()
 
-local window = library:AddWindow("##############", {
+local window = library:AddWindow("Kryvex Paid | Hi ######", {
     title_bar = {
         Color3.fromRGB(175, 20, 230),
         Color3.fromRGB(85, 10, 115),
