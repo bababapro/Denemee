@@ -2526,6 +2526,446 @@ Rock:AddSwitch("👊 Start Rock V2 Farm", function(Value)
     end
 end)
 
+local Boss = window:AddTab("Boss")
+
+Boss:AddLabel("👹 Boss Farming:")
+Boss.StatusLabel = Boss:AddLabel("Status: Waiting for Boss")
+Boss.BossLabel = Boss:AddLabel("Boss: None")
+Boss.HealthLabel = Boss:AddLabel("Health: 0 / 0")
+Boss.NextBossLabel = Boss:AddLabel("Next Boss: N/A")
+
+local CollectionService = game:GetService("CollectionService")
+
+Boss.Data = {
+    Running = false,
+    Generation = 0,
+    ContinueTraining = true,
+    Phase = "Waiting",
+    PunchInterval = 0.3,
+    LastPunch = 0,
+    AttackSequence = nil,
+    EvadeUntil = 0,
+    EvadeDistance = 230,
+    PunchBehindDistance = 45,
+    StompHealthThreshold = 0.35,
+    DodgeStomps = false
+}
+
+local function formatNumber(num)
+    if num >= 1e18 then return string.format("%.2fQi", num/1e18) end
+    if num >= 1e15 then return string.format("%.2fQa", num/1e15) end
+    if num >= 1e12 then return string.format("%.2fT", num/1e12) end
+    if num >= 1e9 then return string.format("%.2fB", num/1e9) end
+    if num >= 1e6 then return string.format("%.2fM", num/1e6) end
+    if num >= 1e3 then return string.format("%.2fK", num/1e3) end
+    return string.format("%.0f", num)
+end
+
+local function findActiveBoss()
+    local model, stats, health, maxHealth, hitbox
+    pcall(function()
+        for _, candidate in ipairs(CollectionService:GetTagged("BossEventBoss")) do
+            if candidate:IsA("Model") and candidate:IsDescendantOf(workspace) then
+                model = candidate
+                break
+            end
+        end
+        if not model then
+            local events = workspace:FindFirstChild("Events")
+            local bossFolder = events and (events:FindFirstChild("BossEvent") or events:FindFirstChild("BossArena"))
+            if bossFolder then
+                for _, candidate in ipairs(bossFolder:GetDescendants()) do
+                    if candidate:IsA("Model") then
+                        local hasHitbox = candidate:FindFirstChild("BossDamageHitbox", true)
+                        local hasTag = CollectionService:HasTag(candidate, "BossEventBoss")
+                        if hasHitbox or hasTag then
+                            model = candidate
+                            break
+                        end
+                    end
+                end
+            end
+        end
+        if not model then return end
+        stats = model:FindFirstChild("stats")
+        health = stats and stats:FindFirstChild("Health")
+        maxHealth = stats and stats:FindFirstChild("MaxHealth")
+        hitbox = model:FindFirstChild("BossDamageHitbox", true)
+        if not hitbox or not hitbox:IsA("BasePart") then
+            model = nil
+            return
+        end
+    end)
+    if not model then return nil end
+    return model, health, maxHealth, hitbox
+end
+
+local function getBossHeadPosition(model, hitbox)
+    local head = model:FindFirstChild("Head", true) or model:FindFirstChild("head", true)
+    if head and head:IsA("BasePart") then return head.Position end
+    if head and head:IsA("Bone") then return head.WorldPosition end
+    return hitbox.Position + Vector3.new(0, hitbox.Size.Y * 0.35, 0)
+end
+
+local function evadeAttack(model, hitbox, root, humanoid)
+    local sequence = model:GetAttribute("BossAttackSequence")
+    local attackKind = model:GetAttribute("BossAttackKind")
+    local attackCFrame = model:GetAttribute("BossAttackCFrame")
+    local impactTime = model:GetAttribute("BossAttackImpactTime")
+
+    if typeof(sequence) == "number" and sequence ~= Boss.Data.AttackSequence then
+        Boss.Data.AttackSequence = sequence
+        if typeof(attackKind) == "string" and typeof(attackCFrame) == "CFrame" and typeof(impactTime) == "number" then
+            Boss.Data.EvadeUntil = impactTime + 0.6
+        end
+    end
+
+    if typeof(attackCFrame) ~= "CFrame" or workspace:GetServerTimeNow() > Boss.Data.EvadeUntil then return end
+
+    attackKind = string.lower(tostring(attackKind or ""))
+
+    if string.find(attackKind, "punch", 1, true) then
+        local center = getBossHeadPosition(model, hitbox)
+        local direction = Vector3.new(attackCFrame.LookVector.X, 0, attackCFrame.LookVector.Z)
+        if direction.Magnitude < 1 then
+            direction = Vector3.new(hitbox.CFrame.LookVector.X, 0, hitbox.CFrame.LookVector.Z)
+        end
+        if direction.Magnitude < 1 then direction = Vector3.new(0, 0, 1) end
+        local safePosition = center - direction.Unit * Boss.Data.PunchBehindDistance
+        root.CFrame = CFrame.lookAt(safePosition, center)
+        root.AssemblyLinearVelocity = Vector3.zero
+        Boss.StatusLabel.Text = "Status: Dodging Punch"
+        return "Punch"
+    end
+
+    if not string.find(attackKind, "stomp", 1, true) then return end
+
+    if humanoid.Health / math.max(humanoid.MaxHealth, 1) <= Boss.Data.StompHealthThreshold then
+        Boss.Data.DodgeStomps = true
+    end
+    if not Boss.Data.DodgeStomps then return end
+
+    local direction = Vector3.new(root.Position.X - attackCFrame.Position.X, 0, root.Position.Z - attackCFrame.Position.Z)
+    if direction.Magnitude < 1 then
+        direction = Vector3.new(-attackCFrame.LookVector.X, 0, -attackCFrame.LookVector.Z)
+    end
+    if direction.Magnitude < 1 then direction = Vector3.new(1, 0, 0) end
+    direction = direction.Unit
+    local safePosition = attackCFrame.Position + direction * Boss.Data.EvadeDistance + Vector3.new(0, 18, 0)
+    root.CFrame = CFrame.lookAt(safePosition, attackCFrame.Position)
+    root.AssemblyLinearVelocity = Vector3.zero
+    Boss.StatusLabel.Text = "Status: Dodging Stomp"
+    return "Stomp"
+end
+
+local function attackBoss(model, health, maxHealth, hitbox)
+    local character = LocalPlayer.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    if not root or not humanoid or humanoid.Health <= 0 then return end
+
+    local evadeMode = evadeAttack(model, hitbox, root, humanoid)
+    if evadeMode == "Stomp" then return end
+
+    local punch = character:FindFirstChild("Punch") or LocalPlayer.Backpack:FindFirstChild("Punch")
+    if punch and punch.Parent ~= character then pcall(function() humanoid:EquipTool(punch) end) end
+
+    local leftHand = character:FindFirstChild("LeftHand")
+    local rightHand = character:FindFirstChild("RightHand")
+    local center = getBossHeadPosition(model, hitbox)
+
+    if evadeMode ~= "Punch" then
+        root.CFrame = CFrame.lookAt(center, center + hitbox.CFrame.LookVector)
+    end
+    root.AssemblyLinearVelocity = Vector3.zero
+
+    pcall(function()
+        if leftHand then firetouchinterest(hitbox, leftHand, 0); firetouchinterest(hitbox, leftHand, 1) end
+        if rightHand then firetouchinterest(hitbox, rightHand, 0); firetouchinterest(hitbox, rightHand, 1) end
+    end)
+
+    if os.clock() - Boss.Data.LastPunch >= Boss.Data.PunchInterval then
+        Boss.Data.LastPunch = os.clock()
+        pcall(function()
+            LocalPlayer.muscleEvent:FireServer("punch", "leftHand")
+            LocalPlayer.muscleEvent:FireServer("punch", "rightHand")
+            if punch then punch:Activate() end
+        end)
+    end
+
+    Boss.BossLabel.Text = "Boss: " .. (workspace:GetAttribute("BossDisplayName") or model.Name)
+    Boss.HealthLabel.Text = "Health: " .. formatNumber(health and health.Value or 0) .. " / " .. formatNumber(maxHealth and maxHealth.Value or 0)
+end
+
+local function collectChest(generation)
+    Boss.StatusLabel.Text = "Status: Waiting for Chest"
+    local startedAt = os.clock()
+    local chest, prompt, part
+    repeat
+        pcall(function()
+            for _, candidate in ipairs(CollectionService:GetTagged("BossEventChest")) do
+                if candidate:IsDescendantOf(workspace) then chest = candidate; break end
+            end
+            if not chest then chest = workspace:FindFirstChild("BossChest", true) end
+            if chest then
+                prompt = chest:FindFirstChild("bossChestPrompt", true)
+                part = prompt and prompt.Parent or (chest:IsA("Model") and (chest.PrimaryPart or chest:FindFirstChildWhichIsA("BasePart", true))) or chest
+            end
+        end)
+        if chest and chest:GetAttribute("BossChestEmerging") ~= true then break end
+        task.wait(0.1)
+    until not Boss.Data.Running or Boss.Data.Generation ~= generation or os.clock() - startedAt >= 12
+
+    if not chest or not part then return end
+    Boss.StatusLabel.Text = "Status: Collecting Chest"
+    startedAt = os.clock()
+
+    repeat
+        local character = LocalPlayer.Character
+        local root = character and character:FindFirstChild("HumanoidRootPart")
+        if root and chest.Parent and part.Parent then
+            pcall(function()
+                root.CFrame = CFrame.lookAt(part.Position + Vector3.new(0, 3, 4), part.Position)
+                root.AssemblyLinearVelocity = Vector3.zero
+            end)
+            task.wait(0.15)
+            if prompt and prompt.Parent then pcall(function() fireproximityprompt(prompt) end) end
+        end
+        task.wait(0.25)
+    until not Boss.Data.Running or Boss.Data.Generation ~= generation or LocalPlayer:GetAttribute("BossChestPending") == false or not chest.Parent or os.clock() - startedAt >= 12
+end
+
+Boss.ContinueSwitch = Boss:AddSwitch("Continue Farming after Boss Kill", function(state)
+    Boss.Data.ContinueTraining = state
+end)
+Boss.ContinueSwitch:Set(true)
+
+-- Boss Info Loop
+task.spawn(function()
+    while true do
+        pcall(function()
+            local model, health, maxHealth, hitbox = findActiveBoss()
+            if model then
+                Boss.BossLabel.Text = "Boss: " .. (workspace:GetAttribute("BossDisplayName") or model.Name)
+                Boss.HealthLabel.Text = "Health: " .. formatNumber(health and health.Value or 0) .. " / " .. formatNumber(maxHealth and maxHealth.Value or 0)
+                Boss.NextBossLabel.Text = "Next Boss: Current boss active"
+            else
+                Boss.BossLabel.Text = "Boss: None"
+                Boss.HealthLabel.Text = "Health: 0 / 0"
+                local nextTime = workspace:GetAttribute("BossSpawnNextTime")
+                if typeof(nextTime) == "number" then
+                    local countdown = math.max(0, math.floor(nextTime - workspace:GetServerTimeNow()))
+                    Boss.NextBossLabel.Text = string.format("Next Boss: %dh %dmin %ds", math.floor(countdown/3600), math.floor((countdown%3600)/60), countdown%60)
+                else
+                    Boss.NextBossLabel.Text = "Next Boss: N/A"
+                end
+            end
+        end)
+        task.wait(0.25)
+    end
+end)
+
+Boss.AutoFarmSwitch = Boss:AddSwitch("Auto Farm Boss", function(state)
+    Boss.Data.Running = state
+    Boss.Data.Generation += 1
+    if not state then
+        Boss.StatusLabel.Text = "Status: Disabled"
+        return
+    end
+    local generation = Boss.Data.Generation
+    task.spawn(function()
+        local wasFighting = false
+        while Boss.Data.Running and Boss.Data.Generation == generation do
+            pcall(function()
+                local model, health, maxHealth, hitbox = findActiveBoss()
+                if model then
+                    if not wasFighting then
+                        wasFighting = true
+                        Boss.Data.AttackSequence = nil
+                        Boss.Data.EvadeUntil = 0
+                        Boss.Data.DodgeStomps = false
+                    end
+                    local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                    if humanoid and humanoid.Health > 0 then
+                        Boss.StatusLabel.Text = "Status: Fighting"
+                        attackBoss(model, health, maxHealth, hitbox)
+                    else
+                        Boss.StatusLabel.Text = "Status: Waiting for Respawn"
+                    end
+                elseif wasFighting then
+                    wasFighting = false
+                    pcall(function() collectChest(generation) end)
+                    Boss.BossLabel.Text = "Boss: None"
+                    Boss.HealthLabel.Text = "Health: 0 / 0"
+                    Boss.StatusLabel.Text = "Status: Waiting for Boss"
+                else
+                    Boss.StatusLabel.Text = "Status: Waiting for Boss"
+                end
+            end)
+            task.wait(wasFighting and 0.03 or 0.25)
+        end
+    end)
+end)
+
+-- ═══════════════════════════════════════════════════════════════
+-- FAST FARM TAB (Görsellerindeki Tasarım - Düzeltildi)
+-- ═══════════════════════════════════════════════════════════════
+local FastFarming = window:AddTab("Fast Farm")
+
+local leaderstats = LocalPlayer:WaitForChild("leaderstats")
+local strengthStat = leaderstats:WaitForChild("Strength")
+local rebirthsStat = leaderstats:WaitForChild("Rebirths")
+local durabilityStat = LocalPlayer:WaitForChild("Durability")
+
+local isRebirthActive = false
+local isStrengthActive = false
+local repSpeed = 462
+local rebirthSpeed = 10
+local lastRebirthRequest = 0
+
+local rebirthStartTime = 0
+local rebirthTotalTime = 0
+local rebirthGained = 0
+local lastRebirthCount = rebirthsStat.Value
+
+local strengthStartTime = 0
+local strengthTotalTime = 0
+local strengthGained = 0
+local lastStrength = strengthStat.Value
+
+-- --- FAST REBIRTH ---
+FastFarming:AddLabel("👑 Fast Rebirth")
+local rebStatus = FastFarming:AddLabel("Status: Inactive"); rebStatus.TextColor3 = Color3.fromRGB(255, 80, 80)
+local rebRuntime = FastFarming:AddLabel("Runtime: 0d 0h 0m 0s")
+local rebStats = FastFarming:AddLabel("Rebirths: " .. formatNumber(rebirthsStat.Value) .. " | Gained: 0")
+local rebPace = FastFarming:AddLabel("Pace: -- / Min | -- / Hour | -- / Day | -- / Week")
+local rebAverage = FastFarming:AddLabel("Average: -- / Min | -- / Hour | -- / Day | -- / Week")
+
+local rebToggle = FastFarming:AddSwitch("⚡ Fast Rebirth", function(state)
+    isRebirthActive = state
+    if state then
+        if isStrengthActive then FastFarming.FastStrengthToggle:Set(false) end
+        rebirthStartTime = os.clock()
+        rebStatus.Text = "Status: Rebirthing..."; rebStatus.TextColor3 = Color3.fromRGB(80, 255, 120)
+        task.spawn(function()
+            while isRebirthActive do
+                local currentReb = rebirthsStat.Value
+                local targetStrength = 5000 + currentReb * 2550
+                if strengthStat.Value < targetStrength then
+                    LocalPlayer.muscleEvent:FireServer("rep")
+                    rebStatus.Text = "Status: Training Strength..."
+                else
+                    if os.clock() - lastRebirthRequest > (1 / rebirthSpeed) then
+                        lastRebirthRequest = os.clock()
+                        ReplicatedStorage.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+                        rebStatus.Text = "Status: Requesting Rebirth..."
+                    end
+                end
+                task.wait(0.01)
+            end
+        end)
+    else
+        rebStatus.Text = "Status: Inactive"; rebStatus.TextColor3 = Color3.fromRGB(255, 80, 80)
+    end
+end)
+
+rebirthsStat:GetPropertyChangedSignal("Value"):Connect(function()
+    local current = rebirthsStat.Value
+    if current > lastRebirthCount then
+        rebirthGained = rebirthGained + (current - lastRebirthCount)
+        rebStats.Text = "Rebirths: " .. formatNumber(current) .. " | Gained: " .. formatNumber(rebirthGained)
+        lastRebirthCount = current
+    end
+end)
+
+FastFarming:AddLabel("=============================================================")
+-- --- FAST STRENGTH ---
+FastFarming:AddLabel("💪 Fast Strength")
+local strStatus = FastFarming:AddLabel("Status: Inactive"); strStatus.TextColor3 = Color3.fromRGB(255, 80, 80)
+local strRuntime = FastFarming:AddLabel("Runtime: 0d 0h 0m 0s")
+local strStats = FastFarming:AddLabel("Strength: " .. formatNumber(strengthStat.Value) .. " | Gained: 0")
+local strDura = FastFarming:AddLabel("Durability: " .. formatNumber(durabilityStat.Value) .. " | Gained: 0")
+local strPace = FastFarming:AddLabel("Strength: --/S | --/Min | --/Hour | --/Day | --/Week")
+local strAvg = FastFarming:AddLabel("Durability: --/S | --/Min | --/Hour | --/Day | --/Week")
+
+FastFarming:AddButton("Reset Calcs (Strength)", function()
+    strengthGained = 0; lastStrength = strengthStat.Value
+    strengthTotalTime = 0; strengthStartTime = os.clock()
+    strStats.Text = "Strength: " .. formatNumber(strengthStat.Value) .. " | Gained: 0"
+    strPace.Text = "Strength: --/S | --/Min | --/Hour | --/Day | --/Week"
+end)
+
+-- İSTEDİĞİN GİBİ BURADA YAZI YOK, SADECE ... VAR
+FastFarming:AddTextBox("...", function(inputText)
+    local val = tonumber(inputText)
+    if val and val > 0 then repSpeed = math.clamp(math.floor(val), 1, 1100) end
+end, {placeholder = "Enter reps/s (e.g. 462)"})
+
+FastFarming.FastStrengthToggle = FastFarming:AddSwitch("💪 Start Farm", function(state)
+    isStrengthActive = state
+    if state then
+        if isRebirthActive then rebToggle:Set(false) end
+        strengthStartTime = os.clock()
+        strStatus.Text = "Status: Farming"; strStatus.TextColor3 = Color3.fromRGB(80, 255, 120)
+        task.spawn(function()
+            local tokens = 0
+            local lastTick = os.clock()
+            while isStrengthActive do
+                local now = os.clock()
+                local dt = now - lastTick
+                lastTick = now
+                tokens = math.min(24, tokens + repSpeed * dt)
+                while tokens >= 1 do
+                    LocalPlayer.muscleEvent:FireServer("rep")
+                    tokens = tokens - 1
+                end
+                task.wait()
+            end
+        end)
+    else
+        strStatus.Text = "Status: Inactive"; strStatus.TextColor3 = Color3.fromRGB(255, 80, 80)
+    end
+end)
+
+strengthStat:GetPropertyChangedSignal("Value"):Connect(function()
+    local current = strengthStat.Value
+    if current > lastStrength then
+        strengthGained = strengthGained + (current - lastStrength)
+        strStats.Text = "Strength: " .. formatNumber(current) .. " | Gained: " .. formatNumber(strengthGained)
+        lastStrength = current
+    end
+end)
+
+-- --- TIMER DÖNGÜSÜ ---
+task.spawn(function()
+    while true do
+        if isRebirthActive then
+            local elapsed = rebirthTotalTime + (os.clock() - rebirthStartTime)
+            rebRuntime.Text = string.format("Runtime: %dd %dh %dm %ds", math.floor(elapsed/86400), math.floor((elapsed%86400)/3600), math.floor((elapsed%3600)/60), math.floor(elapsed%60))
+            local hours = elapsed / 3600
+            if hours > 0 then
+                local rateH = rebirthGained / hours
+                rebPace.Text = string.format("Pace: %s/Min | %s/Hour | %s/Day | %s/Week", formatNumber(rateH/60), formatNumber(rateH), formatNumber(rateH*24), formatNumber(rateH*168))
+                rebAverage.Text = string.format("Average: %s/Min | %s/Hour | %s/Day | %s/Week", formatNumber(rateH/60), formatNumber(rateH), formatNumber(rateH*24), formatNumber(rateH*168))
+            end
+        end
+
+        if isStrengthActive then
+            local elapsed = strengthTotalTime + (os.clock() - strengthStartTime)
+            strRuntime.Text = string.format("Runtime: %dd %dh %dm %ds", math.floor(elapsed/86400), math.floor((elapsed%86400)/3600), math.floor((elapsed%3600)/60), math.floor(elapsed%60))
+            local seconds = elapsed
+            if seconds > 0 then
+                local rateS = strengthGained / seconds
+                strPace.Text = string.format("Strength: %s/S | %s/Min | %s/Hour | %s/Day | %s/Week", formatNumber(rateS), formatNumber(rateS*60), formatNumber(rateS*3600), formatNumber(rateS*86400), formatNumber(rateS*604800))
+            end
+        end
+        task.wait(1)
+    end
+end)
+
+FastFarming:AddLabel("This Tab Made ByHenne ❤️")
+
+
 
 local pets = window:AddTab("Pets")
 pets:AddLabel("💰 Auto Buy")
