@@ -1,7 +1,7 @@
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
-local pastebinUrl = "https://pastebin.com/raw/h9vu11sE"
+local pastebinUrl = "https://pastebin.com/raw/pbkBFCQt"
 
 local success, result = pcall(function()
     return game:HttpGet(pastebinUrl)
