@@ -1,0 +1,2670 @@
+
+local unpackValues = unpack or table.unpack
+if _G.DecodeAntiMultiUi then
+    warn("Decode: UI already running.")
+
+    return
+end
+_G.DecodeAntiMultiUi = true
+local uiLibrary = {}
+local CoreGui = game:GetService("CoreGui")
+local HttpService = game:GetService("HttpService")
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local secondaryGetfenv = getfenv()
+local listfiles = secondaryGetfenv.listfiles
+local callback = setclipboard or toclipboard
+local imageCallback = getcustomasset or function()
+    return ""
+end
+local secondaryImageCallback = secondaryGetfenv.isfile or function()
+    return false
+end
+local dataCallback = isfolder or function()
+    return false
+end
+local secondaryDataCallback = makefolder or function() end
+local secondaryCallback = secondaryGetfenv.readfile or function()
+    return ""
+end
+local alternateCallback = secondaryGetfenv.writefile or function() end
+local jsonencodeConfig = {
+    SpeedEnabled = false,
+    Speed = 0,
+    NoClipEnabled = false,
+    InfiniteJumpEnabled = false,
+    AntiAfkToggleState = true,
+    ExecuteToggleState = true,
+    InputConfig = "",
+    InputConfigFile = "",
+    SelectedCopyConfig = {},
+    HopSelection = "Low",
+    HopStud = 16,
+    IgnoreStolen = false,
+    StealEgg = false,
+    StealEggRarity = false,
+    StealEarnRate = false,
+    SelectedEggsFilter = {},
+    SelectedRarityFilter = {},
+    EarnRate = 0,
+    TreadmillToggleState = false,
+    FpsOptionSelection = {},
+    FpsBoostToggleState = false,
+    EspRarityFilter = {},
+    EspObjectsToggleState = false,
+    EspIndexToggleState = false,
+    SelectedEggPlace = {},
+    SelectedEggRarityPlace = {},
+    PlaceEggsState = false,
+    PlaceEggsRarityState = false,
+    SelectedEggHatch = {},
+    SelectedEggRarityHatch = {},
+    HatchEggsState = false,
+    HatchEggsRarityState = false,
+    EggURL = "",
+    HideUsername = true,
+    EarningRate = 0,
+    EggSend = false,
+    InfestedState = false,
+    InfestedSubmitState = false,
+    MainHue = {
+        10,
+        18,
+        30,
+    },
+    SidebarHue = {
+        15,
+        27,
+        44,
+    },
+    AccentHue = {
+        14,
+        165,
+        233,
+    },
+    ElementHue = {
+        22,
+        38,
+        62,
+    },
+    TextMainHue = {
+        255,
+        255,
+        255,
+    },
+    TextMutedHue = {
+        140,
+        160,
+        185,
+    },
+}
+local vData = {
+    Tabs = {},
+    FirstTab = nil,
+    PageList = {
+        "Home",
+        "Main",
+        "Assist",
+        "Misc",
+        "Webhook",
+        "Settings",
+    },
+    CreatedPages = {},
+    PlayerTracker = {
+        OriginalSpeed = 16,
+    },
+}
+local mainBackground = Color3.fromRGB(unpack(jsonencodeConfig.MainHue))
+local sidebarBackground = Color3.fromRGB(unpack(jsonencodeConfig.SidebarHue))
+local accentColor = Color3.fromRGB(unpack(jsonencodeConfig.AccentHue))
+local elementBackground = Color3.fromRGB(unpack(jsonencodeConfig.ElementHue))
+local textMain = Color3.fromRGB(unpack(jsonencodeConfig.TextMainHue))
+local textMuted = Color3.fromRGB(unpack(jsonencodeConfig.TextMutedHue))
+
+uiLibrary.Theme = {
+    MainBackground = mainBackground,
+    SidebarBackground = sidebarBackground,
+    AccentColor = accentColor,
+    ElementBackground = elementBackground,
+    TextMain = textMain,
+    TextMuted = textMuted,
+}
+local function handler()
+    local ok, result = pcall(function()
+        return HttpService:JSONEncode(jsonencodeConfig)
+    end)
+
+    if ok and result then
+        local assetPath = ""
+        local parts = string.split("Decode by ItzYumi/Save System/Steal an Egg/config.json", "/")
+
+        for i = 1, #parts - 1 do
+            local secondaryI = i
+            local secondaryAssetPath = assetPath == ""
+
+            if secondaryAssetPath then
+                secondaryAssetPath = parts[secondaryI]
+            end
+
+            if not secondaryAssetPath then
+                secondaryAssetPath = assetPath .. "/" .. parts[secondaryI]
+            end
+
+            assetPath = secondaryAssetPath
+
+            if not dataCallback(assetPath) then
+                secondaryDataCallback(assetPath)
+            end
+        end
+
+        alternateCallback("Decode by ItzYumi/Save System/Steal an Egg/config.json", result)
+    end
+end
+(function()
+    if secondaryImageCallback("Decode by ItzYumi/Save System/Steal an Egg/config.json") then
+        local ok, result = pcall(function()
+            return secondaryCallback("Decode by ItzYumi/Save System/Steal an Egg/config.json")
+        end)
+        local capturedResult = result
+
+        if ok and capturedResult then
+            local success, successResult = pcall(function()
+                return HttpService:JSONDecode(capturedResult)
+            end)
+
+            if success then
+                success = type(successResult) == "table"
+            end
+
+            if success then
+                for k, item in pairs(successResult) do
+                    local secondaryK = k
+
+                    if jsonencodeConfig[secondaryK] ~= nil then
+                        jsonencodeConfig[secondaryK] = item
+                    end
+                end
+            end
+        end
+    end
+end)()
+_G.DecodeAPI = {
+    Configs = jsonencodeConfig,
+}
+if not dataCallback("Decode by ItzYumi") then
+    secondaryDataCallback("Decode by ItzYumi")
+end
+if not dataCallback("Decode by ItzYumi/Assets") then
+    secondaryDataCallback("Decode by ItzYumi/Assets")
+end
+if not secondaryImageCallback("Decode by ItzYumi/Assets/icon.png") then
+    pcall(function()
+        local deCodeLogoPng = game:HttpGet(
+            "https://raw.githubusercontent.com/ItzYumi/Decode/refs/heads/main/de_code_logo.png"
+        )
+
+        if deCodeLogoPng then
+            alternateCallback("Decode by ItzYumi/Assets/icon.png", deCodeLogoPng)
+        end
+    end)
+end
+local function handleResult()
+    local Eggs = game:GetService("ReplicatedStorage")
+        :WaitForChild("Assets")
+        :WaitForChild("Models")
+        :WaitForChild("Eggs")
+
+    if #Eggs:GetChildren() == 0 then
+        Eggs.ChildAdded:Wait()
+        task.wait(0.5)
+    end
+
+    local children = Eggs:GetChildren()
+    local vNames = {}
+
+    for _, item in ipairs(children) do
+        if item:IsA("Model") or item:IsA("Folder") then
+            table.insert(vNames, item.Name)
+        end
+    end
+
+    return vNames
+end
+local function secondaryHandleResult()
+    local Configs = game:GetService("ReplicatedStorage")
+        :WaitForChild("Data")
+        :WaitForChild("Rarity")
+        :WaitForChild("Configs")
+
+    if #Configs:GetChildren() == 0 then
+        Configs.ChildAdded:Wait()
+        task.wait(0.5)
+    end
+
+    local children = Configs:GetChildren()
+    local vNames = {}
+
+    for _, item in ipairs(children) do
+        local resultCondition = item:IsA("ModuleScript")
+
+        if not resultCondition then
+            resultCondition = item:IsA("Folder") or item:IsA("Model")
+        end
+
+        if resultCondition then
+            table.insert(vNames, item.Name)
+        end
+    end
+
+    return vNames
+end
+vData.ScreenGui = Instance.new("ScreenGui")
+vData.ScreenGui.Name = "Decode_UI"
+vData.ScreenGui.ResetOnSpawn = false
+vData.ScreenGui.Parent = CoreGui
+vData.FrameMain = Instance.new("Frame")
+vData.FrameMain.Name = "MainContainer"
+vData.FrameMain.Size = UDim2.new(0, 520, 0, 340)
+vData.FrameMain.Position = UDim2.new(0.5, -260, 0.5, -170)
+vData.FrameMain.BackgroundColor3 = uiLibrary.Theme.MainBackground
+vData.FrameMain.BackgroundTransparency = 0.15
+vData.FrameMain.BorderSizePixel = 0
+vData.FrameMain.Active = true
+vData.FrameMain.Draggable = true
+vData.FrameMain.Parent = vData.ScreenGui
+vData.CornerMain = Instance.new("UICorner")
+vData.CornerMain.CornerRadius = UDim.new(0, 10)
+vData.CornerMain.Parent = vData.FrameMain
+vData.TopHeader = Instance.new("Frame")
+vData.TopHeader.Name = "TopHeader"
+vData.TopHeader.Size = UDim2.new(1, 0, 0, 35)
+vData.TopHeader.BackgroundTransparency = 1
+vData.TopHeader.Parent = vData.FrameMain
+vData.TitleLabel = Instance.new("TextLabel")
+vData.TitleLabel.Size = UDim2.new(0, 200, 1, 0)
+vData.TitleLabel.Position = UDim2.new(0, 14, 0, 0)
+vData.TitleLabel.BackgroundTransparency = 1
+vData.TitleLabel.Text = "DECODE | Free v1.4.12"
+vData.TitleLabel.TextColor3 = uiLibrary.Theme.TextMuted
+vData.TitleLabel.TextSize = 16
+vData.TitleLabel.Font = Enum.Font.SourceSansBold
+vData.TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+vData.TitleLabel.Parent = vData.TopHeader
+vData.CloseButton = Instance.new("TextButton")
+vData.CloseButton.Size = UDim2.new(0, 35, 0, 35)
+vData.CloseButton.Position = UDim2.new(1, -40, 0, 0)
+vData.CloseButton.BackgroundTransparency = 1
+vData.CloseButton.Text = "X"
+vData.CloseButton.TextColor3 = uiLibrary.Theme.TextMuted
+vData.CloseButton.TextSize = 14
+vData.CloseButton.Font = Enum.Font.SourceSansBold
+vData.CloseButton.Parent = vData.TopHeader
+vData.MinimizeButton = Instance.new("TextButton")
+vData.MinimizeButton.Size = UDim2.new(0, 35, 0, 35)
+vData.MinimizeButton.Position = UDim2.new(1, -75, 0, 0)
+vData.MinimizeButton.BackgroundTransparency = 1
+vData.MinimizeButton.Text = "-"
+vData.MinimizeButton.TextColor3 = uiLibrary.Theme.TextMuted
+vData.MinimizeButton.TextSize = 18
+vData.MinimizeButton.Font = Enum.Font.SourceSansBold
+vData.MinimizeButton.Parent = vData.TopHeader
+vData.MinimizeLogo = Instance.new("ImageButton")
+vData.MinimizeLogo.Name = "MinimizeLogo"
+vData.MinimizeLogo.Size = UDim2.new(0, 45, 0, 45)
+vData.MinimizeLogo.Position = UDim2.new(0.05, 0, 0.05, 0)
+vData.MinimizeLogo.BackgroundColor3 = uiLibrary.Theme.SidebarBackground
+vData.MinimizeLogo.BackgroundTransparency = 0.2
+vData.MinimizeLogo.Image = secondaryImageCallback("Decode by ItzYumi/Assets/icon.png")
+        and imageCallback("Decode by ItzYumi/Assets/icon.png")
+    or ""
+vData.MinimizeLogo.Visible = false
+vData.MinimizeLogo.Active = true
+vData.MinimizeLogo.Draggable = true
+vData.MinimizeLogo.Parent = vData.ScreenGui
+vData.LogoCorner = Instance.new("UICorner")
+vData.LogoCorner.CornerRadius = UDim.new(1, 0)
+vData.LogoCorner.Parent = vData.MinimizeLogo
+vData.LogoStroke = Instance.new("UIStroke")
+vData.LogoStroke.Color = uiLibrary.Theme.MainBackground
+vData.LogoStroke.Thickness = 2
+vData.LogoStroke.Parent = vData.MinimizeLogo
+vData.MinimizeButton.MouseButton1Click:Connect(function()
+    vData.FrameMain.Visible = false
+    vData.MinimizeLogo.Visible = true
+end)
+vData.MinimizeLogo.MouseButton1Click:Connect(function()
+    vData.MinimizeLogo.Visible = false
+    vData.FrameMain.Visible = true
+end)
+vData.Sidebar = Instance.new("Frame")
+vData.Sidebar.Name = "Sidebar"
+vData.Sidebar.Size = UDim2.new(0, 160, 1, -35)
+vData.Sidebar.Position = UDim2.new(0, 0, 0, 35)
+vData.Sidebar.BackgroundColor3 = uiLibrary.Theme.SidebarBackground
+vData.Sidebar.BackgroundTransparency = 0.2
+vData.Sidebar.BorderSizePixel = 0
+vData.Sidebar.Parent = vData.FrameMain
+vData.CornerSidebar = Instance.new("UICorner")
+vData.CornerSidebar.CornerRadius = UDim.new(0, 10)
+vData.CornerSidebar.Parent = vData.Sidebar
+vData.NavScroll = Instance.new("ScrollingFrame")
+vData.NavScroll.Size = UDim2.new(1, -12, 1, -20)
+vData.NavScroll.Position = UDim2.new(0, 12, 0, 10)
+vData.NavScroll.BackgroundTransparency = 1
+vData.NavScroll.BorderSizePixel = 0
+vData.NavScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+vData.NavScroll.ScrollBarThickness = 0
+vData.NavScroll.Parent = vData.Sidebar
+vData.NavLayout = Instance.new("UIListLayout")
+vData.NavLayout.Parent = vData.NavScroll
+vData.NavLayout.SortOrder = Enum.SortOrder.LayoutOrder
+vData.NavLayout.Padding = UDim.new(0, 4)
+vData.NavLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    vData.NavScroll.CanvasSize = UDim2.new(0, 0, 0, vData.NavLayout.AbsoluteContentSize.Y)
+end)
+vData.ContentContainer = Instance.new("Frame")
+vData.ContentContainer.Name = "ContentContainer"
+vData.ContentContainer.Size = UDim2.new(1, -185, 1, -50)
+vData.ContentContainer.Position = UDim2.new(0, 175, 0, 40)
+vData.ContentContainer.BackgroundTransparency = 1
+vData.ContentContainer.Parent = vData.FrameMain
+vData.PageHeaderLabel = Instance.new("TextLabel")
+vData.PageHeaderLabel.Name = "PageHeaderLabel"
+vData.PageHeaderLabel.Size = UDim2.new(1, 0, 0, 30)
+vData.PageHeaderLabel.Position = UDim2.new(0, 0, 0, -5)
+vData.PageHeaderLabel.BackgroundTransparency = 1
+vData.PageHeaderLabel.Text = "Home"
+vData.PageHeaderLabel.TextColor3 = uiLibrary.Theme.TextMain
+vData.PageHeaderLabel.TextSize = 22
+vData.PageHeaderLabel.Font = Enum.Font.SourceSansBold
+vData.PageHeaderLabel.TextXAlignment = Enum.TextXAlignment.Left
+vData.PageHeaderLabel.Parent = vData.ContentContainer
+vData.NotifyContainer = Instance.new("Frame")
+vData.NotifyContainer.Name = "NotificationContainer"
+vData.NotifyContainer.Size = UDim2.new(0, 280, 0, 400)
+vData.NotifyContainer.Position = UDim2.new(1, -290, 0, 20)
+vData.NotifyContainer.BackgroundTransparency = 1
+vData.NotifyContainer.ZIndex = 9999
+vData.NotifyContainer.Parent = vData.ScreenGui
+local frames = {}
+function uiLibrary.Notify(_, displayValue, text, textLabelColor)
+    for i = #frames, 1, -1 do
+        local secondaryI = i
+        local input = frames[secondaryI]
+
+        if secondaryI >= 3 then
+            table.remove(frames, secondaryI)
+
+            local tween = TweenService:Create(
+                input,
+                TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+                {
+                    Position = UDim2.new(1.5, 0, 0, input.Position.Y.Offset),
+                    BackgroundTransparency = 1,
+                }
+            )
+
+            tween:Play()
+            tween.Completed:Connect(function()
+                input:Destroy()
+            end)
+        else
+            frames[secondaryI + 1] = input
+
+            local product = secondaryI * 68
+
+            TweenService
+                :Create(
+                    input,
+                    TweenInfo.new(0.2, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out),
+                    {
+                        Position = UDim2.new(0, 0, 0, product),
+                    }
+                )
+                :Play()
+        end
+    end
+
+    local Frame = Instance.new("Frame")
+
+    Frame.Size = UDim2.new(1, 0, 0, 56)
+    Frame.Position = UDim2.new(1.4, 0, 0, 0)
+    Frame.BackgroundColor3 = uiLibrary.Theme.SidebarBackground
+    Frame.BackgroundTransparency = 0.1
+    Frame.BorderSizePixel = 0
+    Frame.ZIndex = 10000
+    Frame.Parent = vData.NotifyContainer
+
+    local UICorner = Instance.new("UICorner")
+
+    UICorner.CornerRadius = UDim.new(0, 6)
+    UICorner.Parent = Frame
+
+    local parent = Instance.new("Frame")
+
+    parent.Size = UDim2.new(0, 4, 1, 0)
+    parent.Position = UDim2.new(0, 0, 0, 0)
+
+    local backgroundColor3 = textLabelColor and Color3.fromRGB(239, 68, 68)
+
+    if not backgroundColor3 then
+        backgroundColor3 = uiLibrary.Theme.AccentColor
+    end
+
+    parent.BackgroundColor3 = backgroundColor3
+    parent.BorderSizePixel = 0
+    parent.ZIndex = 10001
+    parent.Parent = Frame
+
+    local uiCorner = Instance.new("UICorner")
+
+    uiCorner.CornerRadius = UDim.new(0, 4)
+    uiCorner.Parent = parent
+
+    local TextLabel = Instance.new("TextLabel")
+
+    TextLabel.Size = UDim2.new(1, -20, 0, 20)
+    TextLabel.Position = UDim2.new(0, 14, 0, 8)
+    TextLabel.BackgroundTransparency = 1
+    TextLabel.Text = tostring(displayValue):upper()
+
+    if textLabelColor then
+        textLabelColor = Color3.fromRGB(252, 165, 165)
+    end
+
+    if not textLabelColor then
+        textLabelColor = uiLibrary.Theme.TextMain
+    end
+
+    TextLabel.TextColor3 = textLabelColor
+    TextLabel.TextSize = 11
+    TextLabel.Font = Enum.Font.SourceSansBold
+    TextLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TextLabel.ZIndex = 10002
+    TextLabel.Parent = Frame
+
+    local textLabel = Instance.new("TextLabel")
+
+    textLabel.Size = UDim2.new(1, -20, 0, 24)
+    textLabel.Position = UDim2.new(0, 14, 0, 24)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = text
+    textLabel.TextColor3 = uiLibrary.Theme.TextMuted
+    textLabel.TextSize = 13
+    textLabel.Font = Enum.Font.SourceSans
+    textLabel.TextXAlignment = Enum.TextXAlignment.Left
+    textLabel.TextWrapped = true
+    textLabel.ZIndex = 10002
+    textLabel.Parent = Frame
+    table.insert(frames, 1, Frame)
+    TweenService
+        :Create(Frame, TweenInfo.new(0.25, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
+            Position = UDim2.new(0, 0, 0, 0),
+        })
+        :Play()
+    task.delay(3, function()
+        if Frame and Frame.Parent then
+            local find = table.find
+            local searchQuery = Frame
+            local condition = find(frames, searchQuery)
+
+            if condition then
+                table.remove(frames, condition)
+            end
+
+            local tween = TweenService:Create(
+                Frame,
+                TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+                {
+                    Position = UDim2.new(1.4, 0, 0, Frame.Position.Y.Offset),
+                    BackgroundTransparency = 1,
+                }
+            )
+
+            tween:Play()
+            tween.Completed:Connect(function()
+                Frame:Destroy()
+            end)
+        end
+    end)
+end
+function _G.PostMailboxTerminalAlert(argument, secondaryArgument, tertiaryArgument)
+    uiLibrary:Notify(argument, secondaryArgument, tertiaryArgument)
+end
+function uiLibrary.CreateTab(_, pageHeaderLabelText)
+    local firstTab = {
+        Page = Instance.new("ScrollingFrame"),
+    }
+
+    firstTab.Page.Name = pageHeaderLabelText .. "_Page"
+    firstTab.Page.Size = UDim2.new(1, 0, 1, -30)
+    firstTab.Page.Position = UDim2.new(0, 0, 0, 30)
+    firstTab.Page.BackgroundTransparency = 1
+    firstTab.Page.BorderSizePixel = 0
+    firstTab.Page.Visible = false
+    firstTab.Page.ScrollBarThickness = 0
+    firstTab.Page.CanvasSize = UDim2.new(0, 0, 0, 0)
+    firstTab.Page.Parent = vData.ContentContainer
+    firstTab.Layout = Instance.new("UIListLayout")
+    firstTab.Layout.Parent = firstTab.Page
+    firstTab.Layout.SortOrder = Enum.SortOrder.LayoutOrder
+    firstTab.Layout.Padding = UDim.new(0, 6)
+    firstTab.Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        firstTab.Page.CanvasSize = UDim2.new(0, 0, 0, firstTab.Layout.AbsoluteContentSize.Y + 10)
+    end)
+    firstTab.Button = Instance.new("TextButton")
+    firstTab.Button.Name = pageHeaderLabelText .. "_Btn"
+    firstTab.Button.Size = UDim2.new(1, 0, 0, 34)
+    firstTab.Button.BackgroundColor3 = uiLibrary.Theme.ElementBackground
+    firstTab.Button.BackgroundTransparency = 1
+    firstTab.Button.Text = "  " .. pageHeaderLabelText
+    firstTab.Button.TextColor3 = uiLibrary.Theme.TextMuted
+    firstTab.Button.TextSize = 14
+    firstTab.Button.Font = Enum.Font.SourceSansBold
+    firstTab.Button.TextXAlignment = Enum.TextXAlignment.Left
+    firstTab.Button.Parent = vData.NavScroll
+    firstTab.Corner = Instance.new("UICorner")
+    firstTab.Corner.CornerRadius = UDim.new(0, 6)
+    firstTab.Corner.Parent = firstTab.Button
+    vData.Tabs[pageHeaderLabelText] = firstTab
+    firstTab.Button.MouseButton1Click:Connect(function()
+        for _, item in pairs(vData.Tabs) do
+            item.Page.Visible = false
+            item.Button.BackgroundTransparency = 1
+            item.Button.TextColor3 = uiLibrary.Theme.TextMuted
+        end
+
+        firstTab.Page.Visible = true
+        firstTab.Button.BackgroundTransparency = 0.8
+        firstTab.Button.TextColor3 = uiLibrary.Theme.TextMain
+        vData.PageHeaderLabel.Text = pageHeaderLabelText
+    end)
+
+    if not vData.FirstTab then
+        vData.FirstTab = firstTab
+    end
+
+    return firstTab.Page
+end
+function uiLibrary.CreateDropdown(_, parent, text)
+    local fontData = {
+        Container = Instance.new("Frame"),
+    }
+
+    fontData.Container.Name = text .. "_DropdownContainer"
+    fontData.Container.Size = UDim2.new(1, 0, 0, 36)
+    fontData.Container.BackgroundColor3 = uiLibrary.Theme.ElementBackground
+    fontData.Container.BackgroundTransparency = 0.4
+    fontData.Container.ClipsDescendants = true
+    fontData.Container.Parent = parent
+    fontData.Corner = Instance.new("UICorner")
+    fontData.Corner.CornerRadius = UDim.new(0, 6)
+    fontData.Corner.Parent = fontData.Container
+    fontData.Header = Instance.new("TextButton")
+    fontData.Header.Name = "Header"
+    fontData.Header.Size = UDim2.new(1, 0, 0, 36)
+    fontData.Header.BackgroundTransparency = 1
+    fontData.Header.Text = "  " .. text
+    fontData.Header.TextColor3 = uiLibrary.Theme.TextMain
+    fontData.Header.TextSize = 14
+    fontData.Header.Font = Enum.Font.SourceSansSemibold
+    fontData.Header.TextXAlignment = Enum.TextXAlignment.Left
+    fontData.Header.Parent = fontData.Container
+    fontData.Arrow = Instance.new("TextLabel")
+    fontData.Arrow.Name = "Arrow"
+    fontData.Arrow.Size = UDim2.new(0, 36, 0, 36)
+    fontData.Arrow.Position = UDim2.new(1, -36, 0, 0)
+    fontData.Arrow.BackgroundTransparency = 1
+    fontData.Arrow.Text = ">"
+    fontData.Arrow.TextColor3 = uiLibrary.Theme.TextMuted
+    fontData.Arrow.TextSize = 13
+    fontData.Arrow.Font = Enum.Font.SourceSansBold
+    fontData.Arrow.Parent = fontData.Header
+    fontData.ItemsFrame = Instance.new("Frame")
+    fontData.ItemsFrame.Name = "Items"
+    fontData.ItemsFrame.Size = UDim2.new(1, -12, 1, -40)
+    fontData.ItemsFrame.Position = UDim2.new(0, 6, 0, 40)
+    fontData.ItemsFrame.BackgroundTransparency = 1
+    fontData.ItemsFrame.Parent = fontData.Container
+    fontData.Layout = Instance.new("UIListLayout")
+    fontData.Layout.Parent = fontData.ItemsFrame
+    fontData.Layout.SortOrder = Enum.SortOrder.LayoutOrder
+    fontData.Layout.Padding = UDim.new(0, 5)
+    fontData.Open = false
+    fontData.Header.MouseButton1Click:Connect(function()
+        fontData.Open = not fontData.Open
+
+        local option = fontData.Open and fontData.Layout.AbsoluteContentSize.Y + 45 or 36
+        local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+        TweenService:Create(fontData.Container, tweenInfo, {
+            Size = UDim2.new(1, 0, 0, option),
+        }):Play()
+        TweenService:Create(fontData.Arrow, tweenInfo, {
+            Rotation = not fontData.Open and 0 or 90,
+        }):Play()
+        task.wait(0.2)
+
+        if fontData.Open and parent:IsA("ScrollingFrame") then
+            parent.CanvasSize = UDim2.new(0, 0, 0, parent.UIListLayout.AbsoluteContentSize.Y + 10)
+        end
+    end)
+
+    return fontData.ItemsFrame
+end
+function uiLibrary.AddInput(
+    _,
+    parent,
+    text,
+    valueBoxText,
+    callback,
+    subLabelText,
+    placeholderTextFlag
+)
+    local fontData = {
+        Frame = Instance.new("Frame"),
+    }
+
+    fontData.Frame.Size = UDim2.new(1, 0, 0, 36)
+    fontData.Frame.BackgroundColor3 = uiLibrary.Theme.ElementBackground
+    fontData.Frame.BackgroundTransparency = 0.6
+    fontData.Frame.Parent = parent
+    fontData.Corner = Instance.new("UICorner")
+    fontData.Corner.CornerRadius = UDim.new(0, 6)
+    fontData.Corner.Parent = fontData.Frame
+
+    local instance = Instance
+    local sizeOption = subLabelText and 0.5
+
+    fontData.Label = instance.new("TextLabel")
+
+    local label = fontData.Label
+    local newResult = UDim2
+    local option = subLabelText and 2
+
+    label.Size = newResult.new(0, 180, sizeOption or 1, 0)
+
+    local secondaryLabel = fontData.Label
+    local secondaryNewResult = UDim2
+    local positionOption = option or 0
+
+    secondaryLabel.Position = secondaryNewResult.new(0, 10, 0, positionOption)
+    fontData.Label.BackgroundTransparency = 1
+    fontData.Label.Text = text
+    fontData.Label.TextColor3 = uiLibrary.Theme.TextMain
+    fontData.Label.TextSize = 13
+    fontData.Label.Font = Enum.Font.SourceSansBold
+    fontData.Label.TextXAlignment = Enum.TextXAlignment.Left
+    fontData.Label.Parent = fontData.Frame
+
+    if subLabelText then
+        fontData.SubLabel = Instance.new("TextLabel")
+        fontData.SubLabel.Size = UDim2.new(0, 220, 0.5, 0)
+        fontData.SubLabel.Position = UDim2.new(0, 10, 0.5, -2)
+        fontData.SubLabel.BackgroundTransparency = 1
+        fontData.SubLabel.Text = subLabelText
+        fontData.SubLabel.TextColor3 = uiLibrary.Theme.TextMuted
+        fontData.SubLabel.TextSize = 11
+        fontData.SubLabel.Font = Enum.Font.SourceSans
+        fontData.SubLabel.TextXAlignment = Enum.TextXAlignment.Left
+        fontData.SubLabel.Parent = fontData.Frame
+    end
+
+    fontData.ValueBox = Instance.new("TextBox")
+    fontData.ValueBox.Size = UDim2.new(0, 120, 0, 24)
+    fontData.ValueBox.Position = UDim2.new(1, -130, 0.5, -12)
+    fontData.ValueBox.BackgroundColor3 = uiLibrary.Theme.MainBackground
+    fontData.ValueBox.Text = tostring(valueBoxText or "")
+    fontData.ValueBox.TextColor3 = uiLibrary.Theme.TextMain
+    fontData.ValueBox.TextSize = 12
+    fontData.ValueBox.Font = Enum.Font.SourceSans
+    fontData.ValueBox.ClearTextOnFocus = true
+    fontData.ValueBox.PlaceholderText = placeholderTextFlag or ""
+    fontData.ValueBox.PlaceholderColor3 = uiLibrary.Theme.TextMuted
+    fontData.ValueBox.TextWrapped = true
+    fontData.ValueBox.Parent = fontData.Frame
+    fontData.CornerBox = Instance.new("UICorner")
+    fontData.CornerBox.CornerRadius = UDim.new(0, 4)
+    fontData.CornerBox.Parent = fontData.ValueBox
+    fontData.ValueBox.FocusLost:Connect(function()
+        local ValueBoxText = fontData.ValueBox.Text
+        local flag = ValueBoxText == ""
+
+        if flag then
+            flag = valueBoxText and valueBoxText ~= ""
+        end
+
+        if flag then
+            fontData.ValueBox.Text = tostring(valueBoxText)
+            ValueBoxText = valueBoxText
+        end
+
+        if callback then
+            callback(ValueBoxText)
+        end
+    end)
+
+    return fontData
+end
+function uiLibrary.AddNumInput(_, parent, text, displayValue, callback, subLabelText)
+    local fontData = {
+        Frame = Instance.new("Frame"),
+    }
+
+    fontData.Frame.Size = UDim2.new(1, 0, 0, 36)
+    fontData.Frame.BackgroundColor3 = uiLibrary.Theme.ElementBackground
+    fontData.Frame.BackgroundTransparency = 0.6
+    fontData.Frame.Parent = parent
+    fontData.Corner = Instance.new("UICorner")
+    fontData.Corner.CornerRadius = UDim.new(0, 6)
+    fontData.Corner.Parent = fontData.Frame
+
+    local instance = Instance
+    local sizeOption = subLabelText and 0.5
+
+    fontData.Label = instance.new("TextLabel")
+    fontData.Label.Size = UDim2.new(0, 180, sizeOption or 1, 0)
+
+    local t10Label = fontData.Label
+    local newResult = UDim2
+    local positionOption = not subLabelText and 0 or 2
+
+    t10Label.Position = newResult.new(0, 10, 0, positionOption)
+    fontData.Label.BackgroundTransparency = 1
+    fontData.Label.Text = text
+    fontData.Label.TextColor3 = uiLibrary.Theme.TextMain
+    fontData.Label.TextSize = 13
+    fontData.Label.Font = Enum.Font.SourceSansBold
+    fontData.Label.TextXAlignment = Enum.TextXAlignment.Left
+    fontData.Label.Parent = fontData.Frame
+
+    if subLabelText then
+        fontData.SubLabel = Instance.new("TextLabel")
+        fontData.SubLabel.Size = UDim2.new(0, 220, 0.5, 0)
+        fontData.SubLabel.Position = UDim2.new(0, 10, 0.5, -2)
+        fontData.SubLabel.BackgroundTransparency = 1
+        fontData.SubLabel.Text = subLabelText
+        fontData.SubLabel.TextColor3 = uiLibrary.Theme.TextMuted
+        fontData.SubLabel.TextSize = 11
+        fontData.SubLabel.Font = Enum.Font.SourceSans
+        fontData.SubLabel.TextXAlignment = Enum.TextXAlignment.Left
+        fontData.SubLabel.Parent = fontData.Frame
+    end
+
+    fontData.ValueBox = Instance.new("TextBox")
+    fontData.ValueBox.Size = UDim2.new(0, 55, 0, 24)
+    fontData.ValueBox.Position = UDim2.new(1, -65, 0.5, -12)
+    fontData.ValueBox.BackgroundColor3 = uiLibrary.Theme.MainBackground
+    fontData.ValueBox.Text = tostring(displayValue)
+    fontData.ValueBox.TextColor3 = uiLibrary.Theme.TextMain
+    fontData.ValueBox.TextSize = 12
+    fontData.ValueBox.Font = Enum.Font.SourceSansBold
+    fontData.ValueBox.Parent = fontData.Frame
+    fontData.CornerBox = Instance.new("UICorner")
+    fontData.CornerBox.CornerRadius = UDim.new(0, 4)
+    fontData.CornerBox.Parent = fontData.ValueBox
+    fontData.ValueBox.FocusLost:Connect(function()
+        local num = tonumber((fontData.ValueBox.Text:gsub("[^%d%.%-]", "")))
+
+        if num and callback then
+            fontData.ValueBox.Text = tostring(num)
+            callback(num)
+
+            return
+        end
+
+        if callback then
+            fontData.ValueBox.Text = tostring(displayValue)
+            callback(displayValue)
+        end
+    end)
+
+    return fontData
+end
+function uiLibrary.AddToggle(_, parent, text, callback)
+    local fontData = {
+        Frame = Instance.new("Frame"),
+    }
+
+    fontData.Frame.Name = text .. "_ToggleFrame"
+    fontData.Frame.Size = UDim2.new(1, 0, 0, 36)
+    fontData.Frame.BackgroundColor3 = uiLibrary.Theme.ElementBackground
+    fontData.Frame.BackgroundTransparency = 0.6
+    fontData.Frame.Parent = parent
+    fontData.Corner = Instance.new("UICorner")
+    fontData.Corner.CornerRadius = UDim.new(0, 6)
+    fontData.Corner.Parent = fontData.Frame
+    fontData.Label = Instance.new("TextLabel")
+    fontData.Label.Size = UDim2.new(1, -60, 1, 0)
+    fontData.Label.Position = UDim2.new(0, 10, 0, 0)
+    fontData.Label.BackgroundTransparency = 1
+    fontData.Label.Text = text
+    fontData.Label.TextColor3 = uiLibrary.Theme.TextMain
+    fontData.Label.TextSize = 13
+    fontData.Label.Font = Enum.Font.SourceSans
+    fontData.Label.TextXAlignment = Enum.TextXAlignment.Left
+    fontData.Label.Parent = fontData.Frame
+    fontData.SwitchBg = Instance.new("Frame")
+    fontData.SwitchBg.Name = "ToggleSwitchBg"
+    fontData.SwitchBg.Size = UDim2.new(0, 32, 0, 16)
+    fontData.SwitchBg.Position = UDim2.new(1, -45, 0.5, -8)
+    fontData.SwitchBg.BackgroundColor3 = uiLibrary.Theme.MainBackground
+    fontData.SwitchBg.Parent = fontData.Frame
+    fontData.SwitchCorner = Instance.new("UICorner")
+    fontData.SwitchCorner.CornerRadius = UDim.new(1, 0)
+    fontData.SwitchCorner.Parent = fontData.SwitchBg
+    fontData.SliderNode = Instance.new("Frame")
+    fontData.SliderNode.Name = "ToggleSliderNode"
+    fontData.SliderNode.Size = UDim2.new(0, 12, 0, 12)
+    fontData.SliderNode.Position = UDim2.new(0, 2, 0.5, -6)
+    fontData.SliderNode.BackgroundColor3 = uiLibrary.Theme.TextMuted
+    fontData.SliderNode.Parent = fontData.SwitchBg
+    fontData.NodeCorner = Instance.new("UICorner")
+    fontData.NodeCorner.CornerRadius = UDim.new(1, 0)
+    fontData.NodeCorner.Parent = fontData.SliderNode
+    fontData.ClickBtn = Instance.new("TextButton")
+    fontData.ClickBtn.Size = UDim2.new(1, 0, 1, 0)
+    fontData.ClickBtn.BackgroundTransparency = 1
+    fontData.ClickBtn.Text = ""
+    fontData.ClickBtn.Parent = fontData.Frame
+    fontData.IsToggled = false
+
+    function fontData.UpdateVisualState(_)
+        if fontData.IsToggled then
+            fontData.SwitchBg.BackgroundColor3 = uiLibrary.Theme.AccentColor
+            fontData.SliderNode.BackgroundColor3 = uiLibrary.Theme.TextMain
+
+            return
+        end
+
+        fontData.SwitchBg.BackgroundColor3 = uiLibrary.Theme.MainBackground
+        fontData.SliderNode.BackgroundColor3 = uiLibrary.Theme.TextMuted
+    end
+
+    fontData.ClickBtn.MouseButton1Click:Connect(function()
+        fontData.IsToggled = not fontData.IsToggled
+
+        local tweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+        if fontData.IsToggled then
+            game:GetService("TweenService")
+                :Create(fontData.SwitchBg, tweenInfo, {
+                    BackgroundColor3 = uiLibrary.Theme.AccentColor,
+                })
+                :Play()
+
+            local tweenService = game:GetService("TweenService")
+            local SliderNode = fontData.SliderNode
+            local dimensions = UDim2.new(1, -14, 0.5, -6)
+            local TextMain = uiLibrary.Theme.TextMain
+
+            tweenService
+                :Create(SliderNode, tweenInfo, {
+                    Position = dimensions,
+                    BackgroundColor3 = TextMain,
+                })
+                :Play()
+        else
+            game:GetService("TweenService")
+                :Create(fontData.SwitchBg, tweenInfo, {
+                    BackgroundColor3 = uiLibrary.Theme.MainBackground,
+                })
+                :Play()
+
+            local tweenService = game:GetService("TweenService")
+            local SliderNode = fontData.SliderNode
+            local dimensions = UDim2.new(0, 2, 0.5, -6)
+            local TextMuted = uiLibrary.Theme.TextMuted
+
+            tweenService
+                :Create(SliderNode, tweenInfo, {
+                    Position = dimensions,
+                    BackgroundColor3 = TextMuted,
+                })
+                :Play()
+        end
+
+        if callback then
+            callback(fontData.IsToggled)
+        end
+    end)
+
+    return fontData
+end
+function uiLibrary.AddLabel(_, parent, textLabel)
+    local TextLabel = Instance.new("TextLabel")
+
+    TextLabel.Size = UDim2.new(1, 0, 0, 24)
+    TextLabel.BackgroundTransparency = 1
+    TextLabel.Text = textLabel
+    TextLabel.TextColor3 = uiLibrary.Theme.TextMuted
+    TextLabel.TextSize = 13
+    TextLabel.Font = Enum.Font.SourceSansBold
+    TextLabel.TextXAlignment = Enum.TextXAlignment.Center
+    TextLabel.Parent = parent
+end
+function uiLibrary.AddSelector(
+    _,
+    parent,
+    text,
+    condition,
+    callback,
+    additionalArgument,
+    secondaryAdditionalArgument
+)
+    local fontData = {
+        Frame = Instance.new("Frame"),
+    }
+
+    fontData.Frame.Size = UDim2.new(1, 0, 0, 36)
+    fontData.Frame.BackgroundColor3 = uiLibrary.Theme.ElementBackground
+    fontData.Frame.BackgroundTransparency = 0.6
+    fontData.Frame.Parent = parent
+    fontData.Corner = Instance.new("UICorner")
+    fontData.Corner.CornerRadius = UDim.new(0, 6)
+    fontData.Corner.Parent = fontData.Frame
+    fontData.Label = Instance.new("TextLabel")
+    fontData.Label.Size = UDim2.new(0, 150, 1, 0)
+    fontData.Label.Position = UDim2.new(0, 10, 0, 0)
+    fontData.Label.BackgroundTransparency = 1
+    fontData.Label.Text = text
+    fontData.Label.TextColor3 = uiLibrary.Theme.TextMain
+    fontData.Label.TextSize = 13
+    fontData.Label.Font = Enum.Font.SourceSansBold
+    fontData.Label.TextXAlignment = Enum.TextXAlignment.Left
+    fontData.Label.Parent = fontData.Frame
+    fontData.SelectBtn = Instance.new("TextButton")
+    fontData.SelectBtn.Size = UDim2.new(0, 120, 0, 26)
+    fontData.SelectBtn.Position = UDim2.new(1, -130, 0.5, -13)
+    fontData.SelectBtn.BackgroundColor3 = uiLibrary.Theme.MainBackground
+    fontData.SelectBtn.Text = "Select Options"
+    fontData.SelectBtn.TextColor3 = uiLibrary.Theme.TextMuted
+    fontData.SelectBtn.TextSize = 12
+    fontData.SelectBtn.Font = Enum.Font.SourceSans
+    fontData.SelectBtn.Parent = fontData.Frame
+    fontData.SelectCorner = Instance.new("UICorner")
+    fontData.SelectCorner.CornerRadius = UDim.new(0, 6)
+    fontData.SelectCorner.Parent = fontData.SelectBtn
+    fontData.Popup = Instance.new("Frame")
+    fontData.Popup.Size = UDim2.new(0, 160, 0, 240)
+    fontData.Popup.Position = UDim2.new(1, -175, 0, 45)
+    fontData.Popup.BackgroundColor3 = uiLibrary.Theme.SidebarBackground
+    fontData.Popup.BorderSizePixel = 0
+    fontData.Popup.Visible = false
+    fontData.Popup.ZIndex = 50
+    fontData.Popup.Parent = vData.FrameMain
+    fontData.PopupCorner = Instance.new("UICorner")
+    fontData.PopupCorner.CornerRadius = UDim.new(0, 8)
+    fontData.PopupCorner.Parent = fontData.Popup
+    fontData.PopupStroke = Instance.new("UIStroke")
+    fontData.PopupStroke.Color = uiLibrary.Theme.MainBackground
+    fontData.PopupStroke.Thickness = 1
+    fontData.PopupStroke.Parent = fontData.Popup
+    fontData.SearchBox = Instance.new("TextBox")
+    fontData.SearchBox.Size = UDim2.new(1, -20, 0, 24)
+    fontData.SearchBox.Position = UDim2.new(0, 10, 0, 10)
+    fontData.SearchBox.BackgroundColor3 = uiLibrary.Theme.MainBackground
+    fontData.SearchBox.Text = ""
+    fontData.SearchBox.PlaceholderText = "Search"
+    fontData.SearchBox.PlaceholderColor3 = uiLibrary.Theme.TextMuted
+    fontData.SearchBox.TextColor3 = uiLibrary.Theme.TextMain
+    fontData.SearchBox.TextSize = 12
+    fontData.SearchBox.Font = Enum.Font.SourceSans
+    fontData.SearchBox.ZIndex = 51
+    fontData.SearchBox.Parent = fontData.Popup
+    fontData.SearchCorner = Instance.new("UICorner")
+    fontData.SearchCorner.CornerRadius = UDim.new(0, 4)
+    fontData.SearchCorner.Parent = fontData.SearchBox
+    fontData.Scroll = Instance.new("ScrollingFrame")
+    fontData.Scroll.Size = UDim2.new(1, -10, 1, -50)
+    fontData.Scroll.Position = UDim2.new(0, 5, 0, 45)
+    fontData.Scroll.BackgroundTransparency = 1
+    fontData.Scroll.BorderSizePixel = 0
+    fontData.Scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    fontData.Scroll.ScrollBarThickness = 2
+    fontData.Scroll.ScrollBarImageColor3 = uiLibrary.Theme.AccentColor
+    fontData.Scroll.ZIndex = 51
+    fontData.Scroll.Parent = fontData.Popup
+    fontData.Layout = Instance.new("UIListLayout")
+    fontData.Layout.Padding = UDim.new(0, 4)
+    fontData.Layout.Parent = fontData.Scroll
+    fontData.Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        fontData.Scroll.CanvasSize = UDim2.new(0, 0, 0, fontData.Layout.AbsoluteContentSize.Y)
+    end)
+
+    function fontData.UpdateSelectionText(_, textSizeData)
+        fontData.SelectBtn.TextWrapped = true
+
+        if type(textSizeData) == "table" then
+            if #textSizeData > 0 then
+                local vs = {}
+
+                for _, item in ipairs(textSizeData) do
+                    table.insert(vs, item)
+                end
+
+                table.sort(vs)
+
+                local selectBtnText = ""
+
+                for i, item in ipairs(vs) do
+                    selectBtnText ..= (i ~= 1 and ", " or "") .. item
+                end
+
+                fontData.SelectBtn.Text = selectBtnText
+                fontData.SelectBtn.TextColor3 = uiLibrary.Theme.TextMain
+                fontData.SelectBtn.TextSize = not (#selectBtnText > 22) and 12 or 10
+            else
+                fontData.SelectBtn.Text = "Select Options"
+                fontData.SelectBtn.TextColor3 = uiLibrary.Theme.TextMuted
+                fontData.SelectBtn.TextSize = 12
+            end
+        elseif textSizeData and textSizeData ~= "" then
+            fontData.SelectBtn.Text = tostring(textSizeData)
+            fontData.SelectBtn.TextColor3 = uiLibrary.Theme.TextMain
+            fontData.SelectBtn.TextSize = not (string.len((tostring(textSizeData))) > 22) and 12
+                or 10
+        else
+            fontData.SelectBtn.Text = "Select Options"
+            fontData.SelectBtn.TextColor3 = uiLibrary.Theme.TextMuted
+            fontData.SelectBtn.TextSize = 12
+        end
+
+        for _, child in pairs(fontData.Scroll:GetChildren()) do
+            if child:IsA("TextButton") then
+                local gsubResult = string.gsub(child.Text, "^%s+", "")
+                local SelectBtnText = fontData.SelectBtn.Text
+                local flag = false
+
+                if SelectBtnText == gsubResult then
+                    flag = true
+                else
+                    for match in string.gmatch(SelectBtnText, "([^,]+)") do
+                        if gsubResult == string.gsub(match, "^%s+", "") then
+                            flag = true
+
+                            break
+                        end
+                    end
+                end
+
+                if flag then
+                    child.BackgroundTransparency = 0.4
+                else
+                    child.BackgroundTransparency = 1
+                end
+            end
+        end
+    end
+    function fontData.Populate(_, data)
+        for _, child in pairs(fontData.Scroll:GetChildren()) do
+            if child:IsA("TextButton") then
+                child:Destroy()
+            end
+        end
+
+        local vs = {}
+
+        if additionalArgument == true then
+            table.insert(vs, "All")
+        end
+
+        if secondaryAdditionalArgument == true then
+            table.insert(vs, "Normal")
+        end
+
+        for _, item in ipairs(data) do
+            table.insert(vs, item)
+        end
+
+        for _, item in ipairs(vs) do
+            local capturedV = item
+            local TextButton = Instance.new("TextButton")
+
+            TextButton.Size = UDim2.new(1, -5, 0, 28)
+            TextButton.BackgroundColor3 = uiLibrary.Theme.AccentColor
+            TextButton.BackgroundTransparency = 1
+            TextButton.Text = "  " .. capturedV
+            TextButton.TextColor3 = uiLibrary.Theme.TextMain
+            TextButton.TextSize = 13
+            TextButton.Font = Enum.Font.SourceSans
+            TextButton.TextXAlignment = Enum.TextXAlignment.Left
+            TextButton.ZIndex = 52
+            TextButton.Parent = fontData.Scroll
+
+            local UICorner = Instance.new("UICorner")
+
+            UICorner.CornerRadius = UDim.new(0, 4)
+            UICorner.Parent = TextButton
+
+            local SelectBtnText = fontData.SelectBtn.Text
+            local flag = false
+
+            if SelectBtnText == capturedV then
+                flag = true
+            else
+                for match in string.gmatch(SelectBtnText, "([^,]+)") do
+                    if capturedV == string.gsub(match, "^%s+", "") then
+                        flag = true
+
+                        break
+                    end
+                end
+            end
+
+            if flag then
+                TextButton.BackgroundTransparency = 0.4
+            end
+
+            TextButton.MouseButton1Click:Connect(function()
+                if callback then
+                    callback(capturedV, fontData)
+
+                    return
+                end
+
+                if fontData.SelectBtn.Text == capturedV then
+                    fontData:UpdateSelectionText("")
+
+                    return
+                end
+
+                fontData:UpdateSelectionText(capturedV)
+            end)
+        end
+    end
+
+    if condition then
+        fontData:Populate(condition)
+    end
+
+    fontData.SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+        local searchQuery = string.lower(fontData.SearchBox.Text)
+
+        for _, child in pairs(fontData.Scroll:GetChildren()) do
+            if child:IsA("TextButton") then
+                if searchQuery == "" or string.find(string.lower(child.Text), searchQuery) then
+                    child.Visible = true
+                else
+                    child.Visible = false
+                end
+            end
+        end
+    end)
+
+    local userInputService = game:GetService("UserInputService")
+
+    fontData.SelectBtn.MouseButton1Click:Connect(function()
+        fontData.Popup.Visible = not fontData.Popup.Visible
+    end)
+    userInputService.InputBegan:Connect(function(input)
+        if
+            (
+                input.UserInputType == Enum.UserInputType.MouseButton1
+                or input.UserInputType == Enum.UserInputType.Touch
+            ) and fontData.Popup.Visible
+        then
+            local inputPosition = input.Position
+            local AbsolutePosition = fontData.Popup.AbsolutePosition
+            local AbsoluteSize = fontData.Popup.AbsoluteSize
+            local absolutePosition = fontData.SelectBtn.AbsolutePosition
+            local absoluteSize = fontData.SelectBtn.AbsoluteSize
+            local isAbsoluteSizeX = inputPosition.X >= AbsolutePosition.X
+
+            if isAbsoluteSizeX then
+                isAbsoluteSizeX = inputPosition.X <= AbsolutePosition.X + AbsoluteSize.X
+
+                if isAbsoluteSizeX then
+                    isAbsoluteSizeX = inputPosition.Y >= AbsolutePosition.Y
+                        and inputPosition.Y <= AbsolutePosition.Y + AbsoluteSize.Y
+                end
+            end
+
+            local isX = inputPosition.X >= absolutePosition.X
+
+            if isX then
+                isX = inputPosition.X <= absolutePosition.X + absoluteSize.X
+
+                if isX then
+                    isX = inputPosition.Y >= absolutePosition.Y
+                        and inputPosition.Y <= absolutePosition.Y + absoluteSize.Y
+                end
+            end
+
+            if not isAbsoluteSizeX and not isX then
+                fontData.Popup.Visible = false
+            end
+        end
+    end)
+
+    return fontData
+end
+function uiLibrary.AddButton(_, parent, buttonText)
+    local fontData = {
+        Button = Instance.new("TextButton"),
+    }
+
+    fontData.Button.Size = UDim2.new(1, 0, 0, 36)
+    fontData.Button.BackgroundColor3 = uiLibrary.Theme.ElementBackground
+    fontData.Button.BackgroundTransparency = 0.6
+    fontData.Button.Text = buttonText
+    fontData.Button.TextColor3 = uiLibrary.Theme.TextMain
+    fontData.Button.TextSize = 13
+    fontData.Button.Font = Enum.Font.SourceSansBold
+    fontData.Button.Parent = parent
+    fontData.Corner = Instance.new("UICorner")
+    fontData.Corner.CornerRadius = UDim.new(0, 6)
+    fontData.Corner.Parent = fontData.Button
+
+    return fontData.Button
+end
+for _, item in ipairs(vData.PageList) do
+    vData.CreatedPages[item] = uiLibrary:CreateTab(item)
+end
+vData.DiscordDrop = uiLibrary:CreateDropdown(vData.CreatedPages.Home, "Discord")
+vData.DiscordRow = Instance.new("Frame")
+vData.DiscordRow.Name = "DiscordInviteRow"
+vData.DiscordRow.Size = UDim2.new(1, 0, 0, 36)
+vData.DiscordRow.BackgroundColor3 = uiLibrary.Theme.ElementBackground
+vData.DiscordRow.BackgroundTransparency = 0.6
+vData.DiscordRow.Parent = vData.DiscordDrop
+vData.DiscordRowCorner = Instance.new("UICorner")
+vData.DiscordRowCorner.CornerRadius = UDim.new(0, 6)
+vData.DiscordRowCorner.Parent = vData.DiscordRow
+vData.DiscordLabel = Instance.new("TextLabel")
+vData.DiscordLabel.Size = UDim2.new(0, 150, 1, 0)
+vData.DiscordLabel.Position = UDim2.new(0, 10, 0, 0)
+vData.DiscordLabel.BackgroundTransparency = 1
+vData.DiscordLabel.Text = "Discord Invite"
+vData.DiscordLabel.TextColor3 = uiLibrary.Theme.TextMain
+vData.DiscordLabel.TextSize = 13
+vData.DiscordLabel.Font = Enum.Font.SourceSans
+vData.DiscordLabel.TextXAlignment = Enum.TextXAlignment.Left
+vData.DiscordLabel.Parent = vData.DiscordRow
+vData.CopyButton = Instance.new("TextButton")
+vData.CopyButton.Name = "CopyBtn"
+vData.CopyButton.Size = UDim2.new(0, 55, 0, 24)
+vData.CopyButton.Position = UDim2.new(1, -65, 0.5, -12)
+vData.CopyButton.BackgroundColor3 = uiLibrary.Theme.MainBackground
+vData.CopyButton.Text = "COPY"
+vData.CopyButton.TextColor3 = uiLibrary.Theme.TextMain
+vData.CopyButton.TextSize = 12
+vData.CopyButton.Font = Enum.Font.SourceSansBold
+vData.CopyButton.Parent = vData.DiscordRow
+vData.CopyCorner = Instance.new("UICorner")
+vData.CopyCorner.CornerRadius = UDim.new(0, 4)
+vData.CopyCorner.Parent = vData.CopyButton
+vData.CopyButton.MouseButton1Click:Connect(function()
+    local condition = setclipboard or toclipboard
+
+    if condition then
+        pcall(condition, "https://discord.gg/Q6SqhpEKGZ")
+
+        return
+    end
+
+    if request then
+        pcall(request, {
+            Url = "http://localhost:24892/copy",
+            Method = "POST",
+            Body = "https://discord.gg/Q6SqhpEKGZ",
+        })
+    end
+end)
+vData.LocalPlayerDrop = uiLibrary:CreateDropdown(vData.CreatedPages.Home, "LocalPlayer")
+vData.SpeedSlider = uiLibrary:AddNumInput(
+    vData.LocalPlayerDrop,
+    "Set Speed",
+    jsonencodeConfig.Speed,
+    function(speed)
+        jsonencodeConfig.Speed = speed
+        handler()
+    end
+)
+vData.WalkspeedToggle = uiLibrary:AddToggle(
+    vData.LocalPlayerDrop,
+    "Enable Speed",
+    function(speedEnabled)
+        jsonencodeConfig.SpeedEnabled = speedEnabled
+        handler()
+    end
+)
+vData.NoClipToggle = uiLibrary:AddToggle(vData.LocalPlayerDrop, "No Clip", function(noClipEnabled)
+    jsonencodeConfig.NoClipEnabled = noClipEnabled
+    handler()
+end)
+UserInputService.JumpRequest:Connect(function()
+    if jsonencodeConfig.InfiniteJumpEnabled and LocalPlayer.Character then
+        local Humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+
+        if Humanoid then
+            Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+vData.InfJumpToggle = uiLibrary:AddToggle(
+    vData.LocalPlayerDrop,
+    "Infinite Jump",
+    function(infiniteJumpEnabled)
+        jsonencodeConfig.InfiniteJumpEnabled = infiniteJumpEnabled
+        handler()
+
+        if not infiniteJumpEnabled and LocalPlayer.Character then
+            local Humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+
+            if Humanoid then
+                Humanoid:ChangeState(Enum.HumanoidStateType.Running)
+            end
+        end
+    end
+)
+vData.StealDrop = uiLibrary:CreateDropdown(vData.CreatedPages.Main, "Steal")
+uiLibrary:AddLabel(vData.StealDrop, "- [ Configs ] -")
+vData.StudSteal = uiLibrary:AddNumInput(
+    vData.StealDrop,
+    "Speed",
+    jsonencodeConfig.HopStud or 16,
+    function(hopStud)
+        jsonencodeConfig.HopStud = hopStud
+        handler()
+    end,
+    "Higher value = Faster, but increases rubberbanding\nExperiment which value is better for you."
+)
+vData.IgnoreStolenToggle = uiLibrary:AddToggle(
+    vData.StealDrop,
+    "Ignore Moving Egg",
+    function(ignoreStolen)
+        jsonencodeConfig.IgnoreStolen = ignoreStolen
+        handler()
+    end
+)
+uiLibrary:AddLabel(vData.StealDrop, "- [ By Names ] -")
+vData.EggsStealSelector = uiLibrary:AddSelector(
+    vData.StealDrop,
+    "Select Eggs",
+    {},
+    function(searchQuery, secondaryArgument)
+        jsonencodeConfig.SelectedEggsFilter = jsonencodeConfig.SelectedEggsFilter or {}
+
+        local find = table.find(jsonencodeConfig.SelectedEggsFilter, searchQuery)
+
+        if find then
+            table.remove(jsonencodeConfig.SelectedEggsFilter, find)
+        else
+            table.insert(jsonencodeConfig.SelectedEggsFilter, searchQuery)
+        end
+
+        handler()
+        secondaryArgument:UpdateSelectionText(jsonencodeConfig.SelectedEggsFilter)
+    end
+)
+vData.StealEggsRarityToggle = {}
+vData.StealEarnRateToggle = {}
+vData.StealEggsToggle = uiLibrary:AddToggle(
+    vData.StealDrop,
+    "Steal Eggs By Name",
+    function(stealEgg)
+        jsonencodeConfig.StealEgg = stealEgg
+        handler()
+
+        if stealEgg then
+            if jsonencodeConfig.StealEggRarity then
+                jsonencodeConfig.StealEggRarity = false
+
+                if vData.StealEggsRarityToggle and vData.StealEggsRarityToggle.SwitchBg then
+                    vData.StealEggsRarityToggle.IsToggled = false
+
+                    local SwitchBg = vData.StealEggsRarityToggle.SwitchBg
+
+                    TweenService
+                        :Create(SwitchBg, TweenInfo.new(0.15), {
+                            BackgroundColor3 = uiLibrary.Theme.MainBackground,
+                        })
+                        :Play()
+
+                    local tweenService = TweenService
+                    local SliderNode = vData.StealEggsRarityToggle.SliderNode
+                    local new = TweenInfo.new
+                    local Create = tweenService.Create
+                    local secondaryNew = new(0.15)
+                    local dimensions = UDim2.new(0, 2, 0.5, -6)
+                    local TextMuted = uiLibrary.Theme.TextMuted
+
+                    Create(tweenService, SliderNode, secondaryNew, {
+                        Position = dimensions,
+                        BackgroundColor3 = TextMuted,
+                    }):Play()
+                end
+            end
+
+            if jsonencodeConfig.StealEarnRate then
+                jsonencodeConfig.StealEarnRate = false
+
+                if vData.StealEarnRateToggle and vData.StealEarnRateToggle.SwitchBg then
+                    vData.StealEarnRateToggle.IsToggled = false
+
+                    local SwitchBg = vData.StealEarnRateToggle.SwitchBg
+
+                    TweenService
+                        :Create(SwitchBg, TweenInfo.new(0.15), {
+                            BackgroundColor3 = uiLibrary.Theme.MainBackground,
+                        })
+                        :Play()
+
+                    local tweenService = TweenService
+                    local SliderNode = vData.StealEarnRateToggle.SliderNode
+                    local new = TweenInfo.new
+                    local Create = tweenService.Create
+                    local secondaryNew = new(0.15)
+                    local dimensions = UDim2.new(0, 2, 0.5, -6)
+                    local TextMuted = uiLibrary.Theme.TextMuted
+
+                    Create(tweenService, SliderNode, secondaryNew, {
+                        Position = dimensions,
+                        BackgroundColor3 = TextMuted,
+                    }):Play()
+                end
+            end
+
+            handler()
+        end
+    end
+)
+uiLibrary:AddLabel(vData.StealDrop, "- [ By Rarities ] -")
+vData.RarityStealSelector = uiLibrary:AddSelector(
+    vData.StealDrop,
+    "Select Rarity",
+    {},
+    function(searchQuery, secondaryArgument)
+        local secondaryJsonencodeConfig = jsonencodeConfig
+        local SelectedRarityFilter = jsonencodeConfig.SelectedRarityFilter
+
+        if not SelectedRarityFilter then
+            SelectedRarityFilter = {}
+        end
+
+        secondaryJsonencodeConfig.SelectedRarityFilter = SelectedRarityFilter
+
+        local find = table.find(jsonencodeConfig.SelectedRarityFilter, searchQuery)
+
+        if find then
+            table.remove(jsonencodeConfig.SelectedRarityFilter, find)
+        else
+            table.insert(jsonencodeConfig.SelectedRarityFilter, searchQuery)
+        end
+
+        handler()
+        secondaryArgument:UpdateSelectionText(jsonencodeConfig.SelectedRarityFilter)
+    end
+)
+vData.StealEggsRarityToggle = uiLibrary:AddToggle(
+    vData.StealDrop,
+    "Steal Eggs By Rarity",
+    function(stealEggRarity)
+        jsonencodeConfig.StealEggRarity = stealEggRarity
+        handler()
+
+        if stealEggRarity then
+            if jsonencodeConfig.StealEgg then
+                jsonencodeConfig.StealEgg = false
+
+                if vData.StealEggsToggle and vData.StealEggsToggle.SwitchBg then
+                    vData.StealEggsToggle.IsToggled = false
+                    TweenService
+                        :Create(vData.StealEggsToggle.SwitchBg, TweenInfo.new(0.15), {
+                            BackgroundColor3 = uiLibrary.Theme.MainBackground,
+                        })
+                        :Play()
+
+                    local tweenService = TweenService
+                    local SliderNode = vData.StealEggsToggle.SliderNode
+                    local tweenInfo = TweenInfo.new(0.15)
+                    local dimensions = UDim2.new(0, 2, 0.5, -6)
+                    local Theme = uiLibrary.Theme
+                    local Create = tweenService.Create
+                    local TextMuted = Theme.TextMuted
+
+                    Create(tweenService, SliderNode, tweenInfo, {
+                        Position = dimensions,
+                        BackgroundColor3 = TextMuted,
+                    }):Play()
+                end
+            end
+
+            if jsonencodeConfig.StealEarnRate then
+                jsonencodeConfig.StealEarnRate = false
+
+                if vData.StealEarnRateToggle and vData.StealEarnRateToggle.SwitchBg then
+                    vData.StealEarnRateToggle.IsToggled = false
+                    TweenService
+                        :Create(vData.StealEarnRateToggle.SwitchBg, TweenInfo.new(0.15), {
+                            BackgroundColor3 = uiLibrary.Theme.MainBackground,
+                        })
+                        :Play()
+
+                    local tweenService = TweenService
+                    local SliderNode = vData.StealEarnRateToggle.SliderNode
+                    local tweenInfo = TweenInfo.new(0.15)
+                    local new = UDim2.new
+                    local Create = tweenService.Create
+                    local position = new(0, 2, 0.5, -6)
+                    local TextMuted = uiLibrary.Theme.TextMuted
+
+                    Create(tweenService, SliderNode, tweenInfo, {
+                        Position = position,
+                        BackgroundColor3 = TextMuted,
+                    }):Play()
+                end
+            end
+
+            handler()
+        end
+    end
+)
+uiLibrary:AddLabel(vData.StealDrop, "- [ By Earning Rate ] -")
+vData.RateSteal = uiLibrary:AddNumInput(
+    vData.StealDrop,
+    "$/sec",
+    jsonencodeConfig.EarnRate or 0,
+    function(earnRate)
+        jsonencodeConfig.EarnRate = earnRate
+        handler()
+    end,
+    "Steal >= input value\nSteal any name/rarity if $/s is satisfied."
+)
+vData.StealEarnRateToggle = uiLibrary:AddToggle(
+    vData.StealDrop,
+    "Steal Eggs By Earn Rate",
+    function(stealEarnRate)
+        jsonencodeConfig.StealEarnRate = stealEarnRate
+        handler()
+
+        if stealEarnRate then
+            if jsonencodeConfig.StealEgg then
+                jsonencodeConfig.StealEgg = false
+
+                if vData.StealEggsToggle and vData.StealEggsToggle.SwitchBg then
+                    vData.StealEggsToggle.IsToggled = false
+                    TweenService
+                        :Create(vData.StealEggsToggle.SwitchBg, TweenInfo.new(0.15), {
+                            BackgroundColor3 = uiLibrary.Theme.MainBackground,
+                        })
+                        :Play()
+
+                    local tweenService = TweenService
+                    local SliderNode = vData.StealEggsToggle.SliderNode
+                    local tweenInfo = TweenInfo.new(0.15)
+                    local dimensions = UDim2.new(0, 2, 0.5, -6)
+                    local TextMuted = uiLibrary.Theme.TextMuted
+
+                    tweenService
+                        :Create(SliderNode, tweenInfo, {
+                            Position = dimensions,
+                            BackgroundColor3 = TextMuted,
+                        })
+                        :Play()
+                end
+            end
+
+            if jsonencodeConfig.StealEggRarity then
+                jsonencodeConfig.StealEggRarity = false
+
+                if vData.StealEggsRarityToggle and vData.StealEggsRarityToggle.SwitchBg then
+                    vData.StealEggsRarityToggle.IsToggled = false
+                    TweenService
+                        :Create(vData.StealEggsRarityToggle.SwitchBg, TweenInfo.new(0.15), {
+                            BackgroundColor3 = uiLibrary.Theme.MainBackground,
+                        })
+                        :Play()
+
+                    local tweenService = TweenService
+                    local SliderNode = vData.StealEggsRarityToggle.SliderNode
+                    local tweenInfo = TweenInfo.new(0.15)
+                    local dimensions = UDim2.new(0, 2, 0.5, -6)
+                    local Create = tweenService.Create
+                    local TextMuted = uiLibrary.Theme.TextMuted
+
+                    Create(tweenService, SliderNode, tweenInfo, {
+                        Position = dimensions,
+                        BackgroundColor3 = TextMuted,
+                    }):Play()
+                end
+            end
+
+            handler()
+        end
+    end
+)
+vData.TreadmillDrop = uiLibrary:CreateDropdown(vData.CreatedPages.Main, "Treadmill")
+uiLibrary:AddLabel(vData.TreadmillDrop, "- [ Functions ] -")
+vData.TreadmillToggle = uiLibrary:AddToggle(
+    vData.TreadmillDrop,
+    "Run Treadmill",
+    function(treadmillToggleState)
+        jsonencodeConfig.TreadmillToggleState = treadmillToggleState
+        handler()
+    end
+)
+vData.InfestedDrop = uiLibrary:CreateDropdown(vData.CreatedPages.Main, "Infested")
+uiLibrary:AddLabel(vData.InfestedDrop, "- [ Functions ] -")
+vData.InfestedToggle = uiLibrary:AddToggle(
+    vData.InfestedDrop,
+    "Steal All Infested",
+    function(infestedState)
+        jsonencodeConfig.InfestedState = infestedState
+        handler()
+    end
+)
+vData.InfestedSubToggle = uiLibrary:AddToggle(
+    vData.InfestedDrop,
+    "Submit All Infested",
+    function(infestedSubmitState)
+        jsonencodeConfig.InfestedSubmitState = infestedSubmitState
+        handler()
+    end
+)
+vData.PlaceEggDrop = uiLibrary:CreateDropdown(vData.CreatedPages.Assist, "Place Egg")
+uiLibrary:AddLabel(vData.PlaceEggDrop, "- [ Options ] -")
+vData.EggsPlaceSelector = uiLibrary:AddSelector(
+    vData.PlaceEggDrop,
+    "Select Eggs",
+    {},
+    function(searchQuery, secondaryArgument)
+        local secondaryJsonencodeConfig = jsonencodeConfig
+        local SelectedEggPlace = jsonencodeConfig.SelectedEggPlace
+
+        if not SelectedEggPlace then
+            SelectedEggPlace = {}
+        end
+
+        secondaryJsonencodeConfig.SelectedEggPlace = SelectedEggPlace
+
+        local find = table.find(jsonencodeConfig.SelectedEggPlace, searchQuery)
+
+        if find then
+            table.remove(jsonencodeConfig.SelectedEggPlace, find)
+        else
+            table.insert(jsonencodeConfig.SelectedEggPlace, searchQuery)
+        end
+
+        handler()
+        secondaryArgument:UpdateSelectionText(jsonencodeConfig.SelectedEggPlace)
+    end
+)
+vData.RarityPlaceSelector = uiLibrary:AddSelector(
+    vData.PlaceEggDrop,
+    "Select Rarity",
+    {},
+    function(searchQuery, secondaryArgument)
+        local secondaryJsonencodeConfig = jsonencodeConfig
+        local SelectedEggRarityPlace = jsonencodeConfig.SelectedEggRarityPlace
+
+        if not SelectedEggRarityPlace then
+            SelectedEggRarityPlace = {}
+        end
+
+        secondaryJsonencodeConfig.SelectedEggRarityPlace = SelectedEggRarityPlace
+
+        local find = table.find(jsonencodeConfig.SelectedEggRarityPlace, searchQuery)
+
+        if find then
+            table.remove(jsonencodeConfig.SelectedEggRarityPlace, find)
+        else
+            table.insert(jsonencodeConfig.SelectedEggRarityPlace, searchQuery)
+        end
+
+        handler()
+        secondaryArgument:UpdateSelectionText(jsonencodeConfig.SelectedEggRarityPlace)
+    end
+)
+uiLibrary:AddLabel(vData.PlaceEggDrop, "- [ Functions ] -")
+vData.PlaceEggToggle = uiLibrary:AddToggle(
+    vData.PlaceEggDrop,
+    "Place Eggs By Name",
+    function(placeEggsState)
+        jsonencodeConfig.PlaceEggsState = placeEggsState
+        handler()
+    end
+)
+vData.PlaceEggRarityToggle = uiLibrary:AddToggle(
+    vData.PlaceEggDrop,
+    "Place Eggs By Rarity",
+    function(placeEggsRarityState)
+        jsonencodeConfig.PlaceEggsRarityState = placeEggsRarityState
+        handler()
+    end
+)
+vData.HatchEggDrop = uiLibrary:CreateDropdown(vData.CreatedPages.Assist, "Hatch Egg")
+uiLibrary:AddLabel(vData.HatchEggDrop, "- [ Options ] -")
+vData.EggsHatchSelector = uiLibrary:AddSelector(
+    vData.HatchEggDrop,
+    "Select Eggs",
+    {},
+    function(searchQuery, secondaryArgument)
+        local secondaryJsonencodeConfig = jsonencodeConfig
+        local SelectedEggHatch = jsonencodeConfig.SelectedEggHatch
+
+        if not SelectedEggHatch then
+            SelectedEggHatch = {}
+        end
+
+        secondaryJsonencodeConfig.SelectedEggHatch = SelectedEggHatch
+
+        local find = table.find(jsonencodeConfig.SelectedEggHatch, searchQuery)
+
+        if find then
+            table.remove(jsonencodeConfig.SelectedEggHatch, find)
+        else
+            table.insert(jsonencodeConfig.SelectedEggHatch, searchQuery)
+        end
+
+        handler()
+        secondaryArgument:UpdateSelectionText(jsonencodeConfig.SelectedEggHatch)
+    end
+)
+vData.RarityHatchSelector = uiLibrary:AddSelector(
+    vData.HatchEggDrop,
+    "Select Rarity",
+    {},
+    function(searchQuery, secondaryArgument)
+        local secondaryJsonencodeConfig = jsonencodeConfig
+        local SelectedEggRarityHatch = jsonencodeConfig.SelectedEggRarityHatch
+
+        if not SelectedEggRarityHatch then
+            SelectedEggRarityHatch = {}
+        end
+
+        secondaryJsonencodeConfig.SelectedEggRarityHatch = SelectedEggRarityHatch
+
+        local find = table.find(jsonencodeConfig.SelectedEggRarityHatch, searchQuery)
+
+        if find then
+            table.remove(jsonencodeConfig.SelectedEggRarityHatch, find)
+        else
+            table.insert(jsonencodeConfig.SelectedEggRarityHatch, searchQuery)
+        end
+
+        handler()
+        secondaryArgument:UpdateSelectionText(jsonencodeConfig.SelectedEggRarityHatch)
+    end
+)
+uiLibrary:AddLabel(vData.HatchEggDrop, "- [ Functions ] -")
+vData.HatchEggToggle = uiLibrary:AddToggle(
+    vData.HatchEggDrop,
+    "Hatch Eggs By Name",
+    function(hatchEggsState)
+        jsonencodeConfig.HatchEggsState = hatchEggsState
+        handler()
+    end
+)
+vData.HatchEggRarityToggle = uiLibrary:AddToggle(
+    vData.HatchEggDrop,
+    "Hatch Eggs By Rarity",
+    function(hatchEggsRarityState)
+        jsonencodeConfig.HatchEggsRarityState = hatchEggsRarityState
+        handler()
+    end
+)
+vData.EspDrop = uiLibrary:CreateDropdown(vData.CreatedPages.Misc, "ESP")
+uiLibrary:AddLabel(vData.EspDrop, "- [ Options ] -")
+vData.EspRaritySelector = uiLibrary:AddSelector(
+    vData.EspDrop,
+    "Select Rarity",
+    {},
+    function(searchQuery, secondaryArgument)
+        jsonencodeConfig.EspRarityFilter = jsonencodeConfig.EspRarityFilter or {}
+
+        local find = table.find(jsonencodeConfig.EspRarityFilter, searchQuery)
+
+        if find then
+            table.remove(jsonencodeConfig.EspRarityFilter, find)
+        else
+            table.insert(jsonencodeConfig.EspRarityFilter, searchQuery)
+        end
+
+        handler()
+        secondaryArgument:UpdateSelectionText(jsonencodeConfig.EspRarityFilter)
+    end
+)
+uiLibrary:AddLabel(vData.EspDrop, "- [ Functions ] -")
+vData.EspObjectsToggle = uiLibrary:AddToggle(
+    vData.EspDrop,
+    "ESP Owned Eggs",
+    function(espObjectsToggleState)
+        jsonencodeConfig.EspObjectsToggleState = espObjectsToggleState
+        handler()
+    end
+)
+vData.FpsDrop = uiLibrary:CreateDropdown(vData.CreatedPages.Misc, "FPS")
+uiLibrary:AddLabel(vData.FpsDrop, "- [ Options ] -")
+vData.FpsOptionSelector = uiLibrary:AddSelector(vData.FpsDrop, "Select FPS option", {
+    "Remove Other Plots",
+    "Remove All Pets",
+    "Remove All Eggs",
+    "Remove Other Eggs",
+    "Remove Other Treadmills",
+    "Smooth",
+}, function(searchQuery, secondaryArgument)
+    local secondaryJsonencodeConfig = jsonencodeConfig
+    local FpsOptionSelection = jsonencodeConfig.FpsOptionSelection
+
+    if not FpsOptionSelection then
+        FpsOptionSelection = {}
+    end
+
+    secondaryJsonencodeConfig.FpsOptionSelection = FpsOptionSelection
+
+    if type(jsonencodeConfig.FpsOptionSelection) ~= "table" then
+        jsonencodeConfig.FpsOptionSelection = {}
+    end
+
+    local find = table.find(jsonencodeConfig.FpsOptionSelection, searchQuery)
+
+    if find then
+        table.remove(jsonencodeConfig.FpsOptionSelection, find)
+    else
+        table.insert(jsonencodeConfig.FpsOptionSelection, searchQuery)
+    end
+
+    handler()
+    secondaryArgument:UpdateSelectionText(jsonencodeConfig.FpsOptionSelection)
+end)
+uiLibrary:AddLabel(vData.FpsDrop, "- [ Function ] -")
+vData.FpsBoostToggle = uiLibrary:AddToggle(vData.FpsDrop, "FPS Boost", function(fpsBoostToggleState)
+    jsonencodeConfig.FpsBoostToggleState = fpsBoostToggleState
+    handler()
+end)
+vData.ServerDrop = uiLibrary:CreateDropdown(vData.CreatedPages.Misc, "Server")
+uiLibrary:AddLabel(vData.ServerDrop, "- [ Functions ] -")
+vData.AntiAfkToggle = uiLibrary:AddToggle(vData.ServerDrop, "Anti-AFK", function(antiAfkToggleState)
+    jsonencodeConfig.AntiAfkToggleState = antiAfkToggleState
+    handler()
+end)
+vData.ExecuteToggle = uiLibrary:AddToggle(
+    vData.ServerDrop,
+    "Auto-Execute",
+    function(executeToggleState)
+        jsonencodeConfig.ExecuteToggleState = executeToggleState
+        handler()
+    end
+)
+uiLibrary:AddLabel(vData.ServerDrop, "- [ Hop Server ] -")
+uiLibrary:AddLabel(vData.ServerDrop, "- [ Options ] -")
+vData.HopSelector = uiLibrary:AddSelector(vData.ServerDrop, "Select Hop", {
+    "Low",
+    "High",
+    "Random",
+}, function(hopSelection, secondaryArgument)
+    if hopSelection == secondaryArgument.SelectBtn.Text then
+        jsonencodeConfig.HopSelection = ""
+    else
+        jsonencodeConfig.HopSelection = hopSelection
+    end
+
+    handler()
+    secondaryArgument:UpdateSelectionText(jsonencodeConfig.HopSelection)
+end)
+uiLibrary:AddLabel(vData.ServerDrop, "- [ Functions ] -")
+vData.OneHop = uiLibrary:AddButton(vData.ServerDrop, "Hop Once")
+vData.OneHop.MouseButton1Click:Connect(function()
+    local DecodeAPI = _G.DecodeAPI
+    local callback = DecodeAPI and DecodeAPI.HopOnce
+
+    if type(callback) == "function" then
+        task.spawn(function()
+            callback()
+        end)
+    end
+end)
+vData.EggWebhookDrop = uiLibrary:CreateDropdown(vData.CreatedPages.Webhook, "Stolen Egg")
+uiLibrary:AddLabel(vData.EggWebhookDrop, "- [ Configs ] -")
+vData.WebhoolURL = uiLibrary:AddInput(
+    vData.EggWebhookDrop,
+    "Input URL",
+    jsonencodeConfig.EggURL,
+    function(eggUrl)
+        jsonencodeConfig.EggURL = eggUrl
+        handler()
+    end,
+    nil,
+    "Input Webhook"
+)
+vData.UserHide = uiLibrary:AddToggle(vData.EggWebhookDrop, "Hide Username", function(hideUsername)
+    jsonencodeConfig.HideUsername = hideUsername
+    handler()
+end)
+vData.WebhookThreshold = uiLibrary:AddNumInput(
+    vData.EggWebhookDrop,
+    "Earning Rate",
+    jsonencodeConfig.EarningRate or 0,
+    function(earningRate)
+        jsonencodeConfig.EarningRate = earningRate
+        handler()
+    end,
+    "Above or Equal threshold will be sent\nInput - 0 to ignore threshold"
+)
+uiLibrary:AddLabel(vData.EggWebhookDrop, "- [ Functions ] -")
+vData.EggWEbToggle = uiLibrary:AddToggle(vData.EggWebhookDrop, "Send Egg Data", function(eggSend)
+    jsonencodeConfig.EggSend = eggSend
+    handler()
+end)
+vData.ConfigDrop = uiLibrary:CreateDropdown(vData.CreatedPages.Settings, "Config")
+uiLibrary:AddLabel(vData.ConfigDrop, "- [ Main Configuration ] -")
+vData.CopyMyConfigBtn = uiLibrary:AddButton(vData.ConfigDrop, "Copy My Config")
+vData.CopyMyConfigBtn.MouseButton1Click:Connect(function()
+    pcall(function()
+        local text = "Decode by ItzYumi/Save System/Steal an Egg/config.json"
+        local isfile = secondaryGetfenv.isfile
+        local readfile = secondaryGetfenv.readfile
+
+        if isfile then
+            isfile = readfile and isfile(text)
+        end
+
+        if isfile then
+            local displayValue = readfile(text)
+
+            if displayValue and displayValue ~= "" then
+                if callback then
+                    callback((tostring(displayValue)))
+
+                    if _G.PostMailboxTerminalAlert then
+                        _G.PostMailboxTerminalAlert(
+                            "Config",
+                            "Main config text copied to clipboard!",
+                            false
+                        )
+
+                        return
+                    end
+                elseif _G.PostMailboxTerminalAlert then
+                    _G.PostMailboxTerminalAlert(
+                        "Config",
+                        "Clipboard unsupported! Output sent to F9.",
+                        true
+                    )
+
+                    return
+                end
+            elseif _G.PostMailboxTerminalAlert then
+                _G.PostMailboxTerminalAlert(
+                    "Config Error",
+                    "Main config file is completely empty!",
+                    true
+                )
+
+                return
+            end
+        elseif _G.PostMailboxTerminalAlert then
+            _G.PostMailboxTerminalAlert(
+                "Config Error",
+                "Main config.json file does not exist yet!",
+                true
+            )
+        end
+    end)
+end)
+vData.DeleteMyConfigBtn = uiLibrary:AddButton(vData.ConfigDrop, "Delete My Config")
+vData.DeleteMyConfigBtn.MouseButton1Click:Connect(function()
+    pcall(function()
+        local text = "Decode by ItzYumi/Save System/Steal an Egg/config.json"
+        local isfile = secondaryGetfenv.isfile
+        local delfile = secondaryGetfenv.delfile
+
+        if isfile and isfile(text) then
+            if delfile then
+                delfile(text)
+
+                if _G.PostMailboxTerminalAlert then
+                    _G.PostMailboxTerminalAlert(
+                        "Config",
+                        "Successfully deleted!\nRestart the game to apply changes.",
+                        false
+                    )
+
+                    return
+                end
+            elseif _G.PostMailboxTerminalAlert then
+                _G.PostMailboxTerminalAlert(
+                    "Config",
+                    "Your executor doesn't support file deletion (delfile)!",
+                    true
+                )
+
+                return
+            end
+        elseif _G.PostMailboxTerminalAlert then
+            _G.PostMailboxTerminalAlert("Config", "Main config.json file does not exist!", true)
+        end
+    end)
+end)
+uiLibrary:AddLabel(vData.ConfigDrop, "- [ Setup Configuration ] -")
+
+local function handleData()
+    local conditions = {}
+
+    if
+        secondaryDataCallback
+        and not dataCallback("Decode by ItzYumi/Save System/Steal an Egg/Saved Configs/")
+    then
+        secondaryDataCallback("Decode by ItzYumi/Save System/Steal an Egg/Saved Configs/")
+    end
+
+    pcall(function()
+        local data = listfiles("Decode by ItzYumi/Save System/Steal an Egg/Saved Configs/")
+
+        for _, item in ipairs(data) do
+            local dataCondition = item:match("([^/\\]+)%.json$")
+
+            if dataCondition then
+                table.insert(conditions, dataCondition)
+            end
+        end
+    end)
+
+    return conditions
+end
+vData.CopySelector = uiLibrary:AddSelector(
+    vData.ConfigDrop,
+    "Select Config",
+    handleData(),
+    function(expectedMembership, secondaryArgument)
+        if expectedMembership == jsonencodeConfig.SelectedCopyConfig[1] then
+            jsonencodeConfig.SelectedCopyConfig = {}
+        else
+            jsonencodeConfig.SelectedCopyConfig = { expectedMembership }
+        end
+
+        handler()
+        secondaryArgument:UpdateSelectionText(jsonencodeConfig.SelectedCopyConfig)
+    end
+)
+vData.CopyConfigBtn = uiLibrary:AddButton(vData.ConfigDrop, "Copy Selected Config")
+vData.CopyConfigBtn.MouseButton1Click:Connect(function()
+    pcall(function()
+        local text = jsonencodeConfig.SelectedCopyConfig[1]
+
+        if not text or text == "" then
+            if _G.PostMailboxTerminalAlert then
+                _G.PostMailboxTerminalAlert("Config Error", "No configuration file selected!", true)
+            end
+
+            return
+        end
+
+        local assetPath = "Decode by ItzYumi"
+            .. "/Save System/Steal an Egg/Saved Configs/"
+            .. text
+            .. ".json"
+        local isfile = secondaryGetfenv.isfile
+        local readfile = secondaryGetfenv.readfile
+
+        if isfile and (readfile and isfile(assetPath)) then
+            local displayValue = readfile(assetPath)
+
+            if displayValue and displayValue ~= "" then
+                if callback then
+                    callback((tostring(displayValue)))
+
+                    if _G.PostMailboxTerminalAlert then
+                        _G.PostMailboxTerminalAlert(
+                            "Config",
+                            "Copied file contents to clipboard!",
+                            false
+                        )
+
+                        return
+                    end
+                elseif _G.PostMailboxTerminalAlert then
+                    _G.PostMailboxTerminalAlert(
+                        "Config",
+                        "Clipboard unsupported! Content printed to F9.",
+                        true
+                    )
+
+                    return
+                end
+            elseif _G.PostMailboxTerminalAlert then
+                _G.PostMailboxTerminalAlert("Config Error", "Selected file is empty inside!", true)
+
+                return
+            end
+        elseif _G.PostMailboxTerminalAlert then
+            _G.PostMailboxTerminalAlert("Config Error", "File could not be found on device!", true)
+        end
+    end)
+end)
+vData.DelConfigBtn = uiLibrary:AddButton(vData.ConfigDrop, "Delete Selected Config")
+vData.DelConfigBtn.MouseButton1Click:Connect(function()
+    pcall(function()
+        local text = jsonencodeConfig.SelectedCopyConfig[1]
+
+        if not text or text == "" then
+            if _G.PostMailboxTerminalAlert then
+                _G.PostMailboxTerminalAlert("Config Error", "No configuration file selected!", true)
+            end
+
+            return
+        end
+
+        local assetPath = "Decode by ItzYumi"
+            .. "/Save System/Steal an Egg/Saved Configs/"
+            .. text
+            .. ".json"
+        local isfile = secondaryGetfenv.isfile
+        local delfile = secondaryGetfenv.delfile
+
+        if isfile then
+            local secondaryIsfile = delfile
+
+            if delfile then
+                secondaryIsfile = isfile(assetPath)
+            end
+
+            isfile = secondaryIsfile
+        end
+
+        if isfile then
+            delfile(assetPath)
+            jsonencodeConfig.SelectedCopyConfig = {}
+            handler()
+
+            if vData.CopySelector and vData.CopySelector.Populate then
+                local CopySelector = vData.CopySelector
+                local data = { handleData() }
+
+                CopySelector:Populate(unpackValues(data))
+                vData.CopySelector:UpdateSelectionText(jsonencodeConfig.SelectedCopyConfig)
+            end
+
+            if _G.PostMailboxTerminalAlert then
+                _G.PostMailboxTerminalAlert(
+                    "Config",
+                    "Deleted file: " .. text .. ".json successfully!",
+                    false
+                )
+
+                return
+            end
+        elseif _G.PostMailboxTerminalAlert then
+            _G.PostMailboxTerminalAlert("Config Error", "File could not be found or deleted!", true)
+        end
+    end)
+end)
+vData.UseConfigBtn = uiLibrary:AddButton(vData.ConfigDrop, "Use Selected Config")
+vData.UseConfigBtn.MouseButton1Click:Connect(function()
+    pcall(function()
+        local text = jsonencodeConfig.SelectedCopyConfig[1]
+
+        if not text or text == "" then
+            if _G.PostMailboxTerminalAlert then
+                _G.PostMailboxTerminalAlert("Config Error", "No configuration file selected!", true)
+            end
+
+            return
+        end
+
+        local assetPath = "Decode by ItzYumi"
+            .. "/Save System/Steal an Egg/Saved Configs/"
+            .. text
+            .. ".json"
+        local isfile = secondaryGetfenv.isfile
+        local readfile = secondaryGetfenv.readfile
+        local secondaryIsfile = isfile
+        local writefile = secondaryGetfenv.writefile
+
+        if isfile then
+            secondaryIsfile = readfile
+
+            if readfile then
+                secondaryIsfile = writefile
+
+                if writefile then
+                    secondaryIsfile = isfile(assetPath)
+                end
+            end
+        end
+
+        if secondaryIsfile then
+            writefile(
+                "Decode by ItzYumi/Save System/Steal an Egg/config.json",
+                (readfile(assetPath))
+            )
+
+            if _G.PostMailboxTerminalAlert then
+                _G.PostMailboxTerminalAlert(
+                    "Config",
+                    "Config Applied! Restart the game to apply changes.",
+                    false
+                )
+
+                return
+            end
+        elseif _G.PostMailboxTerminalAlert then
+            _G.PostMailboxTerminalAlert("Config Error", "Selected file could not be found!", true)
+        end
+    end)
+end)
+uiLibrary:AddLabel(vData.ConfigDrop, "- [ Save Configuration ] -")
+vData.SaveFile = uiLibrary:AddInput(
+    vData.ConfigDrop,
+    "Input File Name",
+    jsonencodeConfig.InputConfigFile,
+    function(inputConfigFile)
+        jsonencodeConfig.InputConfigFile = inputConfigFile
+        handler()
+    end,
+    nil,
+    "File Name"
+)
+vData.SaveInput = uiLibrary:AddInput(
+    vData.ConfigDrop,
+    "Input Configuration",
+    jsonencodeConfig.InputConfig,
+    function(inputConfig)
+        jsonencodeConfig.InputConfig = inputConfig
+        handler()
+    end,
+    nil,
+    "Paste Config"
+)
+vData.SaveConfigBtn = uiLibrary:AddButton(vData.ConfigDrop, "Save Input Config")
+vData.SaveConfigBtn.MouseButton1Click:Connect(function()
+    pcall(function()
+        local ValueBoxText = vData.SaveFile.ValueBox.Text
+        local text = vData.SaveInput.ValueBox.Text
+
+        if ValueBoxText == "" or text == "" then
+            if _G.PostMailboxTerminalAlert then
+                _G.PostMailboxTerminalAlert(
+                    "Config Error",
+                    "File Name and Value cannot be empty!",
+                    true
+                )
+            end
+
+            return
+        end
+
+        local assetPath = "Decode by ItzYumi"
+            .. "/Save System/Steal an Egg/Saved Configs/"
+            .. ValueBoxText
+            .. ".json"
+
+        alternateCallback(assetPath, (tostring(text)))
+        jsonencodeConfig.InputConfig = ""
+        jsonencodeConfig.InputConfigFile = ""
+        vData.SaveInput.ValueBox.Text = ""
+        vData.SaveFile.ValueBox.Text = ""
+        handler()
+
+        if vData.CopySelector and vData.CopySelector.Populate then
+            local CopySelector = vData.CopySelector
+            local data = { handleData() }
+
+            CopySelector:Populate(unpackValues(data))
+        end
+
+        if _G.PostMailboxTerminalAlert then
+            _G.PostMailboxTerminalAlert(
+                "Config",
+                "Saved file: " .. ValueBoxText .. ".json successfully!",
+                false
+            )
+        end
+    end)
+end)
+task.spawn(function()
+    task.wait(0.1)
+
+    if jsonencodeConfig.SpeedEnabled and vData.WalkspeedToggle then
+        vData.WalkspeedToggle.IsToggled = true
+        vData.WalkspeedToggle.SwitchBg.BackgroundColor3 = uiLibrary.Theme.AccentColor
+        vData.WalkspeedToggle.SliderNode.Position = UDim2.new(1, -14, 0.5, -6)
+        vData.WalkspeedToggle.SliderNode.BackgroundColor3 = uiLibrary.Theme.TextMain
+    end
+
+    if jsonencodeConfig.NoClipEnabled and vData.NoClipToggle then
+        vData.NoClipToggle.IsToggled = true
+        vData.NoClipToggle.SwitchBg.BackgroundColor3 = uiLibrary.Theme.AccentColor
+        vData.NoClipToggle.SliderNode.Position = UDim2.new(1, -14, 0.5, -6)
+        vData.NoClipToggle.SliderNode.BackgroundColor3 = uiLibrary.Theme.TextMain
+    end
+
+    if jsonencodeConfig.InfiniteJumpEnabled and vData.InfJumpToggle then
+        vData.InfJumpToggle.IsToggled = true
+        vData.InfJumpToggle.SwitchBg.BackgroundColor3 = uiLibrary.Theme.AccentColor
+        vData.InfJumpToggle.SliderNode.Position = UDim2.new(1, -14, 0.5, -6)
+        vData.InfJumpToggle.SliderNode.BackgroundColor3 = uiLibrary.Theme.TextMain
+    end
+
+    if jsonencodeConfig.IgnoreStolen and vData.IgnoreStolenToggle then
+        vData.IgnoreStolenToggle.IsToggled = true
+        vData.IgnoreStolenToggle.SwitchBg.BackgroundColor3 = uiLibrary.Theme.AccentColor
+        vData.IgnoreStolenToggle.SliderNode.Position = UDim2.new(1, -14, 0.5, -6)
+        vData.IgnoreStolenToggle.SliderNode.BackgroundColor3 = uiLibrary.Theme.TextMain
+    end
+
+    if jsonencodeConfig.StealEgg and vData.StealEggsToggle then
+        vData.StealEggsToggle.IsToggled = true
+        vData.StealEggsToggle.SwitchBg.BackgroundColor3 = uiLibrary.Theme.AccentColor
+        vData.StealEggsToggle.SliderNode.Position = UDim2.new(1, -14, 0.5, -6)
+        vData.StealEggsToggle.SliderNode.BackgroundColor3 = uiLibrary.Theme.TextMain
+    end
+
+    if jsonencodeConfig.StealEggRarity and vData.StealEggsRarityToggle then
+        vData.StealEggsRarityToggle.IsToggled = true
+        vData.StealEggsRarityToggle.SwitchBg.BackgroundColor3 = uiLibrary.Theme.AccentColor
+        vData.StealEggsRarityToggle.SliderNode.Position = UDim2.new(1, -14, 0.5, -6)
+        vData.StealEggsRarityToggle.SliderNode.BackgroundColor3 = uiLibrary.Theme.TextMain
+    end
+
+    if jsonencodeConfig.StealEarnRate and vData.StealEarnRateToggle then
+        vData.StealEarnRateToggle.IsToggled = true
+        vData.StealEarnRateToggle.SwitchBg.BackgroundColor3 = uiLibrary.Theme.AccentColor
+        vData.StealEarnRateToggle.SliderNode.Position = UDim2.new(1, -14, 0.5, -6)
+        vData.StealEarnRateToggle.SliderNode.BackgroundColor3 = uiLibrary.Theme.TextMain
+    end
+
+    if jsonencodeConfig.AntiAfkToggleState and vData.AntiAfkToggle then
+        vData.AntiAfkToggle.IsToggled = true
+        vData.AntiAfkToggle.SwitchBg.BackgroundColor3 = uiLibrary.Theme.AccentColor
+        vData.AntiAfkToggle.SliderNode.Position = UDim2.new(1, -14, 0.5, -6)
+        vData.AntiAfkToggle.SliderNode.BackgroundColor3 = uiLibrary.Theme.TextMain
+    end
+
+    if jsonencodeConfig.ExecuteToggleState and vData.ExecuteToggle then
+        vData.ExecuteToggle.IsToggled = true
+        vData.ExecuteToggle.SwitchBg.BackgroundColor3 = uiLibrary.Theme.AccentColor
+        vData.ExecuteToggle.SliderNode.Position = UDim2.new(1, -14, 0.5, -6)
+        vData.ExecuteToggle.SliderNode.BackgroundColor3 = uiLibrary.Theme.TextMain
+    end
+
+    if jsonencodeConfig.SelectedEggsFilter then
+        vData.EggsStealSelector:UpdateSelectionText(jsonencodeConfig.SelectedEggsFilter)
+    end
+
+    if jsonencodeConfig.SelectedRarityFilter then
+        vData.RarityStealSelector:UpdateSelectionText(jsonencodeConfig.SelectedRarityFilter)
+    end
+
+    if jsonencodeConfig.HopSelection then
+        vData.HopSelector:UpdateSelectionText(jsonencodeConfig.HopSelection)
+    end
+
+    if jsonencodeConfig.TreadmillToggleState and vData.TreadmillToggle then
+        vData.TreadmillToggle.IsToggled = true
+        vData.TreadmillToggle.SwitchBg.BackgroundColor3 = uiLibrary.Theme.AccentColor
+        vData.TreadmillToggle.SliderNode.Position = UDim2.new(1, -14, 0.5, -6)
+        vData.TreadmillToggle.SliderNode.BackgroundColor3 = uiLibrary.Theme.TextMain
+    end
+
+    if
+        type(jsonencodeConfig.FpsOptionSelection) == "table"
+        and #jsonencodeConfig.FpsOptionSelection > 0
+    then
+        vData.FpsOptionSelector:UpdateSelectionText(jsonencodeConfig.FpsOptionSelection)
+    else
+        vData.FpsOptionSelector:UpdateSelectionText("None Selected")
+    end
+
+    if jsonencodeConfig.FpsBoostToggleState and vData.FpsBoostToggle then
+        vData.FpsBoostToggle.IsToggled = true
+        vData.FpsBoostToggle.SwitchBg.BackgroundColor3 = uiLibrary.Theme.AccentColor
+        vData.FpsBoostToggle.SliderNode.Position = UDim2.new(1, -14, 0.5, -6)
+        vData.FpsBoostToggle.SliderNode.BackgroundColor3 = uiLibrary.Theme.TextMain
+    end
+
+    if jsonencodeConfig.EspRarityFilter then
+        vData.EspRaritySelector:UpdateSelectionText(jsonencodeConfig.EspRarityFilter)
+    end
+
+    if jsonencodeConfig.EspObjectsToggleState and vData.EspObjectsToggle then
+        vData.EspObjectsToggle.IsToggled = true
+        vData.EspObjectsToggle.SwitchBg.BackgroundColor3 = uiLibrary.Theme.AccentColor
+        vData.EspObjectsToggle.SliderNode.Position = UDim2.new(1, -14, 0.5, -6)
+        vData.EspObjectsToggle.SliderNode.BackgroundColor3 = uiLibrary.Theme.TextMain
+    end
+
+    if jsonencodeConfig.SelectedEggPlace then
+        vData.EggsPlaceSelector:UpdateSelectionText(jsonencodeConfig.SelectedEggPlace)
+    end
+
+    if jsonencodeConfig.SelectedEggRarityPlace then
+        vData.RarityPlaceSelector:UpdateSelectionText(jsonencodeConfig.SelectedEggRarityPlace)
+    end
+
+    if jsonencodeConfig.PlaceEggsState and vData.PlaceEggToggle then
+        vData.PlaceEggToggle.IsToggled = true
+        vData.PlaceEggToggle.SwitchBg.BackgroundColor3 = uiLibrary.Theme.AccentColor
+        vData.PlaceEggToggle.SliderNode.Position = UDim2.new(1, -14, 0.5, -6)
+        vData.PlaceEggToggle.SliderNode.BackgroundColor3 = uiLibrary.Theme.TextMain
+    end
+
+    if jsonencodeConfig.PlaceEggsRarityState and vData.PlaceEggRarityToggle then
+        vData.PlaceEggRarityToggle.IsToggled = true
+        vData.PlaceEggRarityToggle.SwitchBg.BackgroundColor3 = uiLibrary.Theme.AccentColor
+        vData.PlaceEggRarityToggle.SliderNode.Position = UDim2.new(1, -14, 0.5, -6)
+        vData.PlaceEggRarityToggle.SliderNode.BackgroundColor3 = uiLibrary.Theme.TextMain
+    end
+
+    if jsonencodeConfig.SelectedEggHatch then
+        vData.EggsHatchSelector:UpdateSelectionText(jsonencodeConfig.SelectedEggHatch)
+    end
+
+    if jsonencodeConfig.SelectedEggRarityHatch then
+        vData.RarityHatchSelector:UpdateSelectionText(jsonencodeConfig.SelectedEggRarityHatch)
+    end
+
+    if jsonencodeConfig.HatchEggsState and vData.HatchEggToggle then
+        vData.HatchEggToggle.IsToggled = true
+        vData.HatchEggToggle.SwitchBg.BackgroundColor3 = uiLibrary.Theme.AccentColor
+        vData.HatchEggToggle.SliderNode.Position = UDim2.new(1, -14, 0.5, -6)
+        vData.HatchEggToggle.SliderNode.BackgroundColor3 = uiLibrary.Theme.TextMain
+    end
+
+    if jsonencodeConfig.HatchEggsRarityState and vData.HatchEggRarityToggle then
+        vData.HatchEggRarityToggle.IsToggled = true
+        vData.HatchEggRarityToggle.SwitchBg.BackgroundColor3 = uiLibrary.Theme.AccentColor
+        vData.HatchEggRarityToggle.SliderNode.Position = UDim2.new(1, -14, 0.5, -6)
+        vData.HatchEggRarityToggle.SliderNode.BackgroundColor3 = uiLibrary.Theme.TextMain
+    end
+
+    if jsonencodeConfig.InfestedState and vData.InfestedToggle then
+        vData.InfestedToggle.IsToggled = true
+        vData.InfestedToggle.SwitchBg.BackgroundColor3 = uiLibrary.Theme.AccentColor
+        vData.InfestedToggle.SliderNode.Position = UDim2.new(1, -14, 0.5, -6)
+        vData.InfestedToggle.SliderNode.BackgroundColor3 = uiLibrary.Theme.TextMain
+    end
+
+    if jsonencodeConfig.InfestedSubmitState and vData.InfestedSubToggle then
+        vData.InfestedSubToggle.IsToggled = true
+        vData.InfestedSubToggle.SwitchBg.BackgroundColor3 = uiLibrary.Theme.AccentColor
+        vData.InfestedSubToggle.SliderNode.Position = UDim2.new(1, -14, 0.5, -6)
+        vData.InfestedSubToggle.SliderNode.BackgroundColor3 = uiLibrary.Theme.TextMain
+    end
+
+    if jsonencodeConfig.HideUsername and vData.UserHide then
+        vData.UserHide.IsToggled = true
+        vData.UserHide.SwitchBg.BackgroundColor3 = uiLibrary.Theme.AccentColor
+        vData.UserHide.SliderNode.Position = UDim2.new(1, -14, 0.5, -6)
+        vData.UserHide.SliderNode.BackgroundColor3 = uiLibrary.Theme.TextMain
+    end
+
+    if jsonencodeConfig.EggSend and vData.EggWEbToggle then
+        vData.EggWEbToggle.IsToggled = true
+        vData.EggWEbToggle.SwitchBg.BackgroundColor3 = uiLibrary.Theme.AccentColor
+        vData.EggWEbToggle.SliderNode.Position = UDim2.new(1, -14, 0.5, -6)
+        vData.EggWEbToggle.SliderNode.BackgroundColor3 = uiLibrary.Theme.TextMain
+    end
+end)
+task.spawn(function()
+    local result = handleResult()
+    local secondaryResult = secondaryHandleResult()
+
+    if vData.EggsStealSelector and vData.EggsStealSelector.Populate then
+        pcall(function()
+            vData.EggsStealSelector:Populate(result)
+        end)
+    end
+
+    if vData.RarityStealSelector and vData.RarityStealSelector.Populate then
+        pcall(function()
+            vData.RarityStealSelector:Populate(secondaryResult)
+        end)
+    end
+
+    if vData.EspRaritySelector and vData.EspRaritySelector.Populate then
+        pcall(function()
+            vData.EspRaritySelector:Populate(secondaryResult)
+        end)
+    end
+
+    if vData.EggsPlaceSelector and vData.EggsPlaceSelector.Populate then
+        pcall(function()
+            vData.EggsPlaceSelector:Populate(result)
+        end)
+    end
+
+    if vData.RarityPlaceSelector and vData.RarityPlaceSelector.Populate then
+        pcall(function()
+            vData.RarityPlaceSelector:Populate(secondaryResult)
+        end)
+    end
+
+    if vData.EggsHatchSelector and vData.EggsHatchSelector.Populate then
+        pcall(function()
+            vData.EggsHatchSelector:Populate(result)
+        end)
+    end
+
+    if vData.RarityHatchSelector and vData.RarityHatchSelector.Populate then
+        pcall(function()
+            vData.RarityHatchSelector:Populate(secondaryResult)
+        end)
+    end
+end)
+vData.CloseTweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+vData.ExitModal = Instance.new("Frame")
+vData.ExitModal.Name = "ExitConfirmation"
+vData.ExitModal.Size = UDim2.new(0, 320, 0, 200)
+vData.ExitModal.Position = UDim2.new(0.5, -160, 0.5, -100)
+vData.ExitModal.BackgroundColor3 = uiLibrary.Theme.SidebarBackground
+vData.ExitModal.BackgroundTransparency = 0.05
+vData.ExitModal.BorderSizePixel = 0
+vData.ExitModal.Visible = false
+vData.ExitModal.ZIndex = 10
+vData.ExitModal.Parent = vData.FrameMain
+vData.ModalCorner = Instance.new("UICorner")
+vData.ModalCorner.CornerRadius = UDim.new(0, 12)
+vData.ModalCorner.Parent = vData.ExitModal
+vData.ModalStroke = Instance.new("UIStroke")
+vData.ModalStroke.Color = uiLibrary.Theme.AccentColor
+vData.ModalStroke.Thickness = 1
+vData.ModalStroke.Parent = vData.ExitModal
+vData.WarnIcon = Instance.new("TextLabel")
+vData.WarnIcon.Size = UDim2.new(1, 0, 0, 40)
+vData.WarnIcon.Position = UDim2.new(0, 0, 0, 15)
+vData.WarnIcon.BackgroundTransparency = 1
+vData.WarnIcon.Text = "\226\154\160\239\184\143"
+vData.WarnIcon.TextSize = 28
+vData.WarnIcon.ZIndex = 11
+vData.WarnIcon.Parent = vData.ExitModal
+vData.ConfirmHeader = Instance.new("TextLabel")
+vData.ConfirmHeader.Size = UDim2.new(1, 0, 0, 25)
+vData.ConfirmHeader.Position = UDim2.new(0, 0, 0, 60)
+vData.ConfirmHeader.BackgroundTransparency = 1
+vData.ConfirmHeader.Text = "Exit Confirmation"
+vData.ConfirmHeader.TextColor3 = uiLibrary.Theme.TextMain
+vData.ConfirmHeader.TextSize = 16
+vData.ConfirmHeader.Font = Enum.Font.SourceSansBold
+vData.ConfirmHeader.ZIndex = 11
+vData.ConfirmHeader.Parent = vData.ExitModal
+vData.ConfirmDesc = Instance.new("TextLabel")
+vData.ConfirmDesc.Size = UDim2.new(1, -40, 0, 35)
+vData.ConfirmDesc.Position = UDim2.new(0, 20, 0, 85)
+vData.ConfirmDesc.BackgroundTransparency = 1
+vData.ConfirmDesc.Text =
+    "Are you sure you want to close the UI?\nYou won't be able to re-open in this session."
+vData.ConfirmDesc.TextColor3 = uiLibrary.Theme.TextMuted
+vData.ConfirmDesc.TextSize = 13
+vData.ConfirmDesc.Font = Enum.Font.SourceSans
+vData.ConfirmDesc.TextWrapped = true
+vData.ConfirmDesc.ZIndex = 11
+vData.ConfirmDesc.Parent = vData.ExitModal
+vData.YesBtn = Instance.new("TextButton")
+vData.YesBtn.Name = "YesButton"
+vData.YesBtn.Size = UDim2.new(0, 125, 0, 35)
+vData.YesBtn.Position = UDim2.new(0, 25, 1, -50)
+vData.YesBtn.BackgroundColor3 = uiLibrary.Theme.ElementBackground
+vData.YesBtn.Text = "Yes"
+vData.YesBtn.TextColor3 = uiLibrary.Theme.TextMain
+vData.YesBtn.TextSize = 14
+vData.YesBtn.Font = Enum.Font.SourceSansBold
+vData.YesBtn.ZIndex = 11
+vData.YesBtn.Parent = vData.ExitModal
+vData.YesCorner = Instance.new("UICorner")
+vData.YesCorner.CornerRadius = UDim.new(0, 6)
+vData.YesCorner.Parent = vData.YesBtn
+vData.NoBtn = Instance.new("TextButton")
+vData.NoBtn.Name = "NoButton"
+vData.NoBtn.Size = UDim2.new(0, 125, 0, 35)
+vData.NoBtn.Position = UDim2.new(1, -150, 1, -50)
+vData.NoBtn.BackgroundColor3 = uiLibrary.Theme.ElementBackground
+vData.NoBtn.Text = "No"
+vData.NoBtn.TextColor3 = uiLibrary.Theme.TextMain
+vData.NoBtn.TextSize = 14
+vData.NoBtn.Font = Enum.Font.SourceSansBold
+vData.NoBtn.ZIndex = 11
+vData.NoBtn.Parent = vData.ExitModal
+vData.NoCorner = Instance.new("UICorner")
+vData.NoCorner.CornerRadius = UDim.new(0, 6)
+vData.NoCorner.Parent = vData.NoBtn
+vData.CloseButton.MouseButton1Click:Connect(function()
+    vData.ExitModal.Size = UDim2.new(0, 0, 0, 0)
+    vData.ExitModal.Position = UDim2.new(0.5, 0, 0.5, 0)
+    vData.ExitModal.Visible = true
+
+    local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+    local tweenService = TweenService
+    local ExitModal = vData.ExitModal
+    local dimensions = UDim2.new(0, 320, 0, 200)
+    local secondaryDimensions = UDim2.new(0.5, -160, 0.5, -100)
+
+    tweenService
+        :Create(ExitModal, tweenInfo, {
+            Size = dimensions,
+            Position = secondaryDimensions,
+        })
+        :Play()
+end)
+vData.NoBtn.MouseButton1Click:Connect(function()
+    local tween = TweenService:Create(vData.ExitModal, vData.CloseTweenInfo, {
+        Size = UDim2.new(0, 0, 0, 0),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+    })
+
+    tween:Play()
+    tween.Completed:Connect(function()
+        vData.ExitModal.Visible = false
+    end)
+end)
+vData.YesBtn.MouseButton1Click:Connect(function()
+    vData.ScreenGui:Destroy()
+end)
+
+function uiLibrary.Init(_)
+    if vData.FirstTab then
+        vData.FirstTab.Page.Visible = true
+        vData.FirstTab.Button.BackgroundTransparency = 0.8
+        vData.FirstTab.Button.TextColor3 = uiLibrary.Theme.TextMain
+    end
+end
+if _G.PostMailboxTerminalAlert then
+    _G.PostMailboxTerminalAlert("Decode", "UI Loaded", false)
+end
+print("Decode: UI Loaded")
+uiLibrary:Init()
+return uiLibrary
