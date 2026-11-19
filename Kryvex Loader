@@ -472,13 +472,8 @@ local function OpenKryvexHubLoader()
 
     local scripts = {
         {"Muscle Legends", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/Kryvexpublic.txt"},
-        {"Murder Mystery 2", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/message%202.txt"},
-        {"Steal A Brainrot Duels", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_Duels.txt"},
-        {"Steal A Brainrot", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_Kryvex_Hub_Sab.txt"},
         {"Sell A Lemons", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_Rayfield_Sell_a_Lemon.lua_2.txt"},
-        {"Blox Fruits", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_blox_fruits.txt"},
         {"+1 Speed Monkey Escape", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_1.txt"},
-        {"Blade Ball", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_Blade_ball.txt"},
         {"Survive A Million Monkeys", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_Monkey.txt"},
         {"Evade", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_evade.txt"},
         {"Lumber Tycoon 2", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_limber_tycon_2.txt"},
