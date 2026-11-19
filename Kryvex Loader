@@ -1,0 +1,943 @@
+--[[
+    Kryvex - Loader
+    by Wozzy @wozzylaco
+    (Ultimate Halloween & Animation Update)
+]]
+local KeySystem = {}
+KeySystem.__index = KeySystem
+
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local MarketplaceService = game:GetService("MarketplaceService")
+local UserInputService = game:GetService("UserInputService")
+local Player = Players.LocalPlayer
+
+local isVerifying = false
+local lastClickTime = 0
+local clickCooldown = 1
+
+-- TEMA DEĞİŞKENLERİ
+local SelectedThemeColor = Color3.fromRGB(220, 20, 20)
+local SelectedThemeName = "Crimson"
+local IsRainbow = false
+local IsHalloween = false
+
+local function ValidateKey(inputKey, validKeys)
+    for _, validKey in pairs(validKeys) do
+        if inputKey == validKey then
+            return true
+        end
+    end
+    return false
+end
+
+local function Create(className, properties, parent)
+    local instance = Instance.new(className)
+    for property, value in pairs(properties) do
+        instance[property] = value
+    end
+    if parent then
+        instance.Parent = parent
+    end
+    return instance
+end
+
+-- =======================================================
+-- YUMUŞAK BİLDİRİM SİSTEMİ
+-- =======================================================
+local function ShowNotification(text)
+    local parentGui = RunService:IsStudio() and Player.PlayerGui or (gethui and gethui() or game:GetService("CoreGui"))
+    local NotifyGui = parentGui:FindFirstChild("KryvexNotifyGui")
+    if not NotifyGui then
+        NotifyGui = Create("ScreenGui", {Name = "KryvexNotifyGui", ZIndexBehavior = Enum.ZIndexBehavior.Sibling}, parentGui)
+    end
+
+    local NotifyFrame = Create("Frame", {
+        Size = UDim2.new(0, 280, 0, 45),
+        Position = UDim2.new(0.5, -140, 0.8, 50),
+        BackgroundColor3 = Color3.fromRGB(20, 20, 25), 
+        BorderSizePixel = 0,
+        Name = "Notify"
+    }, NotifyGui)
+    Create("UICorner", {CornerRadius = UDim.new(0, 8)}, NotifyFrame)
+    local stroke = Create("UIStroke", {Color = SelectedThemeColor, Thickness = 1.5}, NotifyFrame)
+
+    local IconCircle = Create("Frame", {
+        Size = UDim2.new(0, 24, 0, 24),
+        Position = UDim2.new(0, 5, 0.5, -12),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0
+    }, NotifyFrame)
+    Create("UIStroke", {Color = SelectedThemeColor, Thickness = 2}, IconCircle)
+    Create("UICorner", {CornerRadius = UDim.new(1, 0)}, IconCircle)
+    
+    Create("TextLabel", {
+        Text = "✓",
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Font = Enum.Font.GothamBold,
+        TextSize = 12,
+        TextColor3 = SelectedThemeColor,
+    }, IconCircle)
+
+    Create("TextLabel", {
+        Text = text,
+        Size = UDim2.new(1, -50, 1, 0),
+        Position = UDim2.new(0, 40, 0, 0),
+        BackgroundTransparency = 1,
+        Font = Enum.Font.GothamBold,
+        TextSize = 12,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextXAlignment = Enum.TextXAlignment.Left,
+    }, NotifyFrame)
+
+    TweenService:Create(NotifyFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Position = UDim2.new(0.5, -140, 0.85, 0)
+    }):Play()
+
+    task.wait(2.5)
+
+    TweenService:Create(NotifyFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+        Position = UDim2.new(0.5, -140, 0.8, 50),
+        BackgroundTransparency = 1
+    }):Play()
+    task.wait(0.4)
+    NotifyFrame:Destroy()
+end
+
+-- =======================================================
+-- TEMA SEÇİM EKRANI (Sadece Renkler Dönüyor)
+-- =======================================================
+local function OpenThemeSelector(onComplete)
+    local parentGui = RunService:IsStudio() and Player.PlayerGui or (gethui and gethui() or game:GetService("CoreGui"))
+    
+    local ThemeGui = Create("ScreenGui", {ZIndexBehavior = Enum.ZIndexBehavior.Sibling, IgnoreGuiInset = true, Name = "ThemeSelectorGui"}, parentGui)
+    
+    local Backdrop = Create("Frame", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+        BackgroundTransparency = 0.6,
+        BorderSizePixel = 0
+    }, ThemeGui)
+
+    local MainFrame = Create("Frame", {
+        Size = UDim2.new(0, 700, 0, 500),
+        Position = UDim2.new(0.5, -350, 0.5, -250),
+        BackgroundColor3 = Color3.fromRGB(15, 15, 18),
+        BorderSizePixel = 0,
+        ClipsDescendants = true
+    }, ThemeGui)
+    Create("UICorner", {CornerRadius = UDim.new(0, 16)}, MainFrame)
+    local MainFrameStroke = Create("UIStroke", {Color = Color3.fromRGB(50, 50, 60), Thickness = 1.5}, MainFrame)
+
+    MainFrame.Size = UDim2.new(0, 0, 0, 0)
+    TweenService:Create(MainFrame, TweenInfo.new(0.6, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = UDim2.new(0, 700, 0, 500)}):Play()
+
+    Create("TextLabel", {
+        Text = "Choose your theme",
+        Size = UDim2.new(1, 0, 0, 40),
+        Position = UDim2.new(0, 0, 0, 25),
+        BackgroundTransparency = 1,
+        Font = Enum.Font.GothamBlack,
+        TextSize = 22,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+    }, MainFrame)
+    
+    Create("TextLabel", {
+        Text = "Select a look for Kryvex Hub. You can change it later any time.",
+        Size = UDim2.new(1, 0, 0, 20),
+        Position = UDim2.new(0, 0, 0, 55),
+        BackgroundTransparency = 1,
+        Font = Enum.Font.Gotham,
+        TextSize = 13,
+        TextColor3 = Color3.fromRGB(150, 150, 150),
+    }, MainFrame)
+
+    local Themes = {
+        {Name = "Crimson", Desc = "Deep dark red", Color = Color3.fromRGB(220, 20, 20), IsRainbow = false, IsHallow = false},
+        {Name = "Obsidian Violet", Desc = "Deep night purple", Color = Color3.fromRGB(150, 50, 255), IsRainbow = false, IsHallow = false},
+        {Name = "Azure", Desc = "Cold blue", Color = Color3.fromRGB(0, 120, 255), IsRainbow = false, IsHallow = false},
+        {Name = "Gold", Desc = "Shiny yellow", Color = Color3.fromRGB(255, 215, 0), IsRainbow = false, IsHallow = false},
+        {Name = "Rainbow", Desc = "Animated colors", Color = Color3.fromRGB(255, 0, 0), IsRainbow = true, IsHallow = false},
+        {Name = "Halloween", Desc = "Spooky season", Color = Color3.fromRGB(255, 100, 0), IsRainbow = false, IsHallow = true}
+    }
+
+    local Grid = Create("Frame", {
+        Size = UDim2.new(1, -40, 0, 350),
+        Position = UDim2.new(0, 20, 0, 90),
+        BackgroundTransparency = 1
+    }, MainFrame)
+    Create("UIGridLayout", {CellSize = UDim2.new(0.5, -10, 0, 100), CellPadding = UDim2.new(0, 20, 0, 20), SortOrder = Enum.SortOrder.LayoutOrder}, Grid)
+
+    local SelectedFrame = nil
+
+    for i, themeData in ipairs(Themes) do
+        local Btn = Create("TextButton", {
+            BackgroundColor3 = Color3.fromRGB(25, 25, 30),
+            BorderSizePixel = 0,
+            Text = "",
+            ClipsDescendants = true,
+            AutoButtonColor = false
+        }, Grid)
+        Create("UICorner", {CornerRadius = UDim.new(0, 8)}, Btn)
+        local stroke = Create("UIStroke", {Color = Color3.fromRGB(40, 40, 45), Thickness = 1}, Btn)
+
+        local ColorBar = Create("Frame", {
+            Size = UDim2.new(0, 8, 1, 0),
+            BackgroundColor3 = themeData.Color,
+            BorderSizePixel = 0
+        }, Btn)
+        Create("UICorner", {CornerRadius = UDim.new(0, 8)}, ColorBar)
+        
+        local DotsFrame = Create("Frame", {
+            Size = UDim2.new(0, 40, 0, 15),
+            Position = UDim2.new(1, -50, 0.5, -7.5),
+            BackgroundTransparency = 1
+        }, Btn)
+        local dot1 = Create("Frame", {Size = UDim2.new(0, 8, 0, 8), Position = UDim2.new(0, 0, 0.5, -4), BackgroundColor3 = themeData.Color, BorderSizePixel = 0}, DotsFrame)
+        Create("UICorner", {CornerRadius = UDim.new(1, 0)}, dot1)
+        local dot2 = Create("Frame", {Size = UDim2.new(0, 8, 0, 8), Position = UDim2.new(0, 12, 0.5, -4), BackgroundColor3 = themeData.Color, BorderSizePixel = 0, BackgroundTransparency = 0.5}, DotsFrame)
+        Create("UICorner", {CornerRadius = UDim.new(1, 0)}, dot2)
+        local dot3 = Create("Frame", {Size = UDim2.new(0, 8, 0, 8), Position = UDim2.new(0, 24, 0.5, -4), BackgroundColor3 = themeData.Color, BorderSizePixel = 0, BackgroundTransparency = 0.8}, DotsFrame)
+        Create("UICorner", {CornerRadius = UDim.new(1, 0)}, dot3)
+
+        Create("TextLabel", {
+            Text = themeData.Name,
+            Size = UDim2.new(1, -60, 0, 20),
+            Position = UDim2.new(0, 20, 0, 20),
+            BackgroundTransparency = 1,
+            Font = Enum.Font.GothamBold,
+            TextSize = 14,
+            TextColor3 = Color3.fromRGB(255, 255, 255),
+            TextXAlignment = Enum.TextXAlignment.Left
+        }, Btn)
+
+        Create("TextLabel", {
+            Text = themeData.Desc,
+            Size = UDim2.new(1, -60, 0, 15),
+            Position = UDim2.new(0, 20, 0, 40),
+            BackgroundTransparency = 1,
+            Font = Enum.Font.Gotham,
+            TextSize = 11,
+            TextColor3 = Color3.fromRGB(150, 150, 150),
+            TextXAlignment = Enum.TextXAlignment.Left
+        }, Btn)
+
+        if themeData.IsHallow then
+            Create("TextLabel", {
+                Text = "🎃",
+                Size = UDim2.new(0, 30, 0, 30),
+                Position = UDim2.new(1, -40, 0, 10),
+                BackgroundTransparency = 1,
+                Font = Enum.Font.GothamBold,
+                TextSize = 20
+            }, Btn)
+        end
+
+        -- RENK DÖNGÜSÜ (Sadece Gökkuşağı için)
+        if themeData.IsRainbow then
+            task.spawn(function()
+                local hue = 0
+                while Btn.Parent do
+                    hue = (hue + 0.02) % 1
+                    local rainbowColor = Color3.fromHSV(hue, 1, 1)
+                    ColorBar.BackgroundColor3 = rainbowColor
+                    dot1.BackgroundColor3 = rainbowColor
+                    dot2.BackgroundColor3 = rainbowColor
+                    dot3.BackgroundColor3 = rainbowColor
+                    task.wait(0.05)
+                end
+            end)
+        end
+
+        Btn.MouseEnter:Connect(function() 
+            TweenService:Create(stroke, TweenInfo.new(0.3, Enum.EasingStyle.Sine), {Color = Color3.fromRGB(100, 100, 100)}):Play()
+            TweenService:Create(Btn, TweenInfo.new(0.3, Enum.EasingStyle.Sine), {BackgroundColor3 = Color3.fromRGB(35, 35, 40)}):Play()
+        end)
+        
+        Btn.MouseLeave:Connect(function() 
+            if SelectedFrame ~= Btn then 
+                TweenService:Create(stroke, TweenInfo.new(0.3, Enum.EasingStyle.Sine), {Color = Color3.fromRGB(40, 40, 45)}):Play()
+                TweenService:Create(Btn, TweenInfo.new(0.3, Enum.EasingStyle.Sine), {BackgroundColor3 = Color3.fromRGB(25, 25, 30)}):Play()
+            end 
+        end)
+
+        Btn.MouseButton1Click:Connect(function()
+            if SelectedFrame then
+                local oldStroke = SelectedFrame:FindFirstChildOfClass("UIStroke")
+                if oldStroke then oldStroke.Color = Color3.fromRGB(40, 40, 45) end
+            end
+            SelectedFrame = Btn
+            stroke.Color = themeData.Color
+            
+            SelectedThemeColor = themeData.Color
+            SelectedThemeName = themeData.Name
+            IsRainbow = themeData.IsRainbow or false
+            IsHalloween = themeData.IsHallow or false
+
+            local originalColor = Btn.BackgroundColor3
+            TweenService:Create(Btn, TweenInfo.new(0.3, Enum.EasingStyle.Sine), {BackgroundColor3 = themeData.Color:Lerp(Color3.new(1,1,1), 0.8)}):Play()
+            task.wait(0.3)
+            TweenService:Create(Btn, TweenInfo.new(0.4, Enum.EasingStyle.Sine), {BackgroundColor3 = originalColor}):Play()
+
+            task.wait(0.4)
+            TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0)}):Play()
+            task.wait(0.3)
+            ThemeGui:Destroy()
+            onComplete()
+        end)
+    end
+end
+
+-- =======================================================
+-- KRYVEX HUB - LOADER MENU
+-- =======================================================
+local function OpenKryvexHubLoader()
+    local parentGui = RunService:IsStudio() and Player.PlayerGui or 
+       (gethui and gethui() or game:GetService("CoreGui"))
+
+    local LoaderGui = Create("ScreenGui", {
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+        IgnoreGuiInset = true,
+        Name = "KryvexHubLoaderGui"
+    }, parentGui)
+
+    local LoaderFrame = Create("Frame", {
+        Size = UDim2.new(0, 480, 0, 550),
+        Position = UDim2.new(0.5, -240, 0.5, -275),
+        BackgroundColor3 = Color3.fromRGB(15, 12, 12),
+        Visible = true,
+        Active = true,
+        Draggable = true,
+        ClipsDescendants = true,
+        Name = "LoaderFrame"
+    }, LoaderGui)
+
+    Create("UICorner", {CornerRadius = UDim.new(0, 12)}, LoaderFrame)
+    local MainStroke = Create("UIStroke", {Color = SelectedThemeColor, Thickness = 2}, LoaderFrame)
+
+    task.spawn(function()
+        local h = 0
+        while LoaderGui.Parent do
+            if IsRainbow then
+                h = (h + 0.02) % 1
+                MainStroke.Color = Color3.fromHSV(h, 1, 1)
+            else
+                MainStroke.Color = SelectedThemeColor
+            end
+            task.wait(0.05)
+        end
+    end)
+
+    local Header = Create("Frame", {
+        Size = UDim2.new(1, 0, 0, 60),
+        BackgroundColor3 = Color3.fromRGB(20, 15, 15),
+        BorderSizePixel = 0,
+        Name = "Header"
+    }, LoaderFrame)
+    Create("UICorner", {CornerRadius = UDim.new(0, 12)}, Header)
+
+    local HeaderLine = Create("Frame", {
+        Size = UDim2.new(1, 0, 0, 2),
+        Position = UDim2.new(0, 0, 1, -2),
+        BackgroundColor3 = SelectedThemeColor,
+        BorderSizePixel = 0
+    }, Header)
+
+    if IsRainbow then
+        task.spawn(function()
+            local h = 0
+            while LoaderGui.Parent do
+                h = (h + 0.02) % 1
+                HeaderLine.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
+                task.wait(0.05)
+            end
+        end)
+    end
+
+    local Title = Create("TextLabel", {
+        Text = "Kryvex Hub Loader",
+        Size = UDim2.new(1, -130, 1, 0),
+        Position = UDim2.new(0, 55, 0, 0),
+        BackgroundTransparency = 1,
+        Font = Enum.Font.GothamBold,
+        TextSize = 18,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextXAlignment = Enum.TextXAlignment.Left,
+    }, Header)
+
+    local LoaderMinBtn = Create("TextButton", {
+        Text = "-", Font = Enum.Font.GothamBlack, TextSize = 20, TextColor3 = Color3.fromRGB(255, 255, 255),
+        BackgroundColor3 = Color3.fromRGB(200, 150, 50), Size = UDim2.new(0, 26, 0, 26), Position = UDim2.new(1, -65, 0.5, -13), BorderSizePixel = 0
+    }, Header)
+    Create("UICorner", {CornerRadius = UDim.new(0, 6)}, LoaderMinBtn)
+
+    local LoaderCloseBtn = Create("TextButton", {
+        Text = "X", Font = Enum.Font.GothamBlack, TextSize = 14, TextColor3 = Color3.fromRGB(255, 255, 255),
+        BackgroundColor3 = Color3.fromRGB(221, 0, 0), Size = UDim2.new(0, 26, 0, 26), Position = UDim2.new(1, -32, 0.5, -13), BorderSizePixel = 0
+    }, Header)
+    Create("UICorner", {CornerRadius = UDim.new(0, 6)}, LoaderCloseBtn)
+
+    local LoaderMinimized = Create("TextButton", {
+        Text = "KRYVEX", Font = Enum.Font.GothamBlack, TextSize = 14, TextColor3 = Color3.fromRGB(255, 255, 255),
+        BackgroundColor3 = SelectedThemeColor, Size = UDim2.new(0, 90, 0, 90), Position = UDim2.new(0, 50, 0, 50), BorderSizePixel = 0, Visible = false
+    }, LoaderGui)
+    Create("UICorner", {CornerRadius = UDim.new(1, 0)}, LoaderMinimized)
+    Create("UIStroke", {Color = Color3.fromRGB(255, 150, 150), Thickness = 2}, LoaderMinimized)
+
+    local dragging, dragInput, dragStart, startPos
+    LoaderFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true; dragStart = input.Position; startPos = LoaderFrame.Position
+            input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
+        end
+    end)
+    LoaderFrame.InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            LoaderFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    LoaderMinBtn.MouseButton1Click:Connect(function()
+        LoaderFrame.Visible = false; LoaderMinimized.Visible = true
+    end)
+    LoaderMinimized.MouseButton1Click:Connect(function()
+        LoaderMinimized.Visible = false; LoaderFrame.Visible = true
+    end)
+    LoaderCloseBtn.MouseButton1Click:Connect(function()
+        LoaderGui:Destroy()
+    end)
+
+    local SearchFrame = Create("Frame", {
+        Size = UDim2.new(1, -30, 0, 40), Position = UDim2.new(0, 15, 0, 75),
+        BackgroundColor3 = Color3.fromRGB(25, 20, 20), BorderSizePixel = 0
+    }, LoaderFrame)
+    Create("UICorner", {CornerRadius = UDim.new(0, 8)}, SearchFrame)
+    Create("UIStroke", {Color = Color3.fromRGB(50, 40, 40), Thickness = 1}, SearchFrame)
+
+    local SearchBox = Create("TextBox", {
+        Size = UDim2.new(1, -20, 1, 0), Position = UDim2.new(0, 10, 0, 0),
+        BackgroundTransparency = 1, Font = Enum.Font.Gotham, TextSize = 14, TextColor3 = Color3.fromRGB(255, 255, 255),
+        PlaceholderText = "Search scripts...", PlaceholderColor3 = Color3.fromRGB(120, 120, 120), TextXAlignment = Enum.TextXAlignment.Left
+    }, SearchFrame)
+
+    local ScrollContainer = Create("ScrollingFrame", {
+        Size = UDim2.new(1, -30, 1, -135), Position = UDim2.new(0, 15, 0, 125),
+        BackgroundTransparency = 1, CanvasSize = UDim2.new(0, 0, 0, 0),
+        ScrollBarThickness = 3, ScrollBarImageColor3 = SelectedThemeColor, BorderSizePixel = 0
+    }, LoaderFrame)
+    Create("UIListLayout", {HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder}, ScrollContainer)
+    Create("UIPadding", {PaddingTop = UDim.new(0, 5)}, ScrollContainer)
+
+    local function CreateScriptBtn(name, scriptURL)
+        local btn = Create("TextButton", {Size = UDim2.new(1, -10, 0, 50), BackgroundColor3 = Color3.fromRGB(25, 20, 20), Text = "", BorderSizePixel = 0, AutoButtonColor = false}, ScrollContainer)
+        Create("UICorner", {CornerRadius = UDim.new(0, 8)}, btn)
+        local btnStroke = Create("UIStroke", {Color = Color3.fromRGB(45, 35, 35), Thickness = 1}, btn)
+
+        Create("TextLabel", {
+            Size = UDim2.new(1, -60, 1, 0), Position = UDim2.new(0, 15, 0, 0), BackgroundTransparency = 1,
+            Text = name, Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = Color3.fromRGB(255, 255, 255), TextXAlignment = Enum.TextXAlignment.Left
+        }, btn)
+
+        local playBtn = Create("Frame", {Size = UDim2.new(0, 32, 0, 32), Position = UDim2.new(1, -42, 0.5, -16), BackgroundColor3 = SelectedThemeColor, BackgroundTransparency = 0.2}, btn)
+        Create("UICorner", {CornerRadius = UDim.new(0, 6)}, playBtn)
+        Create("ImageLabel", {Size = UDim2.new(0, 14, 0, 14), Position = UDim2.new(0.5, -7, 0.5, -7), BackgroundTransparency = 1, Image = "rbxassetid://6031094678", ImageColor3 = Color3.fromRGB(255, 255, 255)}, playBtn)
+
+        btn.MouseEnter:Connect(function() 
+            TweenService:Create(btn, TweenInfo.new(0.25, Enum.EasingStyle.Sine), {BackgroundColor3 = Color3.fromRGB(35, 25, 25)}):Play()
+            if not IsRainbow then
+                TweenService:Create(btnStroke, TweenInfo.new(0.25, Enum.EasingStyle.Sine), {Color = SelectedThemeColor}):Play() 
+            end
+        end)
+        btn.MouseLeave:Connect(function() 
+            TweenService:Create(btn, TweenInfo.new(0.25, Enum.EasingStyle.Sine), {BackgroundColor3 = Color3.fromRGB(25, 20, 20)}):Play()
+            if not IsRainbow then
+                TweenService:Create(btnStroke, TweenInfo.new(0.25, Enum.EasingStyle.Sine), {Color = Color3.fromRGB(45, 35, 35)}):Play() 
+            end
+        end)
+
+        btn.MouseButton1Click:Connect(function()
+            local shrink = TweenService:Create(LoaderFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0)})
+            shrink:Play()
+            shrink.Completed:Connect(function()
+                LoaderGui:Destroy()
+                pcall(function() loadstring(game:HttpGet(scriptURL))() end)
+            end)
+        end)
+        return btn, name
+    end
+
+    local scripts = {
+        {"Muscle Legends", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/Kryvexpublic.txt"},
+        {"Murder Mystery 2", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/message%202.txt"},
+        {"Steal A Brainrot Duels", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_Duels.txt"},
+        {"Steal A Brainrot", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_Kryvex_Hub_Sab.txt"},
+        {"Sell A Lemons", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_Rayfield_Sell_a_Lemon.lua_2.txt"},
+        {"Blox Fruits", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_blox_fruits.txt"},
+        {"+1 Speed Monkey Escape", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_1.txt"},
+        {"Blade Ball", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_Blade_ball.txt"},
+        {"Survive A Million Monkeys", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_Monkey.txt"},
+        {"Evade", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_evade.txt"},
+        {"Lumber Tycoon 2", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_limber_tycon_2.txt"},
+        {"Legends Of Speed", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_Kryvex_Hub_WindUI_Optimized.lua.txt"},
+        {"Ninja Legends", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_Kryvex_Hub_NinjaLegends_WindUI.lua.txt"},
+        {"Anime Dice", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_Anime_dice.txt"}
+    }
+
+    local allButtons = {}
+    for _, scriptData in ipairs(scripts) do
+        local btn, scriptName = CreateScriptBtn(scriptData[1], scriptData[2])
+        table.insert(allButtons, {Button = btn, Name = scriptName})
+    end
+    local layout = ScrollContainer:FindFirstChildOfClass("UIListLayout")
+    ScrollContainer.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
+
+    SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+        local searchText = string.lower(SearchBox.Text)
+        for _, item in ipairs(allButtons) do
+            item.Button.Visible = (searchText == "" or string.find(string.lower(item.Name), searchText)) and true or false
+        end
+    end)
+
+    LoaderFrame.Size = UDim2.new(0, 0, 0, 0)
+    TweenService:Create(LoaderFrame, TweenInfo.new(0.7, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+        Size = UDim2.new(0, 480, 0, 550)
+    }):Play()
+end
+
+-- =======================================================
+-- KRYVEX KEY SYSTEM (Orijinal Tasarım - Sadece Renkler Akıcı)
+-- =======================================================
+function KeySystem:CreateKeySystem(Config)
+    local Keys = Config.Keys or {"", "", ""}
+    local MainScriptCallback = Config.MainScriptCallback or function(success) end
+    local DiscordLink = "https://discord.gg/prVF5TY5W"
+    
+    local RedColor = SelectedThemeColor 
+    local WhiteColor = Color3.fromRGB(255, 255, 255)
+    local LightRed = SelectedThemeColor:Lerp(Color3.fromRGB(255,255,255), 0.5)
+    local DarkBg = Color3.fromRGB(15, 10, 12)
+    local PanelBg = Color3.fromRGB(22, 15, 18)
+    
+    local KContainerSize = UDim2.new(0, 750, 0, 430) 
+
+    local KeySystemGui = Create("ScreenGui", {
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling, IgnoreGuiInset = true, Name = "KeySystemGui"
+    }, RunService:IsStudio() and Player.PlayerGui or (gethui and gethui() or game:GetService("CoreGui")))
+
+    local KeyContainer = Create("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = DarkBg, BorderSizePixel = 0,
+        Position = UDim2.new(0.5, 0, 0.5, 0), Size = KContainerSize, Active = true, Name = "KeyContainer", ClipsDescendants = true 
+    }, KeySystemGui)
+
+    Create("UICorner", {CornerRadius = UDim.new(0, 15)}, KeyContainer)
+    local MainStroke = Create("UIStroke", {Color = RedColor, Thickness = 1.5}, KeyContainer)
+
+    -- YUMUŞAK RENK GEÇİŞLİ PARLAMA
+    task.spawn(function()
+        while KeySystemGui.Parent do
+            if IsRainbow then
+                local h, s, v = MainStroke.Color:ToHSV()
+                h = (h + 0.02) % 1 -- Dönüş hızı artırıldı
+                MainStroke.Color = Color3.fromHSV(h, 1, 1)
+                task.wait(0.05)
+            else
+                TweenService:Create(MainStroke, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {Color = LightRed, Thickness = 2}):Play(); task.wait(1.5)
+                TweenService:Create(MainStroke, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {Color = RedColor, Thickness = 1.5}):Play(); task.wait(1.5)
+                TweenService:Create(MainStroke, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {Color = WhiteColor, Thickness = 2}):Play(); task.wait(1.5)
+                TweenService:Create(MainStroke, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {Color = Color3.fromRGB(200, 150, 150), Thickness = 1.5}):Play(); task.wait(1.5)
+            end
+        end
+    end)
+
+    -- ARKA PLAN SÜSLEMELERİ (HALLOWEEN İSE)
+    local StarContainer = Create("Frame", {
+        Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, ZIndex = 1, ClipsDescendants = true
+    }, KeyContainer)
+
+    task.spawn(function()
+        while KeySystemGui.Parent do
+            local particleText = IsHalloween and (math.random(1,2) == 1 and "🎃" or "👻") or "☄️"
+            local meteor = Create("TextLabel", {
+                Text = particleText,
+                Size = UDim2.new(0, math.random(15, 30), 0, math.random(15, 30)),
+                Position = UDim2.new(1, 20, math.random(5, 95)/100, 0),
+                BackgroundTransparency = 1,
+                TextTransparency = math.random(60, 85)/100,
+                Font = Enum.Font.GothamBold,
+                ZIndex = 1,
+            }, StarContainer)
+
+            local moveTime = math.random(5, 9)
+            TweenService:Create(meteor, TweenInfo.new(moveTime, Enum.EasingStyle.Linear), {
+                Position = UDim2.new(0, -20, math.random(5, 95)/100 + 0.1, 0), 
+                TextTransparency = 1
+            }):Play()
+
+            task.wait(math.random(4, 9)/10)
+        end
+    end)
+
+    -- SÜRÜKLEME
+    local dragging, dragInput, dragStart, startPos
+    KeyContainer.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true; dragStart = input.Position; startPos = KeyContainer.Position
+            input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
+        end
+    end)
+    KeyContainer.InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            KeyContainer.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    -- ÜST KISIM
+    local HeaderFrame = Create("Frame", {Size = UDim2.new(1, 0, 0, 40), BackgroundTransparency = 1, ZIndex = 2}, KeyContainer)
+
+    local MainTitle = Create("TextLabel", {
+        Text = "KRYVEX KEY SYSTEM",
+        Size = UDim2.new(0, 250, 1, 0),
+        Position = UDim2.new(0, 15, 0, 0),
+        BackgroundTransparency = 1,
+        Font = Enum.Font.GothamBlack,
+        TextSize = 16,
+        TextColor3 = WhiteColor,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 2
+    }, HeaderFrame)
+    
+    task.spawn(function()
+        while KeySystemGui.Parent do
+            if IsRainbow then
+                local h, s, v = MainTitle.TextColor3:ToHSV()
+                h = (h + 0.02) % 1
+                MainTitle.TextColor3 = Color3.fromHSV(h, 1, 1)
+                task.wait(0.05)
+            else
+                TweenService:Create(MainTitle, TweenInfo.new(2, Enum.EasingStyle.Sine), {TextColor3 = RedColor}):Play(); task.wait(2)
+                TweenService:Create(MainTitle, TweenInfo.new(2, Enum.EasingStyle.Sine), {TextColor3 = LightRed}):Play(); task.wait(2)
+                TweenService:Create(MainTitle, TweenInfo.new(2, Enum.EasingStyle.Sine), {TextColor3 = WhiteColor}):Play(); task.wait(2)
+                TweenService:Create(MainTitle, TweenInfo.new(2, Enum.EasingStyle.Sine), {TextColor3 = Color3.fromRGB(200, 150, 150)}):Play(); task.wait(2)
+            end
+        end
+    end)
+
+    local TopRightFrame = Create("Frame", {Size = UDim2.new(0, 100, 1, 0), Position = UDim2.new(1, -105, 0, 0), BackgroundTransparency = 1, ZIndex = 2}, HeaderFrame)
+
+    local MinimizeBtn = Create("TextButton", {
+        Text = "-", Font = Enum.Font.GothamBlack, TextSize = 20, TextColor3 = WhiteColor,
+        BackgroundColor3 = Color3.fromRGB(200, 150, 50), Size = UDim2.new(0, 26, 0, 26), Position = UDim2.new(0, 0, 0.5, -13), BorderSizePixel = 0, ZIndex = 2
+    }, TopRightFrame)
+    Create("UICorner", {CornerRadius = UDim.new(0, 6)}, MinimizeBtn)
+
+    local CloseButton = Create("TextButton", {
+        Text = "X", Font = Enum.Font.GothamBlack, TextSize = 14, TextColor3 = WhiteColor,
+        BackgroundColor3 = RedColor, Size = UDim2.new(0, 26, 0, 26), Position = UDim2.new(0, 33, 0.5, -13), BorderSizePixel = 0, ZIndex = 2
+    }, TopRightFrame)
+    Create("UICorner", {CornerRadius = UDim.new(0, 6)}, CloseButton)
+
+    -- SOL PANEL
+    local LeftPanel = Create("Frame", {Size = UDim2.new(0, 300, 1, -60), Position = UDim2.new(0, 15, 0, 50), BackgroundColor3 = PanelBg, BorderSizePixel = 0, ZIndex = 2}, KeyContainer)
+    Create("UICorner", {CornerRadius = UDim.new(0, 12)}, LeftPanel)
+    Create("UIStroke", {Color = Color3.fromRGB(50, 30, 35), Thickness = 1}, LeftPanel)
+
+    local AvatarFrame = Create("Frame", {Size = UDim2.new(0, 140, 0, 140), Position = UDim2.new(0.5, -70, 0, 15), BackgroundColor3 = Color3.fromRGB(40, 20, 25), BorderSizePixel = 0, ZIndex = 2}, LeftPanel)
+    Create("UICorner", {CornerRadius = UDim.new(1, 0)}, AvatarFrame)
+    local AvatarStroke = Create("UIStroke", {Color = RedColor, Thickness = 3}, AvatarFrame)
+    local Headshot = Create("ImageLabel", {Size = UDim2.new(1, -6, 1, -6), Position = UDim2.new(0, 3, 0, 3), BackgroundTransparency = 1, Image = "rbxthumb://type=AvatarHeadShot&id="..Player.UserId.."&w=420&h=420", ZIndex = 2}, AvatarFrame)
+    Create("UICorner", {CornerRadius = UDim.new(1, 0)}, Headshot)
+    
+    if IsRainbow then
+        task.spawn(function()
+            local h = 0
+            while KeySystemGui.Parent do
+                h = (h + 0.02) % 1
+                AvatarStroke.Color = Color3.fromHSV(h, 1, 1)
+                task.wait(0.05)
+            end
+        end)
+    end
+
+    -- KENDİ TASARIMIMIZ OLAN HALLOWEEN CADI ŞAPKASI
+    if IsHalloween then
+        local HatContainer = Create("Frame", {
+            Size = UDim2.new(0, 100, 0, 100),
+            Position = UDim2.new(0.5, -50, -0.55, 0),
+            BackgroundTransparency = 1,
+            ZIndex = 4,
+            Rotation = -10
+        }, AvatarFrame)
+
+        local HatTip = Create("Frame", {Size = UDim2.new(0, 60, 0, 80), Position = UDim2.new(0, 20, 0, 0), BackgroundColor3 = Color3.fromRGB(20, 10, 30), BorderSizePixel = 0}, HatContainer)
+        Create("UICorner", {CornerRadius = UDim.new(0.8, 0)}, HatTip)
+
+        local HatBrim = Create("Frame", {Size = UDim2.new(0, 100, 0, 25), Position = UDim2.new(0, 0, 0, 70), BackgroundColor3 = Color3.fromRGB(30, 15, 40), BorderSizePixel = 0}, HatContainer)
+        Create("UICorner", {CornerRadius = UDim.new(1, 0)}, HatBrim)
+
+        local HatBand = Create("Frame", {Size = UDim2.new(0, 50, 0, 12), Position = UDim2.new(0, 25, 0, 65), BackgroundColor3 = Color3.fromRGB(180, 50, 200), BorderSizePixel = 0}, HatContainer)
+        Create("UICorner", {CornerRadius = UDim.new(0, 4)}, HatBand)
+
+        local HatBuckle = Create("Frame", {Size = UDim2.new(0, 14, 0, 14), Position = UDim2.new(0, 43, 0, 64), BackgroundColor3 = Color3.fromRGB(255, 200, 50), BorderSizePixel = 0}, HatContainer)
+        Create("UICorner", {CornerRadius = UDim.new(0.2, 0)}, HatBuckle)
+        Create("UIStroke", {Color = Color3.fromRGB(100, 50, 0), Thickness = 1.5}, HatBuckle)
+    end
+
+    local OnlineDot = Create("Frame", {Size = UDim2.new(0, 24, 0, 24), Position = UDim2.new(1, -20, 1, -20), BackgroundColor3 = Color3.fromRGB(0, 255, 100), BorderSizePixel = 0, ZIndex = 3}, AvatarFrame)
+    Create("UICorner", {CornerRadius = UDim.new(1, 0)}, OnlineDot)
+    Create("UIStroke", {Color = PanelBg, Thickness = 3}, OnlineDot)
+
+    Create("TextLabel", {Text = Player.DisplayName, Size = UDim2.new(1, 0, 0, 25), Position = UDim2.new(0, 0, 0, 165), BackgroundTransparency = 1, Font = Enum.Font.GothamBlack, TextSize = 18, TextColor3 = WhiteColor, ZIndex = 2}, LeftPanel)
+    local UsernameLabel = Create("TextLabel", {Text = "@" .. Player.Name, Size = UDim2.new(1, 0, 0, 20), Position = UDim2.new(0, 0, 0, 190), BackgroundTransparency = 1, Font = Enum.Font.GothamBold, TextSize = 13, TextColor3 = RedColor, ZIndex = 2}, LeftPanel)
+    
+    if IsRainbow then
+        task.spawn(function()
+            local h = 0
+            while KeySystemGui.Parent do
+                h = (h + 0.02) % 1
+                UsernameLabel.TextColor3 = Color3.fromHSV(h, 1, 1)
+                task.wait(0.05)
+            end
+        end)
+    end
+
+    local function CreateInfoBox(yPos, iconText, labelText, valueText)
+        local Box = Create("Frame", {Size = UDim2.new(1, -20, 0, 35), Position = UDim2.new(0, 10, 0, yPos), BackgroundColor3 = Color3.fromRGB(30, 20, 22), BorderSizePixel = 0, ZIndex = 2}, LeftPanel)
+        Create("UICorner", {CornerRadius = UDim.new(0, 8)}, Box)
+        local IconLabel = Create("TextLabel", {Text = iconText, Size = UDim2.new(0, 30, 1, 0), Position = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 1, Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = RedColor, ZIndex = 2}, Box)
+        if IsRainbow then
+            task.spawn(function()
+                local h = 0
+                while KeySystemGui.Parent do
+                    h = (h + 0.02) % 1
+                    IconLabel.TextColor3 = Color3.fromHSV(h, 1, 1)
+                    task.wait(0.05)
+                end
+            end)
+        end
+        Create("TextLabel", {Text = labelText .. ": " .. valueText, Size = UDim2.new(1, -70, 1, 0), Position = UDim2.new(0, 25, 0, 0), BackgroundTransparency = 1, Font = Enum.Font.Gotham, TextSize = 11, TextColor3 = Color3.fromRGB(180, 180, 180), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 2}, Box)
+        
+        local CopyBtn = Create("TextButton", {Text = "📋", Size = UDim2.new(0, 25, 0, 25), Position = UDim2.new(1, -30, 0.5, -12.5), BackgroundColor3 = Color3.fromRGB(45, 30, 35), Font = Enum.Font.GothamBold, TextSize = 12, TextColor3 = WhiteColor, BorderSizePixel = 0, ZIndex = 2}, Box)
+        Create("UICorner", {CornerRadius = UDim.new(0, 6)}, CopyBtn)
+
+        CopyBtn.MouseButton1Click:Connect(function()
+            if setclipboard then
+                setclipboard(tostring(valueText))
+                CopyBtn.Text = "✅"; CopyBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 50)
+                ShowNotification(labelText .. " copied!")
+                task.wait(1)
+                CopyBtn.Text = "📋"; CopyBtn.BackgroundColor3 = Color3.fromRGB(45, 30, 35)
+            end
+        end)
+    end
+
+    CreateInfoBox(215, "#", "Account ID", Player.UserId)
+    CreateInfoBox(255, "@", "Username", Player.Name)
+    CreateInfoBox(295, "👤", "Display Name", Player.DisplayName)
+
+    -- SAĞ PANEL
+    local RightPanel = Create("Frame", {Size = UDim2.new(1, -335, 1, -60), Position = UDim2.new(0, 320, 0, 50), BackgroundTransparency = 1, ZIndex = 2}, KeyContainer)
+    Create("TextLabel", {Text = "KEY VERIFICATION", Size = UDim2.new(1, 0, 0, 20), BackgroundTransparency = 1, Font = Enum.Font.GothamBlack, TextSize = 16, TextColor3 = WhiteColor, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 2}, RightPanel)
+    Create("TextLabel", {Text = "Paste your copied key into the field below", Size = UDim2.new(1, 0, 0, 15), Position = UDim2.new(0, 0, 0, 20), BackgroundTransparency = 1, Font = Enum.Font.Gotham, TextSize = 11, TextColor3 = Color3.fromRGB(150, 120, 120), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 2}, RightPanel)
+
+    local StatusBox = Create("Frame", {Size = UDim2.new(0, 80, 0, 24), Position = UDim2.new(1, -80, 0, 0), BackgroundColor3 = Color3.fromRGB(30, 20, 22), BorderSizePixel = 0, ZIndex = 2}, RightPanel)
+    Create("UICorner", {CornerRadius = UDim.new(1, 0)}, StatusBox)
+    local StatusText = Create("TextLabel", {Text = "● IDLE", Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Font = Enum.Font.GothamBold, TextSize = 10, TextColor3 = Color3.fromRGB(150, 150, 150), ZIndex = 2}, StatusBox)
+
+    local InputFrame = Create("Frame", {BackgroundColor3 = Color3.fromRGB(20, 8, 10), BorderSizePixel = 0, Position = UDim2.new(0, 0, 0, 45), Size = UDim2.new(1, 0, 0, 55), ClipsDescendants = true, ZIndex = 2}, RightPanel)
+    Create("UICorner", {CornerRadius = UDim.new(0, 10)}, InputFrame)
+    Create("UIStroke", {Color = Color3.fromRGB(100, 30, 40), Thickness = 1.5}, InputFrame)
+
+    local KeyInput = Create("TextBox", {Font = Enum.Font.GothamBold, PlaceholderText = "🔒 Enter your key here...", PlaceholderColor3 = Color3.fromRGB(120, 60, 60), Text = "", TextColor3 = WhiteColor, TextSize = 14, BackgroundTransparency = 1, Position = UDim2.new(0, 15, 0, 0), Size = UDim2.new(1, -80, 1, 0), TextXAlignment = Enum.TextXAlignment.Left, ClearTextOnFocus = false, ZIndex = 3}, InputFrame)
+
+    local PasteBtn = Create("TextButton", {Text = "📋", Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(1, -70, 0.5, -15), BackgroundColor3 = Color3.fromRGB(35, 15, 20), Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = WhiteColor, BorderSizePixel = 0, ZIndex = 3}, InputFrame)
+    Create("UICorner", {CornerRadius = UDim.new(0, 6)}, PasteBtn)
+    local ClearBtn = Create("TextButton", {Text = "🧹", Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(1, -35, 0.5, -15), BackgroundColor3 = Color3.fromRGB(35, 15, 20), Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = WhiteColor, BorderSizePixel = 0, ZIndex = 3}, InputFrame)
+    Create("UICorner", {CornerRadius = UDim.new(0, 6)}, ClearBtn)
+
+    ClearBtn.MouseButton1Click:Connect(function() KeyInput.Text = "" end)
+    PasteBtn.MouseButton1Click:Connect(function() KeyInput:CaptureFocus() end)
+
+    local VerifyBtn = Create("TextButton", {Text = "🔓 VERIFY & ENTER", Font = Enum.Font.GothamBlack, TextSize = 14, TextColor3 = WhiteColor, BackgroundColor3 = RedColor, BorderSizePixel = 0, Position = UDim2.new(0, 0, 0, 115), Size = UDim2.new(1, 0, 0, 50), ZIndex = 2}, RightPanel)
+    Create("UICorner", {CornerRadius = UDim.new(0, 10)}, VerifyBtn)
+
+    task.spawn(function()
+        while KeySystemGui.Parent do
+            if IsRainbow then
+                local h, s, v = VerifyBtn.BackgroundColor3:ToHSV()
+                h = (h + 0.02) % 1
+                VerifyBtn.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
+                task.wait(0.05)
+            else
+                TweenService:Create(VerifyBtn, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {BackgroundColor3 = LightRed}):Play(); task.wait(1.5)
+                TweenService:Create(VerifyBtn, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {BackgroundColor3 = RedColor}):Play(); task.wait(1.5)
+                TweenService:Create(VerifyBtn, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {BackgroundColor3 = Color3.fromRGB(255, 200, 200)}):Play(); task.wait(1.5)
+                TweenService:Create(VerifyBtn, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {BackgroundColor3 = RedColor}):Play(); task.wait(1.5)
+            end
+        end
+    end)
+
+    local function CreateSubBtn(text, iconText, xPos)
+        local btn = Create("TextButton", {Text = iconText .. "  " .. text, Font = Enum.Font.GothamBold, TextSize = 12, TextColor3 = WhiteColor, BackgroundColor3 = Color3.fromRGB(25, 15, 18), BorderSizePixel = 0, Position = UDim2.new(xPos, 0, 0, 180), Size = UDim2.new(0.48, 0, 0, 45), ZIndex = 2, AutoButtonColor = false}, RightPanel)
+        Create("UICorner", {CornerRadius = UDim.new(0, 10)}, btn)
+        local stroke = Create("UIStroke", {Color = Color3.fromRGB(50, 30, 35), Thickness = 1}, btn)
+        
+        btn.MouseEnter:Connect(function() 
+            TweenService:Create(btn, TweenInfo.new(0.2, Enum.EasingStyle.Sine), {BackgroundColor3 = Color3.fromRGB(35, 20, 25)}):Play()
+            if not IsRainbow then
+                TweenService:Create(stroke, TweenInfo.new(0.2, Enum.EasingStyle.Sine), {Color = RedColor}):Play() 
+            end
+        end)
+        btn.MouseLeave:Connect(function() 
+            TweenService:Create(btn, TweenInfo.new(0.2, Enum.EasingStyle.Sine), {BackgroundColor3 = Color3.fromRGB(25, 15, 18)}):Play()
+            if not IsRainbow then
+                TweenService:Create(stroke, TweenInfo.new(0.2, Enum.EasingStyle.Sine), {Color = Color3.fromRGB(50, 30, 35)}):Play() 
+            end
+        end)
+        return btn
+    end
+
+    local DiscordBtn = CreateSubBtn("DISCORD", "💬", 0)
+    local GetKeyBtn = CreateSubBtn("GET KEY", "🔗", 0.52)
+
+    -- ALT PANEL
+    local BottomPanel = Create("Frame", {Size = UDim2.new(1, 0, 0, 75), Position = UDim2.new(0, 0, 0, 240), BackgroundColor3 = Color3.fromRGB(20, 10, 12), BorderSizePixel = 0, ZIndex = 2}, RightPanel)
+    Create("UICorner", {CornerRadius = UDim.new(0, 8)}, BottomPanel)
+    Create("UIStroke", {Color = Color3.fromRGB(40, 25, 30), Thickness = 1}, BottomPanel)
+
+    local GameIcon = Create("ImageLabel", {Size = UDim2.new(0, 55, 0, 55), Position = UDim2.new(0, 10, 0.5, -27.5), BackgroundColor3 = Color3.fromRGB(40, 20, 25), Image = "", BorderSizePixel = 0, ZIndex = 3}, BottomPanel)
+    Create("UICorner", {CornerRadius = UDim.new(0, 8)}, GameIcon)
+    local GameNameLabel = Create("TextLabel", {Text = "Loading Game...", Size = UDim2.new(1, -140, 0, 20), Position = UDim2.new(0, 75, 0, 8), BackgroundTransparency = 1, Font = Enum.Font.GothamBlack, TextSize = 13, TextColor3 = WhiteColor, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 3}, BottomPanel)
+
+    task.spawn(function()
+        local success, gameName, gameIcon = pcall(function()
+            local info = MarketplaceService:GetProductInfo(game.PlaceId)
+            return info.Name, "rbxassetid://" .. info.IconImageAssetId
+        end)
+        if success then GameNameLabel.Text = "🎮 " .. gameName; GameIcon.Image = gameIcon else GameNameLabel.Text = "🎮 Unknown Game" end
+    end)
+
+    local BottomTimeLabel = Create("TextLabel", {Text = "00:00:00", Size = UDim2.new(1, -140, 0, 15), Position = UDim2.new(0, 75, 0, 28), BackgroundTransparency = 1, Font = Enum.Font.GothamBold, TextSize = 11, TextColor3 = LightRed, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 3}, BottomPanel)
+    task.spawn(function()
+        while KeySystemGui.Parent do
+            local t = os.date("*t")
+            BottomTimeLabel.Text = "🕒 " .. string.format("%02d:%02d:%02d", t.hour, t.min, t.sec)
+            task.wait(1)
+        end
+    end)
+
+    Create("TextLabel", {Text = "🏆 Best Owner | ⚡ Best Script", Size = UDim2.new(1, -140, 0, 15), Position = UDim2.new(0, 75, 0, 45), BackgroundTransparency = 1, Font = Enum.Font.GothamBold, TextSize = 11, TextColor3 = Color3.fromRGB(255, 200, 50), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 3}, BottomPanel)
+    
+    local BrandLabel = Create("TextLabel", {Text = "Kryvex Hub On Top", Size = UDim2.new(0, 150, 0, 20), Position = UDim2.new(1, -160, 0.5, -10), BackgroundTransparency = 1, Font = Enum.Font.GothamBlack, TextSize = 14, TextColor3 = RedColor, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 3}, BottomPanel)
+    if IsRainbow then
+        task.spawn(function()
+            local h = 0
+            while KeySystemGui.Parent do
+                h = (h + 0.02) % 1
+                BrandLabel.TextColor3 = Color3.fromHSV(h, 1, 1)
+                task.wait(0.05)
+            end
+        end)
+    end
+
+    -- KÜÇÜLTÜLMÜŞ BUTON
+    local MinimizedBtn = Create("TextButton", {Text = "KRYVEX", Font = Enum.Font.GothamBlack, TextSize = 14, TextColor3 = WhiteColor, BackgroundColor3 = RedColor, Size = UDim2.new(0, 90, 0, 90), Position = UDim2.new(0, 50, 0, 50), BorderSizePixel = 0, Visible = false, Active = true}, KeySystemGui)
+    Create("UICorner", {CornerRadius = UDim.new(1, 0)}, MinimizedBtn)
+    Create("UIStroke", {Color = Color3.fromRGB(255, 150, 150), Thickness = 2}, MinimizedBtn)
+    
+    local mDragging, mDragInput, mDragStart, mStartPos
+    MinimizedBtn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            mDragging = true; mDragStart = input.Position; mStartPos = MinimizedBtn.Position
+            input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then mDragging = false end end)
+        end
+    end)
+    MinimizedBtn.InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement then mDragInput = input end end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == mDragInput and mDragging then
+            local delta = input.Position - mDragStart
+            MinimizedBtn.Position = UDim2.new(mStartPos.X.Scale, mStartPos.X.Offset + delta.X, mStartPos.Y.Scale, mStartPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    local function showStatus(text, color)
+        StatusBox.BackgroundColor3 = Color3.fromRGB(30, 20, 22)
+        StatusText.Text = text; StatusText.TextColor3 = color or Color3.fromRGB(255, 100, 100)
+        task.wait(2.5)
+        StatusText.Text = "● IDLE"; StatusText.TextColor3 = Color3.fromRGB(150, 150, 150)
+    end
+
+    DiscordBtn.MouseButton1Click:Connect(function()
+        if setclipboard then setclipboard(DiscordLink); ShowNotification("Discord link copied!") end
+    end)
+    GetKeyBtn.MouseButton1Click:Connect(function()
+        if setclipboard then setclipboard(DiscordLink); ShowNotification("Discord link copied!") end
+    end)
+
+    CloseButton.MouseButton1Click:Connect(function()
+        TweenService:Create(KeyContainer, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0,0,0,0)}):Play()
+        task.wait(0.3); KeySystemGui:Destroy()
+    end)
+
+    MinimizeBtn.MouseButton1Click:Connect(function()
+        KeyContainer.Visible = false; MinimizedBtn.Visible = true
+        MinimizedBtn.Size = UDim2.new(0, 0, 0, 0)
+        TweenService:Create(MinimizedBtn, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 90, 0, 90)}):Play()
+    end)
+    MinimizedBtn.MouseButton1Click:Connect(function()
+        TweenService:Create(MinimizedBtn, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 0, 0, 0)}):Play()
+        task.wait(0.3); MinimizedBtn.Visible = false; KeyContainer.Visible = true
+        KeyContainer.Size = UDim2.new(0, 0, 0, 0)
+        TweenService:Create(KeyContainer, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = KContainerSize}):Play()
+    end)
+
+    VerifyBtn.MouseButton1Click:Connect(function()
+        if isVerifying then return end
+        local inputKey = KeyInput.Text
+        if inputKey == "" then
+            showStatus("⚠️ Empty key!", Color3.fromRGB(255, 200, 0))
+            local origInputPos = InputFrame.Position
+            for i = 1, 6 do InputFrame.Position = origInputPos + UDim2.new(0, (i % 2 == 0 and 8 or -8), 0, 0); task.wait(0.04) end
+            InputFrame.Position = origInputPos
+            return
+        end
+
+        isVerifying = true; VerifyBtn.Text = "🔄 VERIFYING..."
+        task.wait(0.8)
+
+        if ValidateKey(inputKey, Keys) then
+            showStatus("✅ SUCCESS", Color3.fromRGB(100, 255, 100))
+            VerifyBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0); VerifyBtn.Text = "✅ SUCCESS"
+            task.wait(1); KeySystemGui:Destroy(); MainScriptCallback(true)
+        else
+            showStatus("❌ Invalid key!", Color3.fromRGB(255, 50, 50))
+            VerifyBtn.Text = "🔓 VERIFY & ENTER"
+            local origPos = KeyContainer.Position
+            for i = 1, 8 do KeyContainer.Position = origPos + UDim2.new(0, (i % 2 == 0 and 12 or -12), 0, 0); task.wait(0.04) end
+            KeyContainer.Position = origPos
+        end
+        isVerifying = false
+    end)
+
+    KeyContainer.Size = UDim2.new(0, 0, 0, 0)
+    TweenService:Create(KeyContainer, TweenInfo.new(0.7, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = KContainerSize}):Play()
+end
+
+-- =======================================================
+-- BAŞLATICI
+-- =======================================================
+OpenThemeSelector(function()
+    KeySystem:CreateKeySystem({
+        Keys = {"KryvexWozzy", "KryvexOnTop", "KryvexHub"},
+        MainScriptCallback = function(success)
+            if success then
+                OpenKryvexHubLoader()
+            end
+        end
+    })
+end)
