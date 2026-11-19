@@ -1,7 +1,7 @@
 --[[
     Kryvex - Loader
     by Wozzy @wozzylaco
-    (Ultimate Halloween & Animation Update)
+    (Ultimate Theme Color Sync)
 ]]
 local KeySystem = {}
 KeySystem.__index = KeySystem
@@ -107,7 +107,7 @@ local function ShowNotification(text)
 end
 
 -- =======================================================
--- TEMA SEÇİM EKRANI (Sadece Renkler Dönüyor)
+-- TEMA SEÇİM EKRANI
 -- =======================================================
 local function OpenThemeSelector(onComplete)
     local parentGui = RunService:IsStudio() and Player.PlayerGui or (gethui and gethui() or game:GetService("CoreGui"))
@@ -129,7 +129,7 @@ local function OpenThemeSelector(onComplete)
         ClipsDescendants = true
     }, ThemeGui)
     Create("UICorner", {CornerRadius = UDim.new(0, 16)}, MainFrame)
-    local MainFrameStroke = Create("UIStroke", {Color = Color3.fromRGB(50, 50, 60), Thickness = 1.5}, MainFrame)
+    Create("UIStroke", {Color = Color3.fromRGB(50, 50, 60), Thickness = 1.5}, MainFrame)
 
     MainFrame.Size = UDim2.new(0, 0, 0, 0)
     TweenService:Create(MainFrame, TweenInfo.new(0.6, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = UDim2.new(0, 700, 0, 500)}):Play()
@@ -235,7 +235,6 @@ local function OpenThemeSelector(onComplete)
             }, Btn)
         end
 
-        -- RENK DÖNGÜSÜ (Sadece Gökkuşağı için)
         if themeData.IsRainbow then
             task.spawn(function()
                 local hue = 0
@@ -472,8 +471,13 @@ local function OpenKryvexHubLoader()
 
     local scripts = {
         {"Muscle Legends", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/Kryvexpublic.txt"},
+        {"Murder Mystery 2", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/message%202.txt"},
+        {"Steal A Brainrot Duels", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_Duels.txt"},
+        {"Steal A Brainrot", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_Kryvex_Hub_Sab.txt"},
         {"Sell A Lemons", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_Rayfield_Sell_a_Lemon.lua_2.txt"},
+        {"Blox Fruits", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_blox_fruits.txt"},
         {"+1 Speed Monkey Escape", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_1.txt"},
+        {"Blade Ball", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_Blade_ball.txt"},
         {"Survive A Million Monkeys", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_Monkey.txt"},
         {"Evade", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_evade.txt"},
         {"Lumber Tycoon 2", "https://github.com/WozzyLaco/Kryvex-Public/raw/refs/heads/main/obfuscated_limber_tycon_2.txt"},
@@ -504,16 +508,15 @@ local function OpenKryvexHubLoader()
 end
 
 -- =======================================================
--- KRYVEX KEY SYSTEM (Orijinal Tasarım - Sadece Renkler Akıcı)
+-- KRYVEX KEY SYSTEM (TÜM RENKLER SEÇİLENE UYUMLU)
 -- =======================================================
 function KeySystem:CreateKeySystem(Config)
     local Keys = Config.Keys or {"", "", ""}
     local MainScriptCallback = Config.MainScriptCallback or function(success) end
     local DiscordLink = "https://discord.gg/prVF5TY5W"
     
-    local RedColor = SelectedThemeColor 
+    local MainColor = SelectedThemeColor
     local WhiteColor = Color3.fromRGB(255, 255, 255)
-    local LightRed = SelectedThemeColor:Lerp(Color3.fromRGB(255,255,255), 0.5)
     local DarkBg = Color3.fromRGB(15, 10, 12)
     local PanelBg = Color3.fromRGB(22, 15, 18)
     
@@ -529,50 +532,19 @@ function KeySystem:CreateKeySystem(Config)
     }, KeySystemGui)
 
     Create("UICorner", {CornerRadius = UDim.new(0, 15)}, KeyContainer)
-    local MainStroke = Create("UIStroke", {Color = RedColor, Thickness = 1.5}, KeyContainer)
+    local MainStroke = Create("UIStroke", {Color = MainColor, Thickness = 1.5}, KeyContainer)
 
-    -- YUMUŞAK RENK GEÇİŞLİ PARLAMA
+    -- ANA RENK DÖNGÜSÜ
     task.spawn(function()
+        local h = 0
         while KeySystemGui.Parent do
             if IsRainbow then
-                local h, s, v = MainStroke.Color:ToHSV()
-                h = (h + 0.02) % 1 -- Dönüş hızı artırıldı
+                h = (h + 0.02) % 1
                 MainStroke.Color = Color3.fromHSV(h, 1, 1)
-                task.wait(0.05)
             else
-                TweenService:Create(MainStroke, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {Color = LightRed, Thickness = 2}):Play(); task.wait(1.5)
-                TweenService:Create(MainStroke, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {Color = RedColor, Thickness = 1.5}):Play(); task.wait(1.5)
-                TweenService:Create(MainStroke, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {Color = WhiteColor, Thickness = 2}):Play(); task.wait(1.5)
-                TweenService:Create(MainStroke, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {Color = Color3.fromRGB(200, 150, 150), Thickness = 1.5}):Play(); task.wait(1.5)
+                MainStroke.Color = MainColor
             end
-        end
-    end)
-
-    -- ARKA PLAN SÜSLEMELERİ (HALLOWEEN İSE)
-    local StarContainer = Create("Frame", {
-        Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, ZIndex = 1, ClipsDescendants = true
-    }, KeyContainer)
-
-    task.spawn(function()
-        while KeySystemGui.Parent do
-            local particleText = IsHalloween and (math.random(1,2) == 1 and "🎃" or "👻") or "☄️"
-            local meteor = Create("TextLabel", {
-                Text = particleText,
-                Size = UDim2.new(0, math.random(15, 30), 0, math.random(15, 30)),
-                Position = UDim2.new(1, 20, math.random(5, 95)/100, 0),
-                BackgroundTransparency = 1,
-                TextTransparency = math.random(60, 85)/100,
-                Font = Enum.Font.GothamBold,
-                ZIndex = 1,
-            }, StarContainer)
-
-            local moveTime = math.random(5, 9)
-            TweenService:Create(meteor, TweenInfo.new(moveTime, Enum.EasingStyle.Linear), {
-                Position = UDim2.new(0, -20, math.random(5, 95)/100 + 0.1, 0), 
-                TextTransparency = 1
-            }):Play()
-
-            task.wait(math.random(4, 9)/10)
+            task.wait(0.05)
         end
     end)
 
@@ -608,18 +580,15 @@ function KeySystem:CreateKeySystem(Config)
     }, HeaderFrame)
     
     task.spawn(function()
+        local h = 0
         while KeySystemGui.Parent do
             if IsRainbow then
-                local h, s, v = MainTitle.TextColor3:ToHSV()
                 h = (h + 0.02) % 1
                 MainTitle.TextColor3 = Color3.fromHSV(h, 1, 1)
-                task.wait(0.05)
             else
-                TweenService:Create(MainTitle, TweenInfo.new(2, Enum.EasingStyle.Sine), {TextColor3 = RedColor}):Play(); task.wait(2)
-                TweenService:Create(MainTitle, TweenInfo.new(2, Enum.EasingStyle.Sine), {TextColor3 = LightRed}):Play(); task.wait(2)
-                TweenService:Create(MainTitle, TweenInfo.new(2, Enum.EasingStyle.Sine), {TextColor3 = WhiteColor}):Play(); task.wait(2)
-                TweenService:Create(MainTitle, TweenInfo.new(2, Enum.EasingStyle.Sine), {TextColor3 = Color3.fromRGB(200, 150, 150)}):Play(); task.wait(2)
+                MainTitle.TextColor3 = MainColor
             end
+            task.wait(0.05)
         end
     end)
 
@@ -633,9 +602,20 @@ function KeySystem:CreateKeySystem(Config)
 
     local CloseButton = Create("TextButton", {
         Text = "X", Font = Enum.Font.GothamBlack, TextSize = 14, TextColor3 = WhiteColor,
-        BackgroundColor3 = RedColor, Size = UDim2.new(0, 26, 0, 26), Position = UDim2.new(0, 33, 0.5, -13), BorderSizePixel = 0, ZIndex = 2
+        BackgroundColor3 = MainColor, Size = UDim2.new(0, 26, 0, 26), Position = UDim2.new(0, 33, 0.5, -13), BorderSizePixel = 0, ZIndex = 2
     }, TopRightFrame)
     Create("UICorner", {CornerRadius = UDim.new(0, 6)}, CloseButton)
+    
+    if IsRainbow then
+        task.spawn(function()
+            local h = 0
+            while KeySystemGui.Parent do
+                h = (h + 0.02) % 1
+                CloseButton.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
+                task.wait(0.05)
+            end
+        end)
+    end
 
     -- SOL PANEL
     local LeftPanel = Create("Frame", {Size = UDim2.new(0, 300, 1, -60), Position = UDim2.new(0, 15, 0, 50), BackgroundColor3 = PanelBg, BorderSizePixel = 0, ZIndex = 2}, KeyContainer)
@@ -644,7 +624,7 @@ function KeySystem:CreateKeySystem(Config)
 
     local AvatarFrame = Create("Frame", {Size = UDim2.new(0, 140, 0, 140), Position = UDim2.new(0.5, -70, 0, 15), BackgroundColor3 = Color3.fromRGB(40, 20, 25), BorderSizePixel = 0, ZIndex = 2}, LeftPanel)
     Create("UICorner", {CornerRadius = UDim.new(1, 0)}, AvatarFrame)
-    local AvatarStroke = Create("UIStroke", {Color = RedColor, Thickness = 3}, AvatarFrame)
+    local AvatarStroke = Create("UIStroke", {Color = MainColor, Thickness = 3}, AvatarFrame)
     local Headshot = Create("ImageLabel", {Size = UDim2.new(1, -6, 1, -6), Position = UDim2.new(0, 3, 0, 3), BackgroundTransparency = 1, Image = "rbxthumb://type=AvatarHeadShot&id="..Player.UserId.."&w=420&h=420", ZIndex = 2}, AvatarFrame)
     Create("UICorner", {CornerRadius = UDim.new(1, 0)}, Headshot)
     
@@ -688,37 +668,56 @@ function KeySystem:CreateKeySystem(Config)
     Create("UIStroke", {Color = PanelBg, Thickness = 3}, OnlineDot)
 
     Create("TextLabel", {Text = Player.DisplayName, Size = UDim2.new(1, 0, 0, 25), Position = UDim2.new(0, 0, 0, 165), BackgroundTransparency = 1, Font = Enum.Font.GothamBlack, TextSize = 18, TextColor3 = WhiteColor, ZIndex = 2}, LeftPanel)
-    local UsernameLabel = Create("TextLabel", {Text = "@" .. Player.Name, Size = UDim2.new(1, 0, 0, 20), Position = UDim2.new(0, 0, 0, 190), BackgroundTransparency = 1, Font = Enum.Font.GothamBold, TextSize = 13, TextColor3 = RedColor, ZIndex = 2}, LeftPanel)
+    local UsernameLabel = Create("TextLabel", {Text = "@" .. Player.Name, Size = UDim2.new(1, 0, 0, 20), Position = UDim2.new(0, 0, 0, 190), BackgroundTransparency = 1, Font = Enum.Font.GothamBold, TextSize = 13, TextColor3 = MainColor, ZIndex = 2}, LeftPanel)
     
-    if IsRainbow then
-        task.spawn(function()
-            local h = 0
-            while KeySystemGui.Parent do
+    task.spawn(function()
+        local h = 0
+        while KeySystemGui.Parent do
+            if IsRainbow then
                 h = (h + 0.02) % 1
                 UsernameLabel.TextColor3 = Color3.fromHSV(h, 1, 1)
-                task.wait(0.05)
+            else
+                UsernameLabel.TextColor3 = MainColor
             end
-        end)
-    end
+            task.wait(0.05)
+        end
+    end)
 
     local function CreateInfoBox(yPos, iconText, labelText, valueText)
         local Box = Create("Frame", {Size = UDim2.new(1, -20, 0, 35), Position = UDim2.new(0, 10, 0, yPos), BackgroundColor3 = Color3.fromRGB(30, 20, 22), BorderSizePixel = 0, ZIndex = 2}, LeftPanel)
         Create("UICorner", {CornerRadius = UDim.new(0, 8)}, Box)
-        local IconLabel = Create("TextLabel", {Text = iconText, Size = UDim2.new(0, 30, 1, 0), Position = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 1, Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = RedColor, ZIndex = 2}, Box)
-        if IsRainbow then
-            task.spawn(function()
-                local h = 0
-                while KeySystemGui.Parent do
+        local IconLabel = Create("TextLabel", {Text = iconText, Size = UDim2.new(0, 30, 1, 0), Position = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 1, Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = MainColor, ZIndex = 2}, Box)
+        
+        task.spawn(function()
+            local h = 0
+            while KeySystemGui.Parent do
+                if IsRainbow then
                     h = (h + 0.02) % 1
                     IconLabel.TextColor3 = Color3.fromHSV(h, 1, 1)
-                    task.wait(0.05)
+                else
+                    IconLabel.TextColor3 = MainColor
                 end
-            end)
-        end
+                task.wait(0.05)
+            end
+        end)
+
         Create("TextLabel", {Text = labelText .. ": " .. valueText, Size = UDim2.new(1, -70, 1, 0), Position = UDim2.new(0, 25, 0, 0), BackgroundTransparency = 1, Font = Enum.Font.Gotham, TextSize = 11, TextColor3 = Color3.fromRGB(180, 180, 180), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 2}, Box)
         
         local CopyBtn = Create("TextButton", {Text = "📋", Size = UDim2.new(0, 25, 0, 25), Position = UDim2.new(1, -30, 0.5, -12.5), BackgroundColor3 = Color3.fromRGB(45, 30, 35), Font = Enum.Font.GothamBold, TextSize = 12, TextColor3 = WhiteColor, BorderSizePixel = 0, ZIndex = 2}, Box)
         Create("UICorner", {CornerRadius = UDim.new(0, 6)}, CopyBtn)
+        
+        task.spawn(function()
+            local h = 0
+            while KeySystemGui.Parent do
+                if IsRainbow then
+                    h = (h + 0.02) % 1
+                    CopyBtn.TextColor3 = Color3.fromHSV(h, 1, 1)
+                else
+                    CopyBtn.TextColor3 = MainColor
+                end
+                task.wait(0.05)
+            end
+        end)
 
         CopyBtn.MouseButton1Click:Connect(function()
             if setclipboard then
@@ -758,7 +757,7 @@ function KeySystem:CreateKeySystem(Config)
     ClearBtn.MouseButton1Click:Connect(function() KeyInput.Text = "" end)
     PasteBtn.MouseButton1Click:Connect(function() KeyInput:CaptureFocus() end)
 
-    local VerifyBtn = Create("TextButton", {Text = "🔓 VERIFY & ENTER", Font = Enum.Font.GothamBlack, TextSize = 14, TextColor3 = WhiteColor, BackgroundColor3 = RedColor, BorderSizePixel = 0, Position = UDim2.new(0, 0, 0, 115), Size = UDim2.new(1, 0, 0, 50), ZIndex = 2}, RightPanel)
+    local VerifyBtn = Create("TextButton", {Text = "🔓 VERIFY & ENTER", Font = Enum.Font.GothamBlack, TextSize = 14, TextColor3 = WhiteColor, BackgroundColor3 = MainColor, BorderSizePixel = 0, Position = UDim2.new(0, 0, 0, 115), Size = UDim2.new(1, 0, 0, 50), ZIndex = 2}, RightPanel)
     Create("UICorner", {CornerRadius = UDim.new(0, 10)}, VerifyBtn)
 
     task.spawn(function()
@@ -769,10 +768,8 @@ function KeySystem:CreateKeySystem(Config)
                 VerifyBtn.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
                 task.wait(0.05)
             else
-                TweenService:Create(VerifyBtn, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {BackgroundColor3 = LightRed}):Play(); task.wait(1.5)
-                TweenService:Create(VerifyBtn, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {BackgroundColor3 = RedColor}):Play(); task.wait(1.5)
-                TweenService:Create(VerifyBtn, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {BackgroundColor3 = Color3.fromRGB(255, 200, 200)}):Play(); task.wait(1.5)
-                TweenService:Create(VerifyBtn, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {BackgroundColor3 = RedColor}):Play(); task.wait(1.5)
+                TweenService:Create(VerifyBtn, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {BackgroundColor3 = MainColor:Lerp(Color3.new(1,1,1), 0.2)}):Play(); task.wait(1.5)
+                TweenService:Create(VerifyBtn, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {BackgroundColor3 = MainColor}):Play(); task.wait(1.5)
             end
         end
     end)
@@ -785,7 +782,7 @@ function KeySystem:CreateKeySystem(Config)
         btn.MouseEnter:Connect(function() 
             TweenService:Create(btn, TweenInfo.new(0.2, Enum.EasingStyle.Sine), {BackgroundColor3 = Color3.fromRGB(35, 20, 25)}):Play()
             if not IsRainbow then
-                TweenService:Create(stroke, TweenInfo.new(0.2, Enum.EasingStyle.Sine), {Color = RedColor}):Play() 
+                TweenService:Create(stroke, TweenInfo.new(0.2, Enum.EasingStyle.Sine), {Color = MainColor}):Play() 
             end
         end)
         btn.MouseLeave:Connect(function() 
@@ -817,34 +814,58 @@ function KeySystem:CreateKeySystem(Config)
         if success then GameNameLabel.Text = "🎮 " .. gameName; GameIcon.Image = gameIcon else GameNameLabel.Text = "🎮 Unknown Game" end
     end)
 
-    local BottomTimeLabel = Create("TextLabel", {Text = "00:00:00", Size = UDim2.new(1, -140, 0, 15), Position = UDim2.new(0, 75, 0, 28), BackgroundTransparency = 1, Font = Enum.Font.GothamBold, TextSize = 11, TextColor3 = LightRed, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 3}, BottomPanel)
+    local BottomTimeLabel = Create("TextLabel", {Text = "00:00:00", Size = UDim2.new(1, -140, 0, 15), Position = UDim2.new(0, 75, 0, 28), BackgroundTransparency = 1, Font = Enum.Font.GothamBold, TextSize = 11, TextColor3 = MainColor, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 3}, BottomPanel)
+    
     task.spawn(function()
+        local h = 0
         while KeySystemGui.Parent do
             local t = os.date("*t")
             BottomTimeLabel.Text = "🕒 " .. string.format("%02d:%02d:%02d", t.hour, t.min, t.sec)
+            if IsRainbow then
+                h = (h + 0.02) % 1
+                BottomTimeLabel.TextColor3 = Color3.fromHSV(h, 1, 1)
+            else
+                BottomTimeLabel.TextColor3 = MainColor
+            end
             task.wait(1)
         end
     end)
 
     Create("TextLabel", {Text = "🏆 Best Owner | ⚡ Best Script", Size = UDim2.new(1, -140, 0, 15), Position = UDim2.new(0, 75, 0, 45), BackgroundTransparency = 1, Font = Enum.Font.GothamBold, TextSize = 11, TextColor3 = Color3.fromRGB(255, 200, 50), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 3}, BottomPanel)
     
-    local BrandLabel = Create("TextLabel", {Text = "Kryvex Hub On Top", Size = UDim2.new(0, 150, 0, 20), Position = UDim2.new(1, -160, 0.5, -10), BackgroundTransparency = 1, Font = Enum.Font.GothamBlack, TextSize = 14, TextColor3 = RedColor, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 3}, BottomPanel)
-    if IsRainbow then
-        task.spawn(function()
-            local h = 0
-            while KeySystemGui.Parent do
+    local BrandLabel = Create("TextLabel", {Text = "Kryvex Hub On Top", Size = UDim2.new(0, 150, 0, 20), Position = UDim2.new(1, -160, 0.5, -10), BackgroundTransparency = 1, Font = Enum.Font.GothamBlack, TextSize = 14, TextColor3 = MainColor, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 3}, BottomPanel)
+    
+    task.spawn(function()
+        local h = 0
+        while KeySystemGui.Parent do
+            if IsRainbow then
                 h = (h + 0.02) % 1
                 BrandLabel.TextColor3 = Color3.fromHSV(h, 1, 1)
-                task.wait(0.05)
+            else
+                BrandLabel.TextColor3 = MainColor
             end
-        end)
-    end
+            task.wait(0.05)
+        end
+    end)
 
     -- KÜÇÜLTÜLMÜŞ BUTON
-    local MinimizedBtn = Create("TextButton", {Text = "KRYVEX", Font = Enum.Font.GothamBlack, TextSize = 14, TextColor3 = WhiteColor, BackgroundColor3 = RedColor, Size = UDim2.new(0, 90, 0, 90), Position = UDim2.new(0, 50, 0, 50), BorderSizePixel = 0, Visible = false, Active = true}, KeySystemGui)
+    local MinimizedBtn = Create("TextButton", {Text = "KRYVEX", Font = Enum.Font.GothamBlack, TextSize = 14, TextColor3 = WhiteColor, BackgroundColor3 = MainColor, Size = UDim2.new(0, 90, 0, 90), Position = UDim2.new(0, 50, 0, 50), BorderSizePixel = 0, Visible = false, Active = true}, KeySystemGui)
     Create("UICorner", {CornerRadius = UDim.new(1, 0)}, MinimizedBtn)
     Create("UIStroke", {Color = Color3.fromRGB(255, 150, 150), Thickness = 2}, MinimizedBtn)
     
+    task.spawn(function()
+        local h = 0
+        while KeySystemGui.Parent do
+            if IsRainbow then
+                h = (h + 0.02) % 1
+                MinimizedBtn.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
+            else
+                MinimizedBtn.BackgroundColor3 = MainColor
+            end
+            task.wait(0.05)
+        end
+    end)
+
     local mDragging, mDragInput, mDragStart, mStartPos
     MinimizedBtn.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
