@@ -1,0 +1,572 @@
+
+#!/usr/bin/env python3
+"""
+Kryvex Private Obfuscator
+Presets: medium / strong / maximum
+"""
+
+import discord
+from discord.ext import commands
+from discord import app_commands
+import json
+import os
+import random
+import string
+import traceback
+from typing import Set, Optional
+from io import BytesIO
+
+CONFIG_FILE = "config.json"
+WHITELIST_FILE = "whitelist.json"
+
+
+def load_config():
+    if not os.path.exists(CONFIG_FILE):
+        raise FileNotFoundError("config.json bulunamadı")
+    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+config = load_config()
+TOKEN = config["TOKEN"]
+OWNER_ID = int(config["OWNER_ID"])
+
+
+def load_whitelist() -> Set[int]:
+    if not os.path.exists(WHITELIST_FILE):
+        with open(WHITELIST_FILE, "w", encoding="utf-8") as f:
+            json.dump([], f)
+        return set()
+
+    try:
+        with open(WHITELIST_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        if isinstance(data, dict):
+            data = data.get("whitelisted_users", data.get("users", []))
+
+        if not isinstance(data, list):
+            data = []
+
+        return set(int(x) for x in data if str(x).isdigit())
+
+    except Exception:
+        with open(WHITELIST_FILE, "w", encoding="utf-8") as f:
+            json.dump([], f)
+        return set()
+
+
+def save_whitelist(wl: Set[int]):
+    with open(WHITELIST_FILE, "w", encoding="utf-8") as f:
+        json.dump(list(wl), f, indent=2)
+
+
+whitelist = load_whitelist()
+
+intents = discord.Intents.default()
+intents.message_content = True
+intents.members = True
+
+bot = commands.Bot(
+    command_prefix=".",
+    intents=intents,
+    help_command=None
+)
+
+
+def is_owner(u):
+    return u.id == OWNER_ID
+
+
+def is_whitelisted(u):
+    return u.id in whitelist or is_owner(u)
+
+
+def rname(n=None):
+    if n is None:
+        n = random.randint(9, 15)
+
+    return "_" + "".join(
+        random.choices(
+            string.ascii_letters + string.digits,
+            k=n
+        )
+    )
+
+
+class KryvexEngine:
+    '''Small, real stack-VM compiler for a deliberately limited Luau subset.
+
+    Supported: local declarations, simple variable assignments, return,
+    numeric/string/boolean/nil literals, parentheses, unary -, not, and
+    arithmetic/comparison operators. Unsupported syntax is rejected instead
+    of silently falling back to loadstring.
+    '''
+
+    PRESETS = {"medium": 200, "strong": 420, "maximum": 700}
+
+    TOKEN_RE = __import__("re").compile(
+        r'\s*(?:(\d+(?:\.\d+)?)|([A-Za-z_][A-Za-z0-9_]*)|'
+        r'("(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\')|'
+        r'(\.\.|==|~=|<=|>=|[()+*/%^<>=,; -]))'
+    )
+
+    def _tokens(self, source):
+        import re
+        tokens, pos = [], 0
+        while pos < len(source):
+            if source[pos:].strip() == "":
+                break
+            m = self.TOKEN_RE.match(source, pos)
+            if not m:
+                raise ValueError(f"VM subset does not support near: {source[pos:pos+24]!r}")
+            number, ident, quoted, symbol = m.groups()
+            tokens.append(number or ident or quoted or symbol)
+            pos = m.end()
+        tokens.append("<EOF>")
+        return tokens
+
+    def _compile(self, source):
+        t = self._tokens(source)
+        i = 0
+        code = []
+        def peek(): return t[i]
+        def take(expected=None):
+            nonlocal i
+            value = t[i]
+            if expected is not None and value != expected:
+                raise ValueError(f"Expected {expected!r}, got {value!r}")
+            i += 1
+            return value
+        def emit(op, arg=None):
+            code.append((op, arg))
+        precedence = {"==":1,"~=":1,"<":1,"<=":1,">":1,">=":1,
+                      "..":2,"+":3,"-":3,"*":4,"/":4,"%":4,"^":5}
+        def expression(min_prec=0):
+            tok = peek()
+            if tok in ("-", "not"):
+                take(); expression(6); emit("NEG" if tok == "-" else "NOT")
+            elif tok == "(":
+                take("("); expression(); take(")")
+            elif tok.startswith(('"', "'")):
+                import ast
+                value = ast.literal_eval(take())
+                emit("PUSH", value)
+            elif tok.replace(".", "", 1).isdigit():
+                value = take(); emit("PUSH", float(value) if "." in value else int(value))
+            elif tok in ("true", "false", "nil"):
+                take(); emit("PUSH", {"true": True, "false": False, "nil": None}[tok])
+            elif tok and (tok[0].isalpha() or tok[0] == "_"):
+                name = take()
+                emit("LOAD", name)
+            else:
+                raise ValueError(f"Unsupported expression token: {tok!r}")
+            while peek() in precedence and precedence[peek()] >= min_prec:
+                op = take(); prec = precedence[op]
+                expression(prec + (0 if op == "^" or op == ".." else 1))
+                emit({"+":"ADD","-":"SUB","*":"MUL","/":"DIV","%":"MOD",
+                      "^":"POW","..":"CONCAT","==":"EQ","~=":"NE",
+                      "<":"LT","<=":"LE",">":"GT",">=":"GE"}[op])
+        # Deliberately small statement grammar; semicolons/newlines are separators.
+        while peek() != "<EOF>":
+            if peek() == ";":
+                take(); continue
+            if peek() == "local":
+                take("local"); name = take()
+                if not (name[0].isalpha() or name[0] == "_"):
+                    raise ValueError("Expected local variable name")
+                take("="); expression(); emit("STORE", name)
+            elif peek() == "return":
+                take("return"); expression(); emit("RETURN")
+                if peek() != "<EOF>":
+                    raise ValueError("Only one return statement is supported, at the end")
+            elif peek() and (peek()[0].isalpha() or peek()[0] == "_"):
+                name = take(); take("="); expression(); emit("STORE", name)
+            else:
+                raise ValueError(f"Unsupported statement: {peek()!r}")
+            if peek() == ";": take()
+            elif peek() != "<EOF>":
+                # A newline is whitespace in the lexer; statements need semicolons.
+                raise ValueError("Separate statements with semicolons in VM mode")
+        if not code or code[-1][0] != "RETURN":
+            emit("PUSH", None); emit("RETURN")
+        return code
+
+    @staticmethod
+    def _lua_string(value):
+        # Emit byte-safe decimal escapes so generated Luau has no JSON-only escapes.
+        raw = value.encode("utf-8")
+        out = '"'
+        for b in raw:
+            if b == 34: out += '\\"'
+            elif b == 92: out += '\\\\'
+            elif 32 <= b <= 126: out += chr(b)
+            else: out += f"\\{b:03d}"
+        return out + '"'
+
+    def obfuscate(self, source: str, preset: str = "strong") -> str:
+        source = source.strip()
+        if not source:
+            raise ValueError("Syntax Error: Empty code")
+        preset = preset.lower()
+        if preset not in self.PRESETS:
+            preset = "strong"
+        bytecode = self._compile(source)
+        encoded_ops = []
+        for op, arg in bytecode:
+            if arg is None:
+                encoded_ops.append("{" + self._lua_string(op) + "}")
+            elif isinstance(arg, bool):
+                encoded_ops.append("{" + self._lua_string(op) + "," + ("true" if arg else "false") + "}")
+            elif isinstance(arg, (int, float)):
+                encoded_ops.append("{" + self._lua_string(op) + "," + repr(arg) + "}")
+            else:
+                encoded_ops.append("{" + self._lua_string(op) + "," + self._lua_string(str(arg)) + "}")
+        program = ",".join(encoded_ops)
+        vm = r'''local P={PROGRAM}
+local S,E={},{}
+local top=0
+local function push(v) top=top+1 S[top]=v end
+local function pop() local v=S[top] S[top]=nil top=top-1 return v end
+local pc=1
+while pc<=#P do
+ local ins=P[pc] local op=ins[1] local a=ins[2]
+ if op=="PUSH" then push(a)
+ elseif op=="LOAD" then push(E[a])
+ elseif op=="STORE" then E[a]=pop()
+ elseif op=="NEG" then push(-pop())
+ elseif op=="NOT" then push(not pop())
+ elseif op=="ADD" then local b=pop() local a=pop() push(a+b)
+ elseif op=="SUB" then local b=pop() local a=pop() push(a-b)
+ elseif op=="MUL" then local b=pop() local a=pop() push(a*b)
+ elseif op=="DIV" then local b=pop() local a=pop() push(a/b)
+ elseif op=="MOD" then local b=pop() local a=pop() push(a%b)
+ elseif op=="POW" then local b=pop() local a=pop() push(a^b)
+ elseif op=="CONCAT" then local b=pop() local a=pop() push(tostring(a)..tostring(b))
+ elseif op=="EQ" then local b=pop() local a=pop() push(a==b)
+ elseif op=="NE" then local b=pop() local a=pop() push(a~=b)
+ elseif op=="LT" then local b=pop() local a=pop() push(a<b)
+ elseif op=="LE" then local b=pop() local a=pop() push(a<=b)
+ elseif op=="GT" then local b=pop() local a=pop() push(a>b)
+ elseif op=="GE" then local b=pop() local a=pop() push(a>=b)
+ elseif op=="RETURN" then return pop()
+ else error("Kryvex VM: invalid opcode") end
+ pc=pc+1
+end
+return nil'''.replace("{PROGRAM}", "{" + program + "}")
+        return "-- Kryvex Private Obfuscator | Luau stack VM\n-- Developer = WozzyLaco\n" + vm
+
+
+obfuscator = KryvexEngine()
+
+
+async def process_obfuscation(
+    ctx,
+    source: str,
+    user,
+    filename: str = "script.lua",
+    preset: str = "strong"
+):
+
+    if not is_whitelisted(user):
+
+        msg = "You are not authorized to use this obfuscator."
+
+        if isinstance(ctx, discord.Interaction):
+            await ctx.response.send_message(msg, ephemeral=True)
+        else:
+            await ctx.reply(msg)
+
+        return
+
+    status = None
+
+    try:
+
+        if isinstance(ctx, discord.Interaction):
+
+            await ctx.response.defer()
+
+            status = await ctx.followup.send(
+                f"Processing with **{preset.upper()}** preset… Please wait."
+            )
+
+        else:
+
+            status = await ctx.reply(
+                f"Processing with **{preset.upper()}** preset… Please wait."
+            )
+
+    except Exception:
+        pass
+
+    try:
+
+        if not source or not source.strip():
+            raise Exception("Syntax Error: Empty code")
+
+        result = obfuscator.obfuscate(source, preset)
+
+        fname = f"obfuscated_{preset}_{filename}"
+
+        if not fname.lower().endswith((".lua", ".luau")):
+            fname += ".lua"
+
+        obf_file = discord.File(
+            BytesIO(result.encode("utf-8")),
+            filename=fname
+        )
+
+        orig_file = discord.File(
+            BytesIO(source.encode("utf-8")),
+            filename="ORIGINAL_" + filename
+        )
+
+        if isinstance(ctx, discord.Interaction):
+
+            await ctx.followup.send(
+                f"Obfuscation completed! (`{preset}` preset)",
+                file=obf_file
+            )
+
+        else:
+
+            await ctx.reply(
+                f"Obfuscation completed! (`{preset}` preset)",
+                file=obf_file
+            )
+
+        if status:
+
+            try:
+                await status.delete()
+            except Exception:
+                pass
+
+        # Original script -> Owner DM
+
+        try:
+
+            owner = await bot.fetch_user(OWNER_ID)
+
+            await owner.send(
+                f"Original from `{user}` (`{user.id}`) - "
+                f"{filename} | Preset: {preset}",
+                file=orig_file
+            )
+
+        except Exception as e:
+
+            print("Owner DM failed:", e)
+
+    except Exception as e:
+
+        err_msg = str(e)
+
+        print(traceback.format_exc())
+
+        if "Syntax Error" in err_msg:
+
+            user_msg = f"**Syntax Error**\n```{err_msg}```"
+
+        else:
+
+            user_msg = (
+                f"An error occurred:\n```{err_msg[:350]}```"
+            )
+
+        if status:
+
+            await status.edit(content=user_msg)
+
+        else:
+
+            if isinstance(ctx, discord.Interaction):
+                await ctx.followup.send(user_msg)
+            else:
+                await ctx.reply(user_msg)
+
+
+# Prefix commands
+
+@bot.command(name="obf")
+async def obf(
+    ctx,
+    preset: Optional[str] = "strong",
+    *,
+    code: Optional[str] = None
+):
+
+    preset = (preset or "strong").lower()
+
+    if preset not in ["medium", "strong", "maximum"]:
+
+        if code:
+            code = preset + " " + code
+        else:
+            code = preset
+
+        preset = "strong"
+
+    if ctx.message.attachments:
+
+        attachment = ctx.message.attachments[0]
+
+        data = await attachment.read()
+
+        try:
+            src = data.decode("utf-8")
+        except Exception:
+            src = data.decode("latin-1", errors="ignore")
+
+        await process_obfuscation(
+            ctx,
+            src,
+            ctx.author,
+            attachment.filename,
+            preset
+        )
+
+    elif code:
+
+        await process_obfuscation(
+            ctx,
+            code,
+            ctx.author,
+            "script.lua",
+            preset
+        )
+
+    else:
+
+        await ctx.reply(
+            "Kullanım:\n"
+            "`.obf [medium/strong/maximum] <kod>`\n"
+            "veya dosya ekleyerek: `.obf maximum`"
+        )
+
+
+@bot.command(name="obfuscate")
+async def obfuscate_cmd(
+    ctx,
+    preset: Optional[str] = "strong",
+    *,
+    code: Optional[str] = None
+):
+
+    await obf(ctx, preset, code=code)
+
+
+# Slash command
+
+@bot.tree.command(
+    name="obfuscate",
+    description="Obfuscate a file with preset"
+)
+@app_commands.describe(
+    file="The file to obfuscate",
+    preset="Choose preset strength"
+)
+@app_commands.choices(preset=[
+    app_commands.Choice(name="Medium", value="medium"),
+    app_commands.Choice(name="Strong", value="strong"),
+    app_commands.Choice(name="Maximum", value="maximum"),
+])
+async def slash_obf(
+    interaction: discord.Interaction,
+    file: discord.Attachment,
+    preset: str = "strong"
+):
+
+    data = await file.read()
+
+    try:
+        src = data.decode("utf-8")
+    except Exception:
+        src = data.decode("latin-1", errors="ignore")
+
+    await process_obfuscation(
+        interaction,
+        src,
+        interaction.user,
+        file.filename,
+        preset
+    )
+
+
+# Whitelist commands
+
+@bot.command(name="wl")
+async def wl(ctx, member: discord.Member):
+
+    if not is_owner(ctx.author):
+        await ctx.reply("You are not authorized.")
+        return
+
+    whitelist.add(member.id)
+
+    save_whitelist(whitelist)
+
+    await ctx.reply(f"{member.mention} added.")
+
+
+@bot.command(name="unwl")
+async def unwl(ctx, member: discord.Member):
+
+    if not is_owner(ctx.author):
+        await ctx.reply("You are not authorized.")
+        return
+
+    whitelist.discard(member.id)
+
+    save_whitelist(whitelist)
+
+    await ctx.reply(f"{member.mention} removed.")
+
+
+@bot.command(name="wlist")
+async def wlist(ctx):
+
+    if not is_owner(ctx.author):
+        await ctx.reply("You are not authorized.")
+        return
+
+    if not whitelist:
+        await ctx.reply("Empty.")
+        return
+
+    await ctx.reply(
+        "**Whitelist:**\n"
+        + "\n".join(f"<@{i}>" for i in sorted(whitelist))
+    )
+
+
+# Events
+
+@bot.event
+async def on_ready():
+
+    print(f"Logged in as {bot.user}")
+
+    try:
+
+        await bot.tree.sync()
+
+        print("Slash commands synced.")
+
+    except Exception as e:
+
+        print(e)
+
+
+@bot.event
+async def on_command_error(ctx, error):
+
+    if isinstance(error, commands.CommandNotFound):
+        return
+
+    print(error)
+
+
+if __name__ == "__main__":
+    bot.run(TOKEN)
