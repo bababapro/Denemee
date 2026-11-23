@@ -1,0 +1,317 @@
+#!/usr/bin/env python3
+"""
+Kryvex Private Obfuscator - MAXIMUM STRONG + Base85 + Working Anti-Tamper
+"""
+
+import discord
+from discord.ext import commands
+from discord import app_commands
+import json
+import os
+import random
+import string
+import traceback
+from typing import Set
+from io import BytesIO
+
+CONFIG_FILE = "config.json"
+WHITELIST_FILE = "whitelist.json"
+
+def load_config():
+    if not os.path.exists(CONFIG_FILE):
+        raise FileNotFoundError(f"{CONFIG_FILE} yok.")
+    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+config = load_config()
+TOKEN = config["TOKEN"]
+OWNER_ID = int(config["OWNER_ID"])
+
+def load_whitelist() -> Set[int]:
+    if not os.path.exists(WHITELIST_FILE):
+        with open(WHITELIST_FILE, "w", encoding="utf-8") as f:
+            json.dump([], f)
+        return set()
+    try:
+        with open(WHITELIST_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            data = data.get("whitelisted_users", data.get("users", []))
+        if not isinstance(data, list):
+            data = []
+        return set(int(x) for x in data if str(x).isdigit())
+    except:
+        with open(WHITELIST_FILE, "w", encoding="utf-8") as f:
+            json.dump([], f)
+        return set()
+
+def save_whitelist(wl: Set[int]):
+    with open(WHITELIST_FILE, "w", encoding="utf-8") as f:
+        json.dump(list(wl), f, indent=2)
+
+whitelist = load_whitelist()
+
+intents = discord.Intents.default()
+intents.message_content = True
+intents.members = True
+bot = commands.Bot(command_prefix=".", intents=intents, help_command=None)
+
+def is_owner(u): return u.id == OWNER_ID
+def is_whitelisted(u): return u.id in whitelist or is_owner(u)
+
+def rname(n=10):
+    return "_" + "".join(random.choices(string.ascii_letters + string.digits, k=n))
+
+# ────────────────────────────────────────────────
+# BASE85 (ASCII85 benzeri)
+# ────────────────────────────────────────────────
+BASE85_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~"
+
+def base85_encode(data: bytes) -> str:
+    result = []
+    for i in range(0, len(data), 4):
+        chunk = data[i:i+4]
+        if len(chunk) < 4:
+            chunk = chunk + b"\x00" * (4 - len(chunk))
+        value = int.from_bytes(chunk, "big")
+        encoded = []
+        for _ in range(5):
+            encoded.append(BASE85_ALPHABET[value % 85])
+            value //= 85
+        result.append("".join(reversed(encoded)))
+    return "".join(result)
+
+def base85_decode_lua(name: str) -> str:
+    """Lua tarafında Base85 decode edecek fonksiyon"""
+    return f"""
+local {name}=function(s)
+local A="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{{|}}~"
+local function idx(c)return (A:find(c,1,true)or 1)-1 end
+local out={{}}
+for i=1,#s,5 do
+local v=0
+for j=0,4 do
+local ch=s:sub(i+j,i+j)
+if ch~="" then v=v*85+idx(ch) end
+end
+local b1=math.floor(v/16777216)%256
+local b2=math.floor(v/65536)%256
+local b3=math.floor(v/256)%256
+local b4=v%256
+table.insert(out,string.char(b1,b2,b3,b4))
+end
+return table.concat(out):gsub("%z+$","")
+end
+"""
+
+# ────────────────────────────────────────────────
+# MAXIMUM STRONG ENGINE
+# ────────────────────────────────────────────────
+class KryvexMax:
+    HEADER = "-- By WozzyLaco Private Obf\n"
+
+    def obfuscate(self, source: str) -> str:
+        source = source.strip()
+        if not source:
+            return self.HEADER + "-- empty"
+
+        # Her seferinde farklı key ve isimler
+        key = random.randint(30, 120)
+        dec = rname(11)
+        b85 = rname(9)
+        xor = rname(8)
+        c1 = rname(7)
+        c2 = rname(7)
+        c3 = rname(7)
+        gate = rname(8)
+        run = rname(10)
+
+        # 1. Önce key ile offset
+        shifted = bytes((b + key) % 256 for b in source.encode("utf-8"))
+        # 2. Base85
+        encoded = base85_encode(shifted)
+
+        # Anti-tamper (senin attığın örnekle aynı mantık)
+        anti = f"""
+local function {c1}()local s,r=pcall(function()local a=TweenInfo.new(1,Enum.EasingStyle.Quad,Enum.EasingDirection.InOut,2,true,0.5)if typeof(a)~="TweenInfo"or a.Time~=1 or a.RepeatCount~=2 then return 0 end if a.EasingStyle~=Enum.EasingStyle.Quad or a.Reverses~=true then return 0 end if math.abs(a.DelayTime-0.5)>1e-6 then return 0 end local b=Faces.new(Enum.NormalId.Top,Enum.NormalId.Bottom)if typeof(b)~="Faces"or b.Top~=true or b.Bottom~=true or b.Right~=false then return 0 end local c=Axes.new(Enum.Axis.X)if typeof(c)~="Axes"or c.X~=true or c.Y~=false or c.Z~=false then return 0 end local d=Ray.new(Vector3.new(0,0,0),Vector3.new(0,5,0))if typeof(d)~="Ray"or d.Origin~=Vector3.new(0,0,0)then return 0 end if math.abs(d.Direction.Unit.Y-1)>1e-5 then return 0 end return a.RepeatCount*10+a.Time+d.Direction.Unit.Y end)if s and type(r)=="number"and r~=0 then return r end return 0 end
+local function {c2}()local s,r=pcall(function()local a=table.find({{10,20,30}},20)if a~=2 then return 0 end local b=table.move({{10,20,30}},1,3,1,{{}})if type(b)~="table"or b[1]~=10 or b[3]~=30 then return 0 end local c=table.pack(10,20,30)if c.n~=3 or c[1]~=10 or c[3]~=30 then return 0 end local d=string.match("hello123world","%d+")if d~="123"then return 0 end local e=0 for _ in string.gmatch("aaaa","a")do e=e+1 end if e~=4 then return 0 end return tonumber(d)+a end)if s and type(r)=="number"and r~=0 then return r end return 0 end
+local function {c3}()local s,r=pcall(function()local t={{a=1,b=2,c=3}}local k=0 for _ in pairs(t)do k=k+1 end if k<3 then return 0 end local u=utf8.len("Δ")if type(u)~="number"then return 0 end return k+10 end)if s and type(r)=="number"and r~=0 then return r end return 0 end
+"""
+
+        # Junk
+        junk = ""
+        for _ in range(40):
+            n = rname(6)
+            junk += f"local {n}={random.randint(1,9999)};"
+
+        # Final payload
+        payload = f"""
+{self.HEADER}
+{base85_decode_lua(b85)}
+{anti}
+local {xor}=function(a,b)local r,bit=0,1 for _=0,31 do if(a%2)~=(b%2)then r=r+bit end a=math.floor(a/2)b=math.floor(b/2)bit=bit*2 end return r end
+{junk}
+local {gate}={c1}()+{c2}()+{c3}()
+local {dec}=function(s)
+local d={b85}(s)
+local t={{}}
+for i=1,#d do t[i]=string.char((d:byte(i)-{key})%256) end
+return table.concat(t)
+end
+if {gate}~=0 then
+local src={dec}("{encoded}")
+local fn=loadstring or load
+if fn then
+local f=fn(src)
+if f then f() end
+end
+end
+"""
+
+        # Mümkün olduğunca tek satır
+        payload = " ".join(payload.split())
+        return self.HEADER + payload
+
+obfuscator = KryvexMax()
+
+# ────────────────────────────────────────────────
+async def process_obfuscation(ctx, attachment, user):
+    if not is_whitelisted(user):
+        msg = "You are not authorized to use this obfuscator."
+        if isinstance(ctx, discord.Interaction):
+            await ctx.response.send_message(msg, ephemeral=True)
+        else:
+            await ctx.reply(msg)
+        return
+
+    if attachment.size > 8 * 1024 * 1024:
+        msg = "File too large (max 8MB)."
+        if isinstance(ctx, discord.Interaction):
+            await ctx.response.send_message(msg, ephemeral=True)
+        else:
+            await ctx.reply(msg)
+        return
+
+    status = None
+    try:
+        if isinstance(ctx, discord.Interaction):
+            await ctx.response.defer()
+            status = await ctx.followup.send("Processing your file… Please wait.")
+        else:
+            status = await ctx.reply("Processing your file… Please wait.")
+    except:
+        pass
+
+    try:
+        data = await attachment.read()
+        try:
+            src = data.decode("utf-8")
+        except:
+            src = data.decode("latin-1", errors="ignore")
+
+        if not src.strip():
+            raise Exception("File is empty")
+
+        result = obfuscator.obfuscate(src)
+
+        fname = "obfuscated_" + attachment.filename
+        if not fname.lower().endswith((".lua", ".luau")):
+            fname += ".lua"
+
+        obf_file = discord.File(BytesIO(result.encode("utf-8")), filename=fname)
+        orig_file = discord.File(BytesIO(data), filename="ORIGINAL_" + attachment.filename)
+
+        try:
+            await user.send("Here is your obfuscated file (**Kryvex MAXIMUM STRONG + Base85**).", file=obf_file)
+        except discord.Forbidden:
+            err = "I could not send you a DM. Please enable Direct Messages."
+            if status: await status.edit(content=err)
+            else:
+                if isinstance(ctx, discord.Interaction): await ctx.followup.send(err)
+                else: await ctx.reply(err)
+            return
+
+        try:
+            owner = await bot.fetch_user(OWNER_ID)
+            await owner.send(f"Original from `{user}` ({user.id}) → {attachment.filename}", file=orig_file)
+        except Exception as e:
+            print("Owner DM error:", e)
+
+        ok = "Obfuscation completed! Please check your DMs."
+        if status: await status.edit(content=ok)
+        else:
+            if isinstance(ctx, discord.Interaction): await ctx.followup.send(ok)
+            else: await ctx.reply(ok)
+
+    except Exception as e:
+        print(traceback.format_exc())
+        err = f"Error:\n```{str(e)[:400]}```"
+        if status: await status.edit(content=err)
+        else:
+            if isinstance(ctx, discord.Interaction): await ctx.followup.send(err)
+            else: await ctx.reply(err)
+
+@bot.command(name="obf")
+async def obf(ctx):
+    if not ctx.message.attachments:
+        await ctx.reply("Please attach a file.")
+        return
+    await process_obfuscation(ctx, ctx.message.attachments[0], ctx.author)
+
+@bot.command(name="obfuscate")
+async def obfuscate(ctx):
+    if not ctx.message.attachments:
+        await ctx.reply("Please attach a file.")
+        return
+    await process_obfuscation(ctx, ctx.message.attachments[0], ctx.author)
+
+@bot.tree.command(name="obfuscate", description="Maximum Strong Obfuscator (Base85)")
+@app_commands.describe(file="File")
+async def slash_obf(interaction: discord.Interaction, file: discord.Attachment):
+    await process_obfuscation(interaction, file, interaction.user)
+
+@bot.command(name="wl")
+async def wl(ctx, member: discord.Member):
+    if not is_owner(ctx.author):
+        await ctx.reply("Yetkin yok.")
+        return
+    whitelist.add(member.id)
+    save_whitelist(whitelist)
+    await ctx.reply(f"{member.mention} eklendi.")
+
+@bot.command(name="unwl")
+async def unwl(ctx, member: discord.Member):
+    if not is_owner(ctx.author):
+        await ctx.reply("Yetkin yok.")
+        return
+    whitelist.discard(member.id)
+    save_whitelist(whitelist)
+    await ctx.reply(f"{member.mention} çıkarıldı.")
+
+@bot.command(name="wlist")
+async def wlist(ctx):
+    if not is_owner(ctx.author):
+        await ctx.reply("Yetkin yok.")
+        return
+    if not whitelist:
+        await ctx.reply("Boş.")
+        return
+    await ctx.reply("**Whitelist:**\n" + "\n".join(f"<@{i}>" for i in sorted(whitelist)))
+
+@bot.event
+async def on_ready():
+    print(f"Giriş yapıldı: {bot.user}")
+    try:
+        await bot.tree.sync()
+        print("Slash senkronize edildi.")
+    except Exception as e:
+        print("Sync hatası:", e)
+
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandNotFound):
+        return
+    print(error)
+
+if __name__ == "__main__":
+    bot.run(TOKEN)
