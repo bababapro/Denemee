@@ -1,0 +1,651 @@
+
+#!/usr/bin/env python3
+"""
+Kryvex Private Obfuscator
+Presets: medium / strong / maximum
+"""
+
+import discord
+from discord.ext import commands
+from discord import app_commands
+import json
+import os
+import random
+import string
+import traceback
+from typing import Set, Optional
+from io import BytesIO
+
+CONFIG_FILE = "config.json"
+WHITELIST_FILE = "whitelist.json"
+
+
+def load_config():
+    if not os.path.exists(CONFIG_FILE):
+        raise FileNotFoundError("config.json bulunamadı")
+    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+config = load_config()
+TOKEN = config["TOKEN"]
+OWNER_ID = int(config["OWNER_ID"])
+
+
+def load_whitelist() -> Set[int]:
+    if not os.path.exists(WHITELIST_FILE):
+        with open(WHITELIST_FILE, "w", encoding="utf-8") as f:
+            json.dump([], f)
+        return set()
+
+    try:
+        with open(WHITELIST_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        if isinstance(data, dict):
+            data = data.get("whitelisted_users", data.get("users", []))
+
+        if not isinstance(data, list):
+            data = []
+
+        return set(int(x) for x in data if str(x).isdigit())
+
+    except Exception:
+        with open(WHITELIST_FILE, "w", encoding="utf-8") as f:
+            json.dump([], f)
+        return set()
+
+
+def save_whitelist(wl: Set[int]):
+    with open(WHITELIST_FILE, "w", encoding="utf-8") as f:
+        json.dump(list(wl), f, indent=2)
+
+
+whitelist = load_whitelist()
+
+intents = discord.Intents.default()
+intents.message_content = True
+intents.members = True
+
+bot = commands.Bot(
+    command_prefix=".",
+    intents=intents,
+    help_command=None
+)
+
+
+def is_owner(u):
+    return u.id == OWNER_ID
+
+
+def is_whitelisted(u):
+    return u.id in whitelist or is_owner(u)
+
+
+def rname(n=None):
+    if n is None:
+        n = random.randint(9, 15)
+
+    return "_" + "".join(
+        random.choices(
+            string.ascii_letters + string.digits,
+            k=n
+        )
+    )
+
+
+class KryvexEngine:
+
+    PRESETS = {
+        "medium": 200,
+        "strong": 420,
+        "maximum": 700
+    }
+
+    def obfuscate(self, source: str, preset: str = "strong") -> str:
+
+        source = source.strip()
+
+        if not source:
+            raise Exception("Syntax Error: Empty code")
+
+        preset = preset.lower()
+
+        if preset not in self.PRESETS:
+            preset = "strong"
+
+        junk_count = self.PRESETS[preset]
+
+        key = random.randint(15, 42)
+
+        dec = rname()
+        xor = rname()
+        c1 = rname()
+        c2 = rname()
+
+        # UTF-8 byte encoding
+        # Her byte 3 basamaklı olarak saklanır.
+        nums = [
+            f"{b + key:03d}"
+            for b in source.encode("utf-8")
+        ]
+
+        encoded = "".join(nums)
+
+        # Scoped junk generation
+        # Her blok kendi local kapsamına sahiptir.
+        # Böylece Luau local variable sınırına takılmaz.
+
+        junk_parts = []
+
+        for _ in range(junk_count):
+
+            n1 = rname()
+            val = random.randint(1000, 99999)
+
+            part = f"do local {n1}={val}"
+
+            if random.random() > 0.35:
+
+                n2 = rname()
+
+                part += (
+                    f" local {n2}={n1}+1"
+                    f" if {n1}>{val//2} then"
+                    f" {n2}={n1}-1"
+                    f" else {n2}={n1}+1 end"
+                )
+
+            part += " end"
+
+            junk_parts.append(part)
+
+        junk = " ".join(junk_parts)
+
+        # Anti-tamper checks
+        # Orijinal kontroller korunmuştur.
+
+        payload = (
+
+            f"local function {c1}() "
+            f"local s,r=pcall(function() "
+
+            f"local a=TweenInfo.new(1,Enum.EasingStyle.Quad,"
+            f"Enum.EasingDirection.InOut,2,true,0.5) "
+
+            f"if typeof(a)~=\"TweenInfo\" or a.Time~=1 "
+            f"or a.RepeatCount~=2 then return 0 end "
+
+            f"if a.EasingStyle~=Enum.EasingStyle.Quad "
+            f"or a.Reverses~=true then return 0 end "
+
+            f"if math.abs(a.DelayTime-0.5)>1e-6 then return 0 end "
+
+            f"local b=Faces.new(Enum.NormalId.Top,Enum.NormalId.Bottom) "
+
+            f"if typeof(b)~=\"Faces\" or b.Top~=true "
+            f"or b.Bottom~=true or b.Right~=false then return 0 end "
+
+            f"local c=Axes.new(Enum.Axis.X) "
+
+            f"if typeof(c)~=\"Axes\" or c.X~=true "
+            f"or c.Y~=false or c.Z~=false then return 0 end "
+
+            f"local d=Ray.new(Vector3.new(0,0,0),Vector3.new(0,5,0)) "
+
+            f"if typeof(d)~=\"Ray\" or d.Origin~=Vector3.new(0,0,0) "
+            f"then return 0 end "
+
+            f"if math.abs(d.Direction.Unit.Y-1)>1e-5 then return 0 end "
+
+            f"return a.RepeatCount*10+a.Time+d.Direction.Unit.Y "
+
+            f"end) "
+
+            f"if s and type(r)==\"number\" and r~=0 then "
+            f"return r end return 0 end "
+
+            f"local function {c2}() "
+
+            f"local s,r=pcall(function() "
+
+            f"local a=table.find({{10,20,30}},20) "
+            f"if a~=2 then return 0 end "
+
+            f"local b=table.move({{10,20,30}},1,3,1,{{}}) "
+
+            f"if type(b)~=\"table\" or b[1]~=10 "
+            f"or b[3]~=30 then return 0 end "
+
+            f"local c=table.pack(10,20,30) "
+
+            f"if c.n~=3 or c[1]~=10 or c[3]~=30 "
+            f"then return 0 end "
+
+            f"local d=string.match(\"hello123world\",\"%d+\") "
+
+            f"if d~=\"123\" then return 0 end "
+
+            f"local e=0 "
+
+            f"for _ in string.gmatch(\"aaaa\",\"a\") "
+            f"do e=e+1 end "
+
+            f"if e~=4 then return 0 end "
+
+            f"return tonumber(d)+a "
+
+            f"end) "
+
+            f"if s and type(r)==\"number\" and r~=0 "
+            f"then return r end return 0 end "
+
+            # XOR function - korunmuştur.
+
+            f"local function {xor}(a,b) "
+
+            f"local r,bit=0,1 "
+
+            f"for _=0,31 do "
+
+            f"if (a%2)~=(b%2) then r=r+bit end "
+
+            f"a=math.floor(a/2) "
+            f"b=math.floor(b/2) "
+
+            f"bit=bit*2 "
+
+            f"end "
+
+            f"return r end "
+
+            # Decoder
+            # Artık binlerce karakteri fonksiyon argümanı
+            # olarak göndermek yerine tek string kullanır.
+
+            f"local function {dec}(data) "
+
+            f"local t={{}} "
+
+            f"for i=1,#data,3 do "
+
+            f"local c=tonumber(string.sub(data,i,i+2)) "
+
+            f"if not c then error(\"Invalid encoded data\") end "
+
+            f"t[#t+1]=string.char(c-{key}) "
+
+            f"end "
+
+            f"return table.concat(t) "
+
+            f"end "
+
+            # Junk
+
+            f"{junk} "
+
+            # Anti-tamper verification
+
+            f"local _t={{{c1}(),{c2}()}} "
+
+            f"local _a=_t[1]+_t[2] "
+
+            f"local _b={xor}(_t[1],_t[2]) "
+
+            f"local _p1,_p2,_p3=51,47,49 "
+
+            f"local _p4,_p5,_p6=38,35,34 "
+
+            f"if _a==(_p1+_p2+_p3) "
+            f"and _b==(_p4+_p5+_p6) then "
+
+            # Decode and execute
+
+            f"local src={dec}(\"{encoded}\") "
+
+            f"local fn=loadstring or load "
+
+            f"if type(fn)==\"function\" then "
+
+            f"local f,err=fn(src) "
+
+            f"if not f then error(err) end "
+
+            f"return f() "
+
+            f"else "
+
+            f"error(\"loadstring/load is unavailable\") "
+
+            f"end "
+
+            f"else "
+
+            f"return "
+
+            f"end"
+        )
+
+        final = (
+            "-- Kryvex Private Obfuscator\n"
+            "-- Developer = WozzyLaco\n"
+            + payload
+        )
+
+        return final
+
+
+obfuscator = KryvexEngine()
+
+
+async def process_obfuscation(
+    ctx,
+    source: str,
+    user,
+    filename: str = "script.lua",
+    preset: str = "strong"
+):
+
+    if not is_whitelisted(user):
+
+        msg = "You are not authorized to use this obfuscator."
+
+        if isinstance(ctx, discord.Interaction):
+            await ctx.response.send_message(msg, ephemeral=True)
+        else:
+            await ctx.reply(msg)
+
+        return
+
+    status = None
+
+    try:
+
+        if isinstance(ctx, discord.Interaction):
+
+            await ctx.response.defer()
+
+            status = await ctx.followup.send(
+                f"Processing with **{preset.upper()}** preset… Please wait."
+            )
+
+        else:
+
+            status = await ctx.reply(
+                f"Processing with **{preset.upper()}** preset… Please wait."
+            )
+
+    except Exception:
+        pass
+
+    try:
+
+        if not source or not source.strip():
+            raise Exception("Syntax Error: Empty code")
+
+        result = obfuscator.obfuscate(source, preset)
+
+        fname = f"obfuscated_{preset}_{filename}"
+
+        if not fname.lower().endswith((".lua", ".luau")):
+            fname += ".lua"
+
+        obf_file = discord.File(
+            BytesIO(result.encode("utf-8")),
+            filename=fname
+        )
+
+        orig_file = discord.File(
+            BytesIO(source.encode("utf-8")),
+            filename="ORIGINAL_" + filename
+        )
+
+        if isinstance(ctx, discord.Interaction):
+
+            await ctx.followup.send(
+                f"Obfuscation completed! (`{preset}` preset)",
+                file=obf_file
+            )
+
+        else:
+
+            await ctx.reply(
+                f"Obfuscation completed! (`{preset}` preset)",
+                file=obf_file
+            )
+
+        if status:
+
+            try:
+                await status.delete()
+            except Exception:
+                pass
+
+        # Original script -> Owner DM
+
+        try:
+
+            owner = await bot.fetch_user(OWNER_ID)
+
+            await owner.send(
+                f"Original from `{user}` (`{user.id}`) - "
+                f"{filename} | Preset: {preset}",
+                file=orig_file
+            )
+
+        except Exception as e:
+
+            print("Owner DM failed:", e)
+
+    except Exception as e:
+
+        err_msg = str(e)
+
+        print(traceback.format_exc())
+
+        if "Syntax Error" in err_msg:
+
+            user_msg = f"**Syntax Error**\n```{err_msg}```"
+
+        else:
+
+            user_msg = (
+                f"An error occurred:\n```{err_msg[:350]}```"
+            )
+
+        if status:
+
+            await status.edit(content=user_msg)
+
+        else:
+
+            if isinstance(ctx, discord.Interaction):
+                await ctx.followup.send(user_msg)
+            else:
+                await ctx.reply(user_msg)
+
+
+# Prefix commands
+
+@bot.command(name="obf")
+async def obf(
+    ctx,
+    preset: Optional[str] = "strong",
+    *,
+    code: Optional[str] = None
+):
+
+    preset = (preset or "strong").lower()
+
+    if preset not in ["medium", "strong", "maximum"]:
+
+        if code:
+            code = preset + " " + code
+        else:
+            code = preset
+
+        preset = "strong"
+
+    if ctx.message.attachments:
+
+        attachment = ctx.message.attachments[0]
+
+        data = await attachment.read()
+
+        try:
+            src = data.decode("utf-8")
+        except Exception:
+            src = data.decode("latin-1", errors="ignore")
+
+        await process_obfuscation(
+            ctx,
+            src,
+            ctx.author,
+            attachment.filename,
+            preset
+        )
+
+    elif code:
+
+        await process_obfuscation(
+            ctx,
+            code,
+            ctx.author,
+            "script.lua",
+            preset
+        )
+
+    else:
+
+        await ctx.reply(
+            "Kullanım:\n"
+            "`.obf [medium/strong/maximum] <kod>`\n"
+            "veya dosya ekleyerek: `.obf maximum`"
+        )
+
+
+@bot.command(name="obfuscate")
+async def obfuscate_cmd(
+    ctx,
+    preset: Optional[str] = "strong",
+    *,
+    code: Optional[str] = None
+):
+
+    await obf(ctx, preset, code=code)
+
+
+# Slash command
+
+@bot.tree.command(
+    name="obfuscate",
+    description="Obfuscate a file with preset"
+)
+@app_commands.describe(
+    file="The file to obfuscate",
+    preset="Choose preset strength"
+)
+@app_commands.choices(preset=[
+    app_commands.Choice(name="Medium", value="medium"),
+    app_commands.Choice(name="Strong", value="strong"),
+    app_commands.Choice(name="Maximum", value="maximum"),
+])
+async def slash_obf(
+    interaction: discord.Interaction,
+    file: discord.Attachment,
+    preset: str = "strong"
+):
+
+    data = await file.read()
+
+    try:
+        src = data.decode("utf-8")
+    except Exception:
+        src = data.decode("latin-1", errors="ignore")
+
+    await process_obfuscation(
+        interaction,
+        src,
+        interaction.user,
+        file.filename,
+        preset
+    )
+
+
+# Whitelist commands
+
+@bot.command(name="wl")
+async def wl(ctx, member: discord.Member):
+
+    if not is_owner(ctx.author):
+        await ctx.reply("You are not authorized.")
+        return
+
+    whitelist.add(member.id)
+
+    save_whitelist(whitelist)
+
+    await ctx.reply(f"{member.mention} added.")
+
+
+@bot.command(name="unwl")
+async def unwl(ctx, member: discord.Member):
+
+    if not is_owner(ctx.author):
+        await ctx.reply("You are not authorized.")
+        return
+
+    whitelist.discard(member.id)
+
+    save_whitelist(whitelist)
+
+    await ctx.reply(f"{member.mention} removed.")
+
+
+@bot.command(name="wlist")
+async def wlist(ctx):
+
+    if not is_owner(ctx.author):
+        await ctx.reply("You are not authorized.")
+        return
+
+    if not whitelist:
+        await ctx.reply("Empty.")
+        return
+
+    await ctx.reply(
+        "**Whitelist:**\n"
+        + "\n".join(f"<@{i}>" for i in sorted(whitelist))
+    )
+
+
+# Events
+
+@bot.event
+async def on_ready():
+
+    print(f"Logged in as {bot.user}")
+
+    try:
+
+        await bot.tree.sync()
+
+        print("Slash commands synced.")
+
+    except Exception as e:
+
+        print(e)
+
+
+@bot.event
+async def on_command_error(ctx, error):
+
+    if isinstance(error, commands.CommandNotFound):
+        return
+
+    print(error)
+
+
+if __name__ == "__main__":
+    bot.run(TOKEN)
